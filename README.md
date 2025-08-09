@@ -44,6 +44,8 @@ npm install
 4. **Create** a new **Connector** for this Integration
 5. **Copy** your API key (it will look like: `458663bd41f2d1...`)
 
+![How to get your NEWO API Key](assets/newo-api-key.png)
+
 ### Step 2: Setup Environment
 ```bash
 cp .env.example .env
