@@ -3,21 +3,62 @@
 Mirror NEWO "Project → Agent → Flow → Skills" to local files and back, Git-first.
 
 ## Install
+
+### Option 1: Global Installation (Recommended)
 ```bash
+npm install -g newo
+```
+After global installation, use the CLI anywhere:
+```bash
+newo pull
+newo push
+newo status
+```
+
+### Option 2: Local Installation
+```bash
+# In your project directory
+npm install newo
+```
+Use with npx:
+```bash
+npx newo pull
+npx newo push  
+npx newo status
+```
+
+### Option 3: Development Installation
+```bash
+# Clone the repository
+git clone https://github.com/sabbah13/newo-cli.git
+cd newo-cli
 npm install
 ```
 
 ## Configure
+
+### Step 1: Get Your NEWO API Key
+1. **Login** to your [app.newo.ai](https://app.newo.ai) account
+2. **Navigate** to the **Integrations** page
+3. **Find** the **API Integration** in the list
+4. **Create** a new **Connector** for this Integration
+5. **Copy** your API key (it will look like: `458663bd41f2d1...`)
+
+### Step 2: Setup Environment
 ```bash
 cp .env.example .env
 # Edit .env with your values
 ```
-Required:
+
+Required environment variables:
 - `NEWO_BASE_URL` (default `https://app.newo.ai`)
-- `NEWO_PROJECT_ID`
-- One of:
-  - `NEWO_API_KEY` to exchange for tokens (recommended), or
-  - `NEWO_ACCESS_TOKEN` (+ optional `NEWO_REFRESH_TOKEN` and `NEWO_REFRESH_URL`)
+- `NEWO_PROJECT_ID` (your project UUID from NEWO)
+- `NEWO_API_KEY` (your API key from Step 1)
+
+Optional (advanced):
+- `NEWO_ACCESS_TOKEN` (direct access token)
+- `NEWO_REFRESH_TOKEN` (refresh token)
+- `NEWO_REFRESH_URL` (custom refresh endpoint)
 
 ## Commands
 ```bash
@@ -63,7 +104,7 @@ jobs:
       - run: node ./src/cli.js push
         env:
           NEWO_BASE_URL: https://app.newo.ai
-          NEWO_PROJECT_ID: b78188ba-0df0-46a8-8713-f0d7cff0a06e
+          NEWO_PROJECT_ID: ${{ secrets.NEWO_PROJECT_ID }}
           NEWO_API_KEY: ${{ secrets.NEWO_API_KEY }}
           # Optional:
           # NEWO_REFRESH_URL: ${{ secrets.NEWO_REFRESH_URL }}
