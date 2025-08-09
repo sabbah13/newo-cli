@@ -23,11 +23,23 @@ Required:
 ```bash
 npx newo pull     # download project -> ./project
 npx newo status   # list modified files
-npx newo push     # upload modified *.gdn back to NEWO
+npx newo push     # upload modified *.guidance/*.jinja back to NEWO
 ```
 
-Files are stored under `./project/<AgentIdn>/<FlowIdn>/<SkillIdn>.gdn`.
+Files are stored as:
+- `./project/<AgentIdn>/<FlowIdn>/<SkillIdn>.guidance` (AI guidance scripts)
+- `./project/<AgentIdn>/<FlowIdn>/<SkillIdn>.jinja` (NSL/Jinja template scripts)
+
 Hashes are tracked in `.newo/hashes.json` so only changed files are pushed.
+Project structure is also exported to `flows.yaml` for reference.
+
+## Features
+- **Two-way sync**: Pull NEWO projects to local files, push local changes back
+- **Change detection**: SHA256 hashing prevents unnecessary uploads
+- **Multiple file types**: `.guidance` (AI prompts) and `.jinja` (NSL templates)
+- **Project structure export**: Generates `flows.yaml` with complete project metadata
+- **Robust authentication**: API key exchange with automatic token refresh
+- **CI/CD ready**: GitHub Actions workflow included
 
 ## CI/CD (GitHub Actions)
 Create `.github/workflows/deploy.yml`:
@@ -37,7 +49,8 @@ on:
   push:
     branches: [ main ]
     paths:
-      - 'project/**/*.gdn'
+      - 'project/**/*.guidance'
+      - 'project/**/*.jinja'
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -52,13 +65,15 @@ jobs:
           NEWO_BASE_URL: https://app.newo.ai
           NEWO_PROJECT_ID: b78188ba-0df0-46a8-8713-f0d7cff0a06e
           NEWO_API_KEY: ${{ secrets.NEWO_API_KEY }}
-          # Optional refresh URL if your server supports it:
+          # Optional:
           # NEWO_REFRESH_URL: ${{ secrets.NEWO_REFRESH_URL }}
 ```
 
-## Endpoints used
-- `GET /api/v1/bff/agents/list?project_id=...`
-- `GET /api/v1/designer/flows/{flowId}/skills`
-- `GET /api/v1/bff/skills/{skillId}` (fallback to `/api/v1/designer/skills/{skillId}`)
-- `PUT /api/v1/designer/skills/{skillId}` (fallback to `/api/v1/bff/skills/{skillId}`)
-- `POST /api/v1/auth/api-key/token` to acquire access tokens from API key.
+## API Endpoints
+- `GET /api/v1/bff/agents/list?project_id=...` - List project agents
+- `GET /api/v1/designer/flows/{flowId}/skills` - List skills in flow
+- `GET /api/v1/designer/skills/{skillId}` - Get skill content
+- `PUT /api/v1/designer/flows/skills/{skillId}` - Update skill content
+- `GET /api/v1/designer/flows/{flowId}/events` - List flow events (for flows.yaml)
+- `GET /api/v1/designer/flows/{flowId}/states` - List flow states (for flows.yaml)
+- `POST /api/v1/auth/api-key/token` - Exchange API key for access tokens

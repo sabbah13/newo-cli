@@ -11,8 +11,9 @@ export async function ensureState() {
   await fs.ensureDir(ROOT_DIR);
 }
 
-export function skillPath(agentIdn, flowIdn, skillIdn) {
-  return path.join(ROOT_DIR, agentIdn, flowIdn, `${skillIdn}.gdn`);
+export function skillPath(agentIdn, flowIdn, skillIdn, runnerType = 'guidance') {
+  const extension = runnerType === 'nsl' ? '.jinja' : '.guidance';
+  return path.join(ROOT_DIR, agentIdn, flowIdn, `${skillIdn}${extension}`);
 }
 
 export async function writeFileAtomic(filepath, content) {

@@ -1,0 +1,81 @@
+# Security - Exclude all sensitive files and data
+.env
+.env.*
+!.env.example
+
+# Local NEWO project data and state
+.newo/
+project/
+flows.yaml
+
+# Development and build files
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm/
+.nyc_output/
+coverage/
+.coverage/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Version control
+.git/
+.gitignore
+
+# Testing and development
+test/
+tests/
+*.test.js
+*.spec.js
+__tests__/
+jest.config.*
+.eslintrc.*
+.prettierrc.*
+.babelrc
+.browserslistrc
+
+# Documentation and examples that aren't needed in npm package
+docs/
+examples/
+screenshots/
+*.md
+!README.md
+
+# Log files
+logs/
+*.log
+
+# Temporary files
+tmp/
+temp/
+.tmp/
+.temp/
+
+# OS generated files
+Thumbs.db
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+
+# Configuration files that might contain sensitive info
+jinja-lsp.toml
+.claude/
+
+# Any potential backup files
+*.bak
+*.backup
+*.old
+*.orig
+
+# Package manager locks (included in package.json files field instead)
+package-lock.json
+yarn.lock
+pnpm-lock.yaml

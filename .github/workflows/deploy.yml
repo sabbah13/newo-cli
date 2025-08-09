@@ -3,7 +3,8 @@ on:
   push:
     branches: [ main ]
     paths:
-      - 'project/**/*.gdn'
+      - 'project/**/*.guidance'
+      - 'project/**/*.jinja'
 jobs:
   deploy:
     runs-on: ubuntu-latest
