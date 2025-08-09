@@ -20,16 +20,16 @@
     "sync",
     "local-development"
   ],
-  "author": "Your Name",
+  "author": "sabbah13",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/newo-cli.git"
+    "url": "https://github.com/sabbah13/newo-cli.git"
   },
   "bugs": {
-    "url": "https://github.com/yourusername/newo-cli/issues"
+    "url": "https://github.com/sabbah13/newo-cli/issues"
   },
-  "homepage": "https://github.com/yourusername/newo-cli#readme",
+  "homepage": "https://github.com/sabbah13/newo-cli#readme",
   "engines": {
     "node": ">=18"
   },
