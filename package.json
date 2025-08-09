@@ -4,7 +4,7 @@
   "description": "NEWO CLI: sync flows/skills between NEWO and local files",
   "type": "module",
   "bin": {
-    "newo": "./src/cli.js"
+    "newo": "src/cli.js"
   },
   "files": [
     "src/**/*.js",
@@ -24,7 +24,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/sabbah13/newo-cli.git"
+    "url": "git+https://github.com/sabbah13/newo-cli.git"
   },
   "bugs": {
     "url": "https://github.com/sabbah13/newo-cli/issues"
