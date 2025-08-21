@@ -91,3 +91,8 @@ export async function listFlowStates(client, flowId) {
   const r = await client.get(`/api/v1/designer/flows/${flowId}/states`);
   return r.data;
 }
+
+export async function importAkbArticle(client, articleData) {
+  const r = await client.post('/api/v1/akb/append-manual', articleData);
+  return r.data;
+}

@@ -64,9 +64,11 @@ Optional (advanced):
 
 ## Commands
 ```bash
-npx newo pull     # download project -> ./project
-npx newo status   # list modified files
-npx newo push     # upload modified *.guidance/*.jinja back to NEWO
+npx newo pull                              # download project -> ./project
+npx newo status                            # list modified files
+npx newo push                              # upload modified *.guidance/*.jinja back to NEWO
+npx newo import-akb <file> <persona_id>    # import AKB articles from file
+npx newo meta                              # get project metadata (debug)
 ```
 
 Files are stored as:
@@ -80,6 +82,7 @@ Project structure is also exported to `flows.yaml` for reference.
 - **Two-way sync**: Pull NEWO projects to local files, push local changes back
 - **Change detection**: SHA256 hashing prevents unnecessary uploads
 - **Multiple file types**: `.guidance` (AI prompts) and `.jinja` (NSL templates)
+- **AKB import**: Import knowledge base articles from structured text files
 - **Project structure export**: Generates `flows.yaml` with complete project metadata
 - **Robust authentication**: API key exchange with automatic token refresh
 - **CI/CD ready**: GitHub Actions workflow included
@@ -112,6 +115,39 @@ jobs:
           # NEWO_REFRESH_URL: ${{ secrets.NEWO_REFRESH_URL }}
 ```
 
+## AKB Import
+
+Import knowledge base articles from structured text files into NEWO personas:
+
+```bash
+npx newo import-akb akb.txt da4550db-2b95-4500-91ff-fb4b60fe7be9
+```
+
+### AKB File Format
+```
+---
+# r001
+## Category / Subcategory / Description
+## Summary description of the category
+## Keywords; separated; by; semicolons
+
+<Category type="Category Name">
+Item Name: $Price [Modifiers: modifier1, modifier2]
+Another Item: $Price [Modifiers: modifier3]
+</Category>
+---
+```
+
+Each article will be imported with:
+- **topic_name**: The descriptive category title
+- **source**: The article ID (e.g., "r001") 
+- **topic_summary**: The full category content with pricing
+- **topic_facts**: Array containing category, summary, and keywords
+- **confidence**: 100
+- **labels**: ["rag_context"]
+
+Use `--verbose` flag to see detailed import progress.
+
 ## API Endpoints
 - `GET /api/v1/bff/agents/list?project_id=...` - List project agents
 - `GET /api/v1/designer/flows/{flowId}/skills` - List skills in flow
@@ -120,3 +156,4 @@ jobs:
 - `GET /api/v1/designer/flows/{flowId}/events` - List flow events (for flows.yaml)
 - `GET /api/v1/designer/flows/{flowId}/states` - List flow states (for flows.yaml)
 - `POST /api/v1/auth/api-key/token` - Exchange API key for access tokens
+- `POST /api/v1/akb/append-manual` - Import AKB articles
