@@ -1,31 +1,35 @@
-import { listAgents, listFlowSkills, updateSkill, listFlowEvents, listFlowStates } from './api.js';
-import { ensureState, skillPath, writeFileAtomic, readIfExists, MAP_PATH } from './fsutil.js';
+import { listProjects, listAgents, listFlowSkills, updateSkill, listFlowEvents, listFlowStates, getProjectMeta } from './api.js';
+import { ensureState, skillPath, writeFileAtomic, readIfExists, MAP_PATH, projectDir, metadataPath } from './fsutil.js';
 import fs from 'fs-extra';
 import { sha256, loadHashes, saveHashes } from './hash.js';
 import yaml from 'js-yaml';
 import path from 'path';
 
-export async function pullAll(client, projectId, verbose = false) {
-  await ensureState();
-  if (verbose) console.log(`🔍 Fetching agents for project ${projectId}...`);
+export async function pullSingleProject(client, projectId, projectIdn, verbose = false) {
+  if (verbose) console.log(`🔍 Fetching agents for project ${projectId} (${projectIdn})...`);
   const agents = await listAgents(client, projectId);
   if (verbose) console.log(`📦 Found ${agents.length} agents`);
 
-  const idMap = { projectId, agents: {} };
+  // Get and save project metadata
+  const projectMeta = await getProjectMeta(client, projectId);
+  await writeFileAtomic(metadataPath(projectIdn), JSON.stringify(projectMeta, null, 2));
+  if (verbose) console.log(`✓ Saved metadata for ${projectIdn}`);
+
+  const projectMap = { projectId, projectIdn, agents: {} };
 
   for (const agent of agents) {
     const aKey = agent.idn;
-    idMap.agents[aKey] = { id: agent.id, flows: {} };
+    projectMap.agents[aKey] = { id: agent.id, flows: {} };
 
     for (const flow of agent.flows ?? []) {
-      idMap.agents[aKey].flows[flow.idn] = { id: flow.id, skills: {} };
+      projectMap.agents[aKey].flows[flow.idn] = { id: flow.id, skills: {} };
 
       const skills = await listFlowSkills(client, flow.id);
       for (const s of skills) {
-        const file = skillPath(agent.idn, flow.idn, s.idn, s.runner_type);
+        const file = skillPath(projectIdn, agent.idn, flow.idn, s.idn, s.runner_type);
         await writeFileAtomic(file, s.prompt_script || '');
         // Store complete skill metadata for push operations
-        idMap.agents[aKey].flows[flow.idn].skills[s.idn] = {
+        projectMap.agents[aKey].flows[flow.idn].skills[s.idn] = {
           id: s.id,
           title: s.title,
           idn: s.idn,
@@ -39,23 +43,66 @@ export async function pullAll(client, projectId, verbose = false) {
     }
   }
 
-  await fs.writeJson(MAP_PATH, idMap, { spaces: 2 });
+  // Generate flows.yaml for this project
+  if (verbose) console.log(`📄 Generating flows.yaml for ${projectIdn}...`);
+  await generateFlowsYaml(client, agents, projectIdn, verbose);
 
-  // Generate flows.yaml
-  if (verbose) console.log('📄 Generating flows.yaml...');
-  await generateFlowsYaml(client, agents, verbose);
+  return projectMap;
+}
 
-  const hashes = {};
-  for (const [agentIdn, agentObj] of Object.entries(idMap.agents)) {
-    for (const [flowIdn, flowObj] of Object.entries(agentObj.flows)) {
-      for (const [skillIdn, skillMeta] of Object.entries(flowObj.skills)) {
-        const p = skillPath(agentIdn, flowIdn, skillIdn, skillMeta.runner_type);
-        const content = await fs.readFile(p, 'utf8');
-        hashes[p] = sha256(content);
+export async function pullAll(client, projectId = null, verbose = false) {
+  await ensureState();
+  
+  if (projectId) {
+    // Single project mode
+    const projectMeta = await getProjectMeta(client, projectId);
+    const projectMap = await pullSingleProject(client, projectId, projectMeta.idn, verbose);
+    
+    const idMap = { projects: { [projectMeta.idn]: projectMap } };
+    await fs.writeJson(MAP_PATH, idMap, { spaces: 2 });
+    
+    // Generate hash tracking for this project
+    const hashes = {};
+    for (const [agentIdn, agentObj] of Object.entries(projectMap.agents)) {
+      for (const [flowIdn, flowObj] of Object.entries(agentObj.flows)) {
+        for (const [skillIdn, skillMeta] of Object.entries(flowObj.skills)) {
+          const p = skillPath(projectMeta.idn, agentIdn, flowIdn, skillIdn, skillMeta.runner_type);
+          const content = await fs.readFile(p, 'utf8');
+          hashes[p] = sha256(content);
+        }
+      }
+    }
+    await saveHashes(hashes);
+    return;
+  }
+
+  // Multi-project mode
+  if (verbose) console.log(`🔍 Fetching all projects...`);
+  const projects = await listProjects(client);
+  if (verbose) console.log(`📦 Found ${projects.length} projects`);
+
+  const idMap = { projects: {} };
+  const allHashes = {};
+
+  for (const project of projects) {
+    if (verbose) console.log(`\n📁 Processing project: ${project.idn} (${project.title})`);
+    const projectMap = await pullSingleProject(client, project.id, project.idn, verbose);
+    idMap.projects[project.idn] = projectMap;
+
+    // Collect hashes for this project
+    for (const [agentIdn, agentObj] of Object.entries(projectMap.agents)) {
+      for (const [flowIdn, flowObj] of Object.entries(agentObj.flows)) {
+        for (const [skillIdn, skillMeta] of Object.entries(flowObj.skills)) {
+          const p = skillPath(project.idn, agentIdn, flowIdn, skillIdn, skillMeta.runner_type);
+          const content = await fs.readFile(p, 'utf8');
+          allHashes[p] = sha256(content);
+        }
       }
     }
   }
-  await saveHashes(hashes);
+
+  await fs.writeJson(MAP_PATH, idMap, { spaces: 2 });
+  await saveHashes(allHashes);
 }
 
 export async function pushChanged(client, verbose = false) {
@@ -74,59 +121,68 @@ export async function pushChanged(client, verbose = false) {
   let pushed = 0;
   let scanned = 0;
   
-  for (const [agentIdn, agentObj] of Object.entries(idMap.agents)) {
-    if (verbose) console.log(`  📁 Scanning agent: ${agentIdn}`);
-    for (const [flowIdn, flowObj] of Object.entries(agentObj.flows)) {
-      if (verbose) console.log(`    📁 Scanning flow: ${flowIdn}`);
-      for (const [skillIdn, skillMeta] of Object.entries(flowObj.skills)) {
-        const p = skillPath(agentIdn, flowIdn, skillIdn, skillMeta.runner_type);
-        scanned++;
-        if (verbose) console.log(`      📄 Checking: ${p}`);
-        
-        const content = await readIfExists(p);
-        if (content === null) {
-          if (verbose) console.log(`        ⚠️  File not found: ${p}`);
-          continue;
-        }
-        
-        const h = sha256(content);
-        const oldHash = oldHashes[p];
-        if (verbose) {
-          console.log(`        🔍 Hash comparison:`);
-          console.log(`          Old: ${oldHash || 'none'}`);
-          console.log(`          New: ${h}`);
-        }
-        
-        if (oldHash !== h) {
-          if (verbose) console.log(`        🔄 File changed, preparing to push...`);
+  // Handle both old single-project format and new multi-project format
+  const projects = idMap.projects || { '': idMap };
+  
+  for (const [projectIdn, projectData] of Object.entries(projects)) {
+    if (verbose && projectIdn) console.log(`📁 Scanning project: ${projectIdn}`);
+    
+    for (const [agentIdn, agentObj] of Object.entries(projectData.agents)) {
+      if (verbose) console.log(`  📁 Scanning agent: ${agentIdn}`);
+      for (const [flowIdn, flowObj] of Object.entries(agentObj.flows)) {
+        if (verbose) console.log(`    📁 Scanning flow: ${flowIdn}`);
+        for (const [skillIdn, skillMeta] of Object.entries(flowObj.skills)) {
+          const p = projectIdn ? 
+            skillPath(projectIdn, agentIdn, flowIdn, skillIdn, skillMeta.runner_type) :
+            skillPath('', agentIdn, flowIdn, skillIdn, skillMeta.runner_type);
+          scanned++;
+          if (verbose) console.log(`      📄 Checking: ${p}`);
           
-          // Create complete skill object with updated prompt_script
-          const skillObject = {
-            id: skillMeta.id,
-            title: skillMeta.title,
-            idn: skillMeta.idn,
-            prompt_script: content,
-            runner_type: skillMeta.runner_type,
-            model: skillMeta.model,
-            parameters: skillMeta.parameters,
-            path: skillMeta.path
-          };
-          
-          if (verbose) {
-            console.log(`        📤 Pushing skill object:`);
-            console.log(`          ID: ${skillObject.id}`);
-            console.log(`          Title: ${skillObject.title}`);
-            console.log(`          IDN: ${skillObject.idn}`);
-            console.log(`          Content length: ${content.length} chars`);
-            console.log(`          Content preview: ${content.substring(0, 100).replace(/\n/g, '\\n')}...`);
+          const content = await readIfExists(p);
+          if (content === null) {
+            if (verbose) console.log(`        ⚠️  File not found: ${p}`);
+            continue;
           }
           
-          await updateSkill(client, skillObject);
-          console.log(`↑ Pushed ${p}`);
-          newHashes[p] = h;
-          pushed++;
-        } else if (verbose) {
-          console.log(`        ✓ No changes`);
+          const h = sha256(content);
+          const oldHash = oldHashes[p];
+          if (verbose) {
+            console.log(`        🔍 Hash comparison:`);
+            console.log(`          Old: ${oldHash || 'none'}`);
+            console.log(`          New: ${h}`);
+          }
+          
+          if (oldHash !== h) {
+            if (verbose) console.log(`        🔄 File changed, preparing to push...`);
+            
+            // Create complete skill object with updated prompt_script
+            const skillObject = {
+              id: skillMeta.id,
+              title: skillMeta.title,
+              idn: skillMeta.idn,
+              prompt_script: content,
+              runner_type: skillMeta.runner_type,
+              model: skillMeta.model,
+              parameters: skillMeta.parameters,
+              path: skillMeta.path
+            };
+            
+            if (verbose) {
+              console.log(`        📤 Pushing skill object:`);
+              console.log(`          ID: ${skillObject.id}`);
+              console.log(`          Title: ${skillObject.title}`);
+              console.log(`          IDN: ${skillObject.idn}`);
+              console.log(`          Content length: ${content.length} chars`);
+              console.log(`          Content preview: ${content.substring(0, 100).replace(/\n/g, '\\n')}...`);
+            }
+            
+            await updateSkill(client, skillObject);
+            console.log(`↑ Pushed ${p}`);
+            newHashes[p] = h;
+            pushed++;
+          } else if (verbose) {
+            console.log(`        ✓ No changes`);
+          }
         }
       }
     }
@@ -149,33 +205,42 @@ export async function status(verbose = false) {
   const hashes = await loadHashes();
   let dirty = 0;
 
-  for (const [agentIdn, agentObj] of Object.entries(idMap.agents)) {
-    if (verbose) console.log(`  📁 Checking agent: ${agentIdn}`);
-    for (const [flowIdn, flowObj] of Object.entries(agentObj.flows)) {
-      if (verbose) console.log(`    📁 Checking flow: ${flowIdn}`);
-      for (const [skillIdn, skillMeta] of Object.entries(flowObj.skills)) {
-        const p = skillPath(agentIdn, flowIdn, skillIdn, skillMeta.runner_type);
-        const exists = await fs.pathExists(p);
-        if (!exists) { 
-          console.log(`D  ${p}`); 
-          dirty++; 
-          if (verbose) console.log(`      ❌ Deleted: ${p}`);
-          continue; 
-        }
-        const content = await fs.readFile(p, 'utf8');
-        const h = sha256(content);
-        const oldHash = hashes[p];
-        if (verbose) {
-          console.log(`      📄 ${p}`);
-          console.log(`        Old hash: ${oldHash || 'none'}`);
-          console.log(`        New hash: ${h}`);
-        }
-        if (oldHash !== h) { 
-          console.log(`M  ${p}`); 
-          dirty++; 
-          if (verbose) console.log(`      🔄 Modified: ${p}`);
-        } else if (verbose) {
-          console.log(`      ✓ Unchanged: ${p}`);
+  // Handle both old single-project format and new multi-project format
+  const projects = idMap.projects || { '': idMap };
+
+  for (const [projectIdn, projectData] of Object.entries(projects)) {
+    if (verbose && projectIdn) console.log(`📁 Checking project: ${projectIdn}`);
+    
+    for (const [agentIdn, agentObj] of Object.entries(projectData.agents)) {
+      if (verbose) console.log(`  📁 Checking agent: ${agentIdn}`);
+      for (const [flowIdn, flowObj] of Object.entries(agentObj.flows)) {
+        if (verbose) console.log(`    📁 Checking flow: ${flowIdn}`);
+        for (const [skillIdn, skillMeta] of Object.entries(flowObj.skills)) {
+          const p = projectIdn ? 
+            skillPath(projectIdn, agentIdn, flowIdn, skillIdn, skillMeta.runner_type) :
+            skillPath('', agentIdn, flowIdn, skillIdn, skillMeta.runner_type);
+          const exists = await fs.pathExists(p);
+          if (!exists) { 
+            console.log(`D  ${p}`); 
+            dirty++; 
+            if (verbose) console.log(`      ❌ Deleted: ${p}`);
+            continue; 
+          }
+          const content = await fs.readFile(p, 'utf8');
+          const h = sha256(content);
+          const oldHash = hashes[p];
+          if (verbose) {
+            console.log(`      📄 ${p}`);
+            console.log(`        Old hash: ${oldHash || 'none'}`);
+            console.log(`        New hash: ${h}`);
+          }
+          if (oldHash !== h) { 
+            console.log(`M  ${p}`); 
+            dirty++; 
+            if (verbose) console.log(`      🔄 Modified: ${p}`);
+          } else if (verbose) {
+            console.log(`      ✓ Unchanged: ${p}`);
+          }
         }
       }
     }
@@ -183,7 +248,7 @@ export async function status(verbose = false) {
   console.log(dirty ? `${dirty} changed file(s).` : 'Clean.');
 }
 
-async function generateFlowsYaml(client, agents, verbose = false) {
+async function generateFlowsYaml(client, agents, projectIdn, verbose = false) {
   const flowsData = { flows: [] };
 
   for (const agent of agents) {
@@ -278,7 +343,7 @@ async function generateFlowsYaml(client, agents, verbose = false) {
   // Post-process to fix enum formatting
   yamlContent = yamlContent.replace(/"(!enum "[^"]+")"/g, '$1');
   
-  const yamlPath = path.join('flows.yaml');
-  await fs.writeFile(yamlPath, yamlContent, 'utf8');
-  console.log(`✓ Generated flows.yaml`);
+  const yamlPath = path.join(projectDir(projectIdn), 'flows.yaml');
+  await writeFileAtomic(yamlPath, yamlContent);
+  console.log(`✓ Generated flows.yaml for ${projectIdn}`);
 }

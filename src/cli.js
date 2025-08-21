@@ -17,17 +17,24 @@ async function main() {
   if (!cmd || ['help', '-h', '--help'].includes(cmd)) {
     console.log(`NEWO CLI
 Usage:
-  newo pull                    # download project -> ./project
+  newo pull                    # download all projects -> ./projects/ OR specific project if NEWO_PROJECT_ID set
   newo push                    # upload modified *.guidance/*.jinja back to NEWO
   newo status                  # show modified files
-  newo meta                    # get project metadata (debug)
+  newo meta                    # get project metadata (debug, requires NEWO_PROJECT_ID)
   newo import-akb <file> <persona_id>  # import AKB articles from file
   
 Flags:
   --verbose, -v                # enable detailed logging
   
 Env:
-  NEWO_BASE_URL, NEWO_PROJECT_ID, NEWO_API_KEY, NEWO_REFRESH_URL (optional)
+  NEWO_BASE_URL, NEWO_PROJECT_ID (optional), NEWO_API_KEY, NEWO_REFRESH_URL (optional)
+  
+Notes:
+  - multi-project support: pull downloads all accessible projects or single project based on NEWO_PROJECT_ID
+  - If NEWO_PROJECT_ID is set, pull downloads only that project
+  - If NEWO_PROJECT_ID is not set, pull downloads all projects accessible with your API key
+  - Projects are stored in ./projects/{project-idn}/ folders
+  - Each project folder contains metadata.json and flows.yaml
 `);
     return;
   }
@@ -35,8 +42,8 @@ Env:
   const client = await makeClient(verbose);
 
   if (cmd === 'pull') {
-    if (!NEWO_PROJECT_ID) throw new Error('NEWO_PROJECT_ID is not set in env');
-    await pullAll(client, NEWO_PROJECT_ID, verbose);
+    // If PROJECT_ID is set, pull single project; otherwise pull all projects
+    await pullAll(client, NEWO_PROJECT_ID || null, verbose);
   } else if (cmd === 'push') {
     await pushChanged(client, verbose);
   } else if (cmd === 'status') {

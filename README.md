@@ -54,34 +54,41 @@ cp .env.example .env
 
 Required environment variables:
 - `NEWO_BASE_URL` (default `https://app.newo.ai`)
-- `NEWO_PROJECT_ID` (your project UUID from NEWO)
 - `NEWO_API_KEY` (your API key from Step 1)
 
-Optional (advanced):
+Optional environment variables:
+- `NEWO_PROJECT_ID` (specific project UUID - if not set, pulls all accessible projects)
 - `NEWO_ACCESS_TOKEN` (direct access token)
 - `NEWO_REFRESH_TOKEN` (refresh token)
 - `NEWO_REFRESH_URL` (custom refresh endpoint)
 
 ## Commands
 ```bash
-npx newo pull                              # download project -> ./project
+npx newo pull                              # download all projects -> ./projects/ OR specific project if NEWO_PROJECT_ID set
 npx newo status                            # list modified files
 npx newo push                              # upload modified *.guidance/*.jinja back to NEWO
 npx newo import-akb <file> <persona_id>    # import AKB articles from file
-npx newo meta                              # get project metadata (debug)
+npx newo meta                              # get project metadata (debug, requires NEWO_PROJECT_ID)
 ```
 
+### Project Structure
 Files are stored as:
-- `./project/<AgentIdn>/<FlowIdn>/<SkillIdn>.guidance` (AI guidance scripts)
-- `./project/<AgentIdn>/<FlowIdn>/<SkillIdn>.jinja` (NSL/Jinja template scripts)
+- **Multi-project mode** (no NEWO_PROJECT_ID): `./projects/<ProjectIdn>/<AgentIdn>/<FlowIdn>/<SkillIdn>.guidance|.jinja`
+- **Single-project mode** (NEWO_PROJECT_ID set): `./projects/<ProjectIdn>/<AgentIdn>/<FlowIdn>/<SkillIdn>.guidance|.jinja`
+
+Each project folder contains:
+- `metadata.json` - Project metadata (title, description, version, etc.)
+- `flows.yaml` - Complete project structure export for external tools
+- Agent/Flow/Skill hierarchy with `.guidance` (AI prompts) and `.jinja` (NSL templates)
 
 Hashes are tracked in `.newo/hashes.json` so only changed files are pushed.
-Project structure is also exported to `flows.yaml` for reference.
 
 ## Features
+- **Multi-project support**: Pull all accessible projects or specify a single project
 - **Two-way sync**: Pull NEWO projects to local files, push local changes back
 - **Change detection**: SHA256 hashing prevents unnecessary uploads
 - **Multiple file types**: `.guidance` (AI prompts) and `.jinja` (NSL templates)
+- **Project metadata**: Each project includes `metadata.json` with complete project info
 - **AKB import**: Import knowledge base articles from structured text files
 - **Project structure export**: Generates `flows.yaml` with complete project metadata
 - **Robust authentication**: API key exchange with automatic token refresh
@@ -95,8 +102,8 @@ on:
   push:
     branches: [ main ]
     paths:
-      - 'project/**/*.guidance'
-      - 'project/**/*.jinja'
+      - 'projects/**/*.guidance'
+      - 'projects/**/*.jinja'
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -149,6 +156,8 @@ Each article will be imported with:
 Use `--verbose` flag to see detailed import progress.
 
 ## API Endpoints
+- `GET /api/v1/designer/projects` - List all accessible projects
+- `GET /api/v1/designer/projects/by-id/{projectId}` - Get specific project metadata
 - `GET /api/v1/bff/agents/list?project_id=...` - List project agents
 - `GET /api/v1/designer/flows/{flowId}/skills` - List skills in flow
 - `GET /api/v1/designer/skills/{skillId}` - Get skill content

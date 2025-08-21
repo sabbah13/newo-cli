@@ -58,6 +58,11 @@ export async function makeClient(verbose = false) {
   return client;
 }
 
+export async function listProjects(client) {
+  const r = await client.get(`/api/v1/designer/projects`);
+  return r.data;
+}
+
 export async function listAgents(client, projectId) {
   const r = await client.get(`/api/v1/bff/agents/list`, { params: { project_id: projectId } });
   return r.data;

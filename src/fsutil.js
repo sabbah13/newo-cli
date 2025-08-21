@@ -1,7 +1,7 @@
 import fs from 'fs-extra';
 import path from 'path';
 
-export const ROOT_DIR = path.join(process.cwd(), 'project');
+export const ROOT_DIR = path.join(process.cwd(), 'projects');
 export const STATE_DIR = path.join(process.cwd(), '.newo');
 export const MAP_PATH = path.join(STATE_DIR, 'map.json');
 export const HASHES_PATH = path.join(STATE_DIR, 'hashes.json');
@@ -11,9 +11,17 @@ export async function ensureState() {
   await fs.ensureDir(ROOT_DIR);
 }
 
-export function skillPath(agentIdn, flowIdn, skillIdn, runnerType = 'guidance') {
+export function projectDir(projectIdn) {
+  return path.join(ROOT_DIR, projectIdn);
+}
+
+export function skillPath(projectIdn, agentIdn, flowIdn, skillIdn, runnerType = 'guidance') {
   const extension = runnerType === 'nsl' ? '.jinja' : '.guidance';
-  return path.join(ROOT_DIR, agentIdn, flowIdn, `${skillIdn}${extension}`);
+  return path.join(ROOT_DIR, projectIdn, agentIdn, flowIdn, `${skillIdn}${extension}`);
+}
+
+export function metadataPath(projectIdn) {
+  return path.join(ROOT_DIR, projectIdn, 'metadata.json');
 }
 
 export async function writeFileAtomic(filepath, content) {

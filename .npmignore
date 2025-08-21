@@ -79,3 +79,6 @@ jinja-lsp.toml
 package-lock.json
 yarn.lock
 pnpm-lock.yaml
+
+akb.txt
+test-results/

@@ -3,8 +3,8 @@ on:
   push:
     branches: [ main ]
     paths:
-      - 'project/**/*.guidance'
-      - 'project/**/*.jinja'
+      - 'projects/**/*.guidance'
+      - 'projects/**/*.jinja'
 jobs:
   deploy:
     runs-on: ubuntu-latest

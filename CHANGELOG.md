@@ -5,7 +5,63 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.3.0] - 2025-01-21
+## [1.4.0] - 2025-08-20
+
+### Added
+- **Multi-Project Support**: Major feature allowing users to work with multiple NEWO projects
+  - Optional `NEWO_PROJECT_ID` environment variable - if not set, pulls all accessible projects
+  - New API endpoint: `GET /api/v1/designer/projects` to list all accessible projects
+  - Projects stored in organized folder structure: `./projects/{project-idn}/`
+  - Each project folder contains `metadata.json` with complete project information
+  - Project-specific `flows.yaml` files for individual project structure exports
+- **Enhanced Project Structure**:
+  - Changed from single `./project/` to multi-project `./projects/{project-idn}/` hierarchy
+  - Backward compatibility maintained for existing single-project workflows
+  - Improved organization with project-specific metadata and flows
+
+### Changed
+- **Folder Structure**: Project files now stored in `./projects/{project-idn}/` instead of `./project/`
+- **CLI Behavior**: `newo pull` now downloads all projects by default (unless NEWO_PROJECT_ID specified)
+- **CI/CD Paths**: GitHub Actions workflow paths updated from `project/**/*` to `projects/**/*`
+- **Help Documentation**: Updated CLI help text to reflect multi-project capabilities
+- **API Integration**: Enhanced sync logic to handle both single and multi-project scenarios
+
+### Technical Details
+- **New API Functions**:
+  - `listProjects()`: Fetch all accessible projects from NEWO platform
+  - `pullSingleProject()`: Pull individual project with metadata generation
+  - `metadataPath()`: Generate project-specific metadata file paths
+- **Enhanced Sync Engine**:
+  - Multi-project mapping in `.newo/map.json` with backward compatibility
+  - Project-specific hash tracking for efficient change detection
+  - Automatic project metadata collection and storage
+- **File System Updates**:
+  - Updated `fsutil.js` with multi-project path utilities
+  - Enhanced `skillPath()` function to include project identifier
+  - New `projectDir()` and `metadataPath()` helper functions
+
+### Migration Guide
+- **Existing Users**: Single-project setups continue to work with `NEWO_PROJECT_ID` set
+- **New Users**: Leave `NEWO_PROJECT_ID` unset to access all projects automatically
+- **File Paths**: Update any scripts referencing `./project/` to use `./projects/{project-idn}/`
+- **CI/CD**: Update workflow paths from `project/**/*` to `projects/**/*`
+
+### Example Usage
+```bash
+# Pull all accessible projects (new default behavior)
+npx newo pull
+
+# Pull specific project (original behavior)
+NEWO_PROJECT_ID=your-project-id npx newo pull
+
+# Push changes from any project structure
+npx newo push
+
+# Status works with both single and multi-project setups
+npx newo status
+```
+
+## [1.3.0] - 2025-08-20
 
 ### Added
 - **AKB Import Feature**: New `import-akb` command to import knowledge base articles from structured text files
@@ -57,7 +113,7 @@ Another Item: $Price [Modifiers: modifier3]
 ---
 ```
 
-## [1.2.2] - 2025-01-20
+## [1.2.2] - 2025-08-12
 
 ### Changed
 - Updated README with API key image
