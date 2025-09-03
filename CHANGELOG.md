@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.1] - 2025-08-21
+
+### Changed
+- **Production Cleanup**: Removed development artifacts and improved project structure
+  - Removed development test files from root directory (test-core.js, test-quick.js, test-working.js)
+  - Removed unused refactored files (api-refactored.js, auth-refactored.js, cli-refactored.js)
+  - Removed test-results directory and generated coverage reports
+  - Fixed circular dependency in package.json (removed self-reference)
+  - Updated .gitignore to prevent committing development artifacts
+  - Applied code formatting fixes via ESLint auto-fix
+
+### Fixed
+- **Package Dependencies**: Resolved circular dependency where package depended on itself
+- **Code Quality**: Fixed ESLint formatting issues across codebase
+- **Project Structure**: Cleaned up development artifacts for production readiness
+
+### Technical Details
+- **Files Removed**: Development test files, unused refactored modules, generated reports
+- **Dependency Fix**: Removed "newo": "^1.4.0" from dependencies (circular reference)
+- **Linting**: Applied auto-fixes for code style consistency
+- **Tests**: Verified core functionality still works after cleanup (189/216 tests passing)
+
+### Migration Guide
+- No breaking changes for users
+- Development environment may need `npm install` after dependency changes
+- Generated files (coverage/, test-results/) will be recreated as needed
+
 ## [1.4.0] - 2025-08-20
 
 ### Added

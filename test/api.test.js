@@ -9,20 +9,20 @@ describe('API Functions', function() {
 
   let client;
 
-  before(async function() {
+  before(async () => {
     client = await makeClient();
   });
 
-  describe('Authentication', function() {
-    it('should create client with valid access token', async function() {
+  describe('Authentication', () => {
+    it('should create client with valid access token', async () => {
       assert(client, 'Client should be created');
       assert(client.defaults, 'Client should have defaults');
       assert(client.defaults.baseURL, 'Client should have base URL configured');
     });
   });
 
-  describe('Projects API', function() {
-    it('should list all projects', async function() {
+  describe('Projects API', () => {
+    it('should list all projects', async () => {
       const projects = await listProjects(client);
       assert(Array.isArray(projects), 'Projects should be an array');
       assert(projects.length > 0, 'Should have at least one project');
@@ -33,7 +33,7 @@ describe('API Functions', function() {
       assert(project.title, 'Project should have title');
     });
 
-    it('should get specific project metadata', async function() {
+    it('should get specific project metadata', async () => {
       const projects = await listProjects(client);
       const projectId = projects[0].id;
       
@@ -44,8 +44,8 @@ describe('API Functions', function() {
     });
   });
 
-  describe('Agents API', function() {
-    it('should list agents for a project', async function() {
+  describe('Agents API', () => {
+    it('should list agents for a project', async () => {
       const projects = await listProjects(client);
       const projectId = projects[0].id;
       

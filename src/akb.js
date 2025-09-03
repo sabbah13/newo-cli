@@ -89,7 +89,7 @@ function parseArticleSection(lines) {
     topic_facts: topicFacts,
     confidence: 100,
     source: topicName, // Use the ID (r001) as source
-    labels: ["rag_context"]
+    labels: ['rag_context']
   };
 }
 

@@ -15,7 +15,7 @@ describe('Sync Functions', function() {
   const testDir = path.join(process.cwd(), 'test-projects');
   const testStateDir = path.join(process.cwd(), '.test-newo');
 
-  before(async function() {
+  before(async () => {
     client = await makeClient();
     
     // Clean up any existing test directories
@@ -23,14 +23,14 @@ describe('Sync Functions', function() {
     await fs.remove(testStateDir);
   });
 
-  after(async function() {
+  after(async () => {
     // Clean up test directories
     await fs.remove(testDir);
     await fs.remove(testStateDir);
   });
 
-  describe('Multi-project Pull', function() {
-    it('should pull all projects when no PROJECT_ID specified', async function() {
+  describe('Multi-project Pull', () => {
+    it('should pull all projects when no PROJECT_ID specified', async () => {
       // Temporarily override ROOT_DIR and STATE_DIR for testing
       const originalCwd = process.cwd();
       process.chdir(path.dirname(testDir));
@@ -78,8 +78,8 @@ describe('Sync Functions', function() {
     });
   });
 
-  describe('Single-project Pull', function() {
-    it('should pull single project when PROJECT_ID specified', async function() {
+  describe('Single-project Pull', () => {
+    it('should pull single project when PROJECT_ID specified', async () => {
       const originalCwd = process.cwd();
       process.chdir(path.dirname(testDir));
       

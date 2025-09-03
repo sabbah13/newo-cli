@@ -14,19 +14,19 @@ describe('CLI Integration Tests', function() {
 
   const testDir = path.join(process.cwd(), 'test-integration');
 
-  before(async function() {
+  before(async () => {
     // Clean up any existing test directory
     await fs.remove(testDir);
     await fs.ensureDir(testDir);
   });
 
-  after(async function() {
+  after(async () => {
     // Clean up test directory
     await fs.remove(testDir);
   });
 
-  describe('Multi-project CLI workflow', function() {
-    it('should perform full pull -> status -> push cycle', async function() {
+  describe('Multi-project CLI workflow', () => {
+    it('should perform full pull -> status -> push cycle', async () => {
       const originalCwd = process.cwd();
       
       try {
@@ -69,7 +69,7 @@ describe('CLI Integration Tests', function() {
         if (guidanceFile) {
           const fullPath = path.join(projectPath, guidanceFile);
           const content = await fs.readFile(fullPath, 'utf8');
-          await fs.writeFile(fullPath, content + '\n// Test comment');
+          await fs.writeFile(fullPath, `${content  }\n// Test comment`);
           
           // Step 4: Check status again (should show change)
           console.log('  → Testing status after change...');
@@ -93,15 +93,15 @@ describe('CLI Integration Tests', function() {
     });
   });
 
-  describe('Help and error handling', function() {
-    it('should show help when requested', async function() {
+  describe('Help and error handling', () => {
+    it('should show help when requested', async () => {
       const helpResult = await execAsync(`node ${path.join(process.cwd(), 'src/cli.js')} --help`);
       assert(helpResult.stdout.includes('NEWO CLI'), 'Help should show CLI title');
       assert(helpResult.stdout.includes('Usage:'), 'Help should show usage information');
       assert(helpResult.stdout.includes('multi-project'), 'Help should mention multi-project support');
     });
 
-    it('should handle missing .newo state gracefully', async function() {
+    it('should handle missing .newo state gracefully', async () => {
       const originalCwd = process.cwd();
       
       try {

@@ -8,7 +8,7 @@ import path from 'path';
 import fs from 'fs-extra';
 
 // Infrastructure imports
-import { config, getDirectories, validateAuthConfig } from './config.js';
+import { config, getDirectories, validateAuthConfig } from './src/config.js';
 import {
   APP_NAME,
   APP_VERSION,
@@ -22,22 +22,22 @@ import {
   INDICATORS,
   VALIDATION_PATTERNS,
   SECURITY_LIMITS
-} from './constants.js';
+} from './src/constants.js';
 import {
   NewoError,
   AuthenticationError,
   ValidationError,
   ConfigurationError,
   ErrorHandler
-} from './errors.js';
-import { Logger, ProgressLogger } from './logger.js';
-import { PerformanceMonitor } from './performance.js';
-import { Validator } from './validation.js';
+} from './src/errors.js';
+import { logger, ProgressLogger } from './src/logger.js';
+import { PerformanceMonitor } from './src/performance.js';
+import { Validator } from './src/validation.js';
 
 // Application imports
-import { makeClient, getProjectMeta, importAkbArticle } from './api.js';
-import { pullAll, pushChanged, status } from './sync.js';
-import { parseAkbFile, prepareArticlesForImport } from './akb.js';
+import { makeClient, getProjectMeta, importAkbArticle } from './api-refactored.js';
+import { pullAll, pushChanged, status } from './src/sync.js';
+import { parseAkbFile, prepareArticlesForImport } from './src/akb.js';
 
 // CLI Configuration using infrastructure constants
 const CLI_CONFIG = {
@@ -54,7 +54,7 @@ const ENV = config;
 // Initialize infrastructure services
 const performanceMonitor = new PerformanceMonitor();
 const validator = new Validator();
-// Logger will be initialized dynamically based on verbose flag
+const cliLogger = logger.child({ component: 'CLI' });
 
 // Command definitions with metadata using infrastructure constants
 const COMMANDS = {
@@ -184,15 +184,8 @@ class CLIHandler {
     this.noColor = args['no-color'] || false;
     this.timeout = this._validateTimeout(args.timeout) || CLI_CONFIG.defaultTimeout;
     
-    // Initialize logger with proper level based on verbose/quiet flags
-    const logLevel = this.quiet ? 'ERROR' : (this.verbose ? 'DEBUG' : 'WARN');
-    const cliLogger = new Logger({ 
-      level: logLevel,
-      enableFile: false,  // Disable file logging for CLI
-      simple: !this.verbose  // Simple mode for non-verbose output
-    });
+    // Initialize logger with context
     this.logger = cliLogger.child({
-      component: 'CLI',
       verbose: this.verbose,
       quiet: this.quiet,
       command: args._[0] || 'unknown'
@@ -1047,28 +1040,20 @@ async function main() {
       );
     }
     
+    await cliLogger.info('CLI started', {
+      args: args,
+      nodeVersion: process.version,
+      platform: process.platform
+    });
+    
     const handler = new CLIHandler(args);
-    
-    // Log CLI start only in verbose mode
-    if (handler.verbose) {
-      await handler.logger.info('CLI started', {
-        args: args,
-        nodeVersion: process.version,
-        platform: process.platform
-      });
-    }
-    
     await handler.execute();
     
-    if (handler.verbose) {
-      await handler.logger.info('CLI completed successfully');
-    }
+    await cliLogger.info('CLI completed successfully');
     process.exit(0);
     
   } catch (error) {
-    // Create minimal logger for error reporting
-    const errorLogger = new Logger({ level: 'ERROR', enableFile: false });
-    await errorLogger.error('CLI failed with error', {
+    await cliLogger.error('CLI failed with error', {
       error: error.message,
       stack: error.stack,
       type: error.constructor.name
@@ -1110,28 +1095,67 @@ async function main() {
   } finally {
     performanceMonitor.endTimer('cli_main');
     
-    // No need to flush logs - handled by logger destructor
+    // Flush logs before exit
+    try {
+      await cliLogger.flush();
+    } catch (flushError) {
+      console.error('Failed to flush logs:', flushError.message);
+    }
   }
 }
 
 // Handle uncaught exceptions and rejections with infrastructure logging
 process.on('uncaughtException', async (error) => {
+  try {
+    await cliLogger.error('Uncaught exception', {
+      error: error.message,
+      stack: error.stack
+    });
+    await cliLogger.flush();
+  } catch (logError) {
+    console.error('Failed to log uncaught exception:', logError.message);
+  }
+  
   console.error(`${INDICATORS.ERROR} Uncaught exception:`, error.message);
   process.exit(1);
 });
 
 process.on('unhandledRejection', async (reason, promise) => {
+  try {
+    await cliLogger.error('Unhandled rejection', {
+      reason: reason?.message || reason,
+      promise: promise.toString()
+    });
+    await cliLogger.flush();
+  } catch (logError) {
+    console.error('Failed to log unhandled rejection:', logError.message);
+  }
+  
   console.error(`${INDICATORS.ERROR} Unhandled rejection:`, reason);
   process.exit(1);
 });
 
 // Handle process termination signals with graceful shutdown
 process.on('SIGINT', async () => {
+  try {
+    await cliLogger.info('CLI interrupted by user (SIGINT)');
+    await cliLogger.flush();
+  } catch (logError) {
+    console.error('Failed to log SIGINT:', logError.message);
+  }
+  
   console.log('\n👋 Goodbye!');
   process.exit(0);
 });
 
 process.on('SIGTERM', async () => {
+  try {
+    await cliLogger.info('CLI terminated (SIGTERM)');
+    await cliLogger.flush();
+  } catch (logError) {
+    console.error('Failed to log SIGTERM:', logError.message);
+  }
+  
   console.log('\n👋 Terminated');
   process.exit(0);
 });
