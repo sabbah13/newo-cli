@@ -1,11 +1,46 @@
-import { listProjects, listAgents, listFlowSkills, updateSkill, listFlowEvents, listFlowStates, getProjectMeta } from './api.js';
-import { ensureState, skillPath, writeFileAtomic, readIfExists, MAP_PATH, projectDir, metadataPath } from './fsutil.js';
+import { 
+  listProjects, 
+  listAgents, 
+  listFlowSkills, 
+  updateSkill, 
+  listFlowEvents, 
+  listFlowStates, 
+  getProjectMeta 
+} from './api.js';
+import { 
+  ensureState, 
+  skillPath, 
+  writeFileAtomic, 
+  readIfExists, 
+  MAP_PATH, 
+  projectDir, 
+  metadataPath 
+} from './fsutil.js';
 import fs from 'fs-extra';
 import { sha256, loadHashes, saveHashes } from './hash.js';
 import yaml from 'js-yaml';
 import path from 'path';
+import type { AxiosInstance } from 'axios';
+import type { 
+  Agent, 
+  ProjectData, 
+  ProjectMap, 
+  LegacyProjectMap,
+  HashStore,
+  FlowsYamlData,
+  FlowsYamlAgent,
+  FlowsYamlFlow,
+  FlowsYamlSkill,
+  FlowsYamlEvent,
+  FlowsYamlState
+} from './types.js';
 
-export async function pullSingleProject(client, projectId, projectIdn, verbose = false) {
+export async function pullSingleProject(
+  client: AxiosInstance, 
+  projectId: string, 
+  projectIdn: string, 
+  verbose: boolean = false
+): Promise<ProjectData> {
   if (verbose) console.log(`🔍 Fetching agents for project ${projectId} (${projectIdn})...`);
   const agents = await listAgents(client, projectId);
   if (verbose) console.log(`📦 Found ${agents.length} agents`);
@@ -15,28 +50,29 @@ export async function pullSingleProject(client, projectId, projectIdn, verbose =
   await writeFileAtomic(metadataPath(projectIdn), JSON.stringify(projectMeta, null, 2));
   if (verbose) console.log(`✓ Saved metadata for ${projectIdn}`);
 
-  const projectMap = { projectId, projectIdn, agents: {} };
+  const projectMap: ProjectData = { projectId, projectIdn, agents: {} };
 
   for (const agent of agents) {
     const aKey = agent.idn;
     projectMap.agents[aKey] = { id: agent.id, flows: {} };
 
     for (const flow of agent.flows ?? []) {
-      projectMap.agents[aKey].flows[flow.idn] = { id: flow.id, skills: {} };
+      projectMap.agents[aKey]!.flows[flow.idn] = { id: flow.id, skills: {} };
 
       const skills = await listFlowSkills(client, flow.id);
-      for (const s of skills) {
-        const file = skillPath(projectIdn, agent.idn, flow.idn, s.idn, s.runner_type);
-        await writeFileAtomic(file, s.prompt_script || '');
+      for (const skill of skills) {
+        const file = skillPath(projectIdn, agent.idn, flow.idn, skill.idn, skill.runner_type);
+        await writeFileAtomic(file, skill.prompt_script || '');
+        
         // Store complete skill metadata for push operations
-        projectMap.agents[aKey].flows[flow.idn].skills[s.idn] = {
-          id: s.id,
-          title: s.title,
-          idn: s.idn,
-          runner_type: s.runner_type,
-          model: s.model,
-          parameters: s.parameters,
-          path: s.path
+        projectMap.agents[aKey]!.flows[flow.idn]!.skills[skill.idn] = {
+          id: skill.id,
+          title: skill.title,
+          idn: skill.idn,
+          runner_type: skill.runner_type,
+          model: skill.model,
+          parameters: skill.parameters,
+          path: skill.path || undefined
         };
         console.log(`✓ Pulled ${file}`);
       }
@@ -50,7 +86,11 @@ export async function pullSingleProject(client, projectId, projectIdn, verbose =
   return projectMap;
 }
 
-export async function pullAll(client, projectId = null, verbose = false) {
+export async function pullAll(
+  client: AxiosInstance, 
+  projectId: string | null = null, 
+  verbose: boolean = false
+): Promise<void> {
   await ensureState();
   
   if (projectId) {
@@ -58,11 +98,11 @@ export async function pullAll(client, projectId = null, verbose = false) {
     const projectMeta = await getProjectMeta(client, projectId);
     const projectMap = await pullSingleProject(client, projectId, projectMeta.idn, verbose);
     
-    const idMap = { projects: { [projectMeta.idn]: projectMap } };
+    const idMap: ProjectMap = { projects: { [projectMeta.idn]: projectMap } };
     await fs.writeJson(MAP_PATH, idMap, { spaces: 2 });
     
     // Generate hash tracking for this project
-    const hashes = {};
+    const hashes: HashStore = {};
     for (const [agentIdn, agentObj] of Object.entries(projectMap.agents)) {
       for (const [flowIdn, flowObj] of Object.entries(agentObj.flows)) {
         for (const [skillIdn, skillMeta] of Object.entries(flowObj.skills)) {
@@ -77,12 +117,12 @@ export async function pullAll(client, projectId = null, verbose = false) {
   }
 
   // Multi-project mode
-  if (verbose) console.log(`🔍 Fetching all projects...`);
+  if (verbose) console.log('🔍 Fetching all projects...');
   const projects = await listProjects(client);
   if (verbose) console.log(`📦 Found ${projects.length} projects`);
 
-  const idMap = { projects: {} };
-  const allHashes = {};
+  const idMap: ProjectMap = { projects: {} };
+  const allHashes: HashStore = {};
 
   for (const project of projects) {
     if (verbose) console.log(`\n📁 Processing project: ${project.idn} (${project.title})`);
@@ -105,24 +145,24 @@ export async function pullAll(client, projectId = null, verbose = false) {
   await saveHashes(allHashes);
 }
 
-export async function pushChanged(client, verbose = false) {
+export async function pushChanged(client: AxiosInstance, verbose: boolean = false): Promise<void> {
   await ensureState();
   if (!(await fs.pathExists(MAP_PATH))) {
     throw new Error('Missing .newo/map.json. Run `newo pull` first.');
   }
   
   if (verbose) console.log('📋 Loading project mapping...');
-  const idMap = await fs.readJson(MAP_PATH);
+  const idMap = await fs.readJson(MAP_PATH) as ProjectMap | LegacyProjectMap;
   if (verbose) console.log('🔍 Loading file hashes...');
   const oldHashes = await loadHashes();
-  const newHashes = { ...oldHashes };
+  const newHashes: HashStore = { ...oldHashes };
 
   if (verbose) console.log('🔄 Scanning for changes...');
   let pushed = 0;
   let scanned = 0;
   
   // Handle both old single-project format and new multi-project format
-  const projects = idMap.projects || { '': idMap };
+  const projects = 'projects' in idMap && idMap.projects ? idMap.projects : { '': idMap as ProjectData };
   
   for (const [projectIdn, projectData] of Object.entries(projects)) {
     if (verbose && projectIdn) console.log(`📁 Scanning project: ${projectIdn}`);
@@ -164,7 +204,7 @@ export async function pushChanged(client, verbose = false) {
               runner_type: skillMeta.runner_type,
               model: skillMeta.model,
               parameters: skillMeta.parameters,
-              path: skillMeta.path
+              path: skillMeta.path || undefined
             };
             
             if (verbose) {
@@ -193,7 +233,7 @@ export async function pushChanged(client, verbose = false) {
   console.log(pushed ? `✅ Push complete. ${pushed} file(s) updated.` : '✅ Nothing to push.');
 }
 
-export async function status(verbose = false) {
+export async function status(verbose: boolean = false): Promise<void> {
   await ensureState();
   if (!(await fs.pathExists(MAP_PATH))) {
     console.log('No map. Run `newo pull` first.');
@@ -201,12 +241,12 @@ export async function status(verbose = false) {
   }
   
   if (verbose) console.log('📋 Loading project mapping and hashes...');
-  const idMap = await fs.readJson(MAP_PATH);
+  const idMap = await fs.readJson(MAP_PATH) as ProjectMap | LegacyProjectMap;
   const hashes = await loadHashes();
   let dirty = 0;
 
   // Handle both old single-project format and new multi-project format
-  const projects = idMap.projects || { '': idMap };
+  const projects = 'projects' in idMap && idMap.projects ? idMap.projects : { '': idMap as ProjectData };
 
   for (const [projectIdn, projectData] of Object.entries(projects)) {
     if (verbose && projectIdn) console.log(`📁 Checking project: ${projectIdn}`);
@@ -248,20 +288,25 @@ export async function status(verbose = false) {
   console.log(dirty ? `${dirty} changed file(s).` : 'Clean.');
 }
 
-async function generateFlowsYaml(client, agents, projectIdn, verbose = false) {
-  const flowsData = { flows: [] };
+async function generateFlowsYaml(
+  client: AxiosInstance, 
+  agents: Agent[], 
+  projectIdn: string, 
+  verbose: boolean = false
+): Promise<void> {
+  const flowsData: FlowsYamlData = { flows: [] };
 
   for (const agent of agents) {
     if (verbose) console.log(`  📁 Processing agent: ${agent.idn}`);
     
-    const agentFlows = [];
+    const agentFlows: FlowsYamlFlow[] = [];
     
     for (const flow of agent.flows ?? []) {
       if (verbose) console.log(`    📄 Processing flow: ${flow.idn}`);
       
       // Get skills for this flow
       const skills = await listFlowSkills(client, flow.id);
-      const skillsData = skills.map(skill => ({
+      const skillsData: FlowsYamlSkill[] = skills.map(skill => ({
         idn: skill.idn,
         title: skill.title || "",
         prompt_script: `flows/${flow.idn}/${skill.idn}.${skill.runner_type === 'nsl' ? 'jinja' : 'nsl'}`,
@@ -277,17 +322,17 @@ async function generateFlowsYaml(client, agents, projectIdn, verbose = false) {
       }));
 
       // Get events for this flow
-      let eventsData = [];
+      let eventsData: FlowsYamlEvent[] = [];
       try {
         const events = await listFlowEvents(client, flow.id);
         eventsData = events.map(event => ({
           title: event.description,
           idn: event.idn,
           skill_selector: `!enum "SkillSelector.${event.skill_selector}"`,
-          skill_idn: event.skill_idn,
-          state_idn: event.state_idn,
-          integration_idn: event.integration_idn,
-          connector_idn: event.connector_idn,
+          skill_idn: event.skill_idn || undefined,
+          state_idn: event.state_idn || undefined,
+          integration_idn: event.integration_idn || undefined,
+          connector_idn: event.connector_idn || undefined,
           interrupt_mode: `!enum "InterruptMode.${event.interrupt_mode}"`
         }));
         if (verbose) console.log(`      📋 Found ${events.length} events`);
@@ -296,13 +341,13 @@ async function generateFlowsYaml(client, agents, projectIdn, verbose = false) {
       }
 
       // Get state fields for this flow
-      let stateFieldsData = [];
+      let stateFieldsData: FlowsYamlState[] = [];
       try {
         const states = await listFlowStates(client, flow.id);
         stateFieldsData = states.map(state => ({
           title: state.title,
           idn: state.idn,
-          default_value: state.default_value,
+          default_value: state.default_value || undefined,
           scope: `!enum "StateFieldScope.${state.scope}"`
         }));
         if (verbose) console.log(`      📊 Found ${states.length} state fields`);
@@ -323,11 +368,13 @@ async function generateFlowsYaml(client, agents, projectIdn, verbose = false) {
       });
     }
 
-    flowsData.flows.push({
+    const agentData: FlowsYamlAgent = {
       agent_idn: agent.idn,
-      agent_description: agent.description,
+      agent_description: agent.description || undefined,
       agent_flows: agentFlows
-    });
+    };
+    
+    flowsData.flows.push(agentData);
   }
 
   // Convert to YAML and write to file with custom enum handling

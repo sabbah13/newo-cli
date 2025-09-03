@@ -5,14 +5,15 @@ import { makeClient, getProjectMeta, importAkbArticle } from './api.js';
 import { pullAll, pushChanged, status } from './sync.js';
 import { parseAkbFile, prepareArticlesForImport } from './akb.js';
 import path from 'path';
+import type { NewoEnvironment, CliArgs, NewoApiError } from './types.js';
 
 dotenv.config();
-const { NEWO_PROJECT_ID } = process.env;
+const { NEWO_PROJECT_ID } = process.env as NewoEnvironment;
 
-async function main() {
-  const args = minimist(process.argv.slice(2));
+async function main(): Promise<void> {
+  const args = minimist(process.argv.slice(2)) as CliArgs;
   const cmd = args._[0];
-  const verbose = args.verbose || args.v;
+  const verbose = Boolean(args.verbose || args.v);
 
   if (!cmd || ['help', '-h', '--help'].includes(cmd)) {
     console.log(`NEWO CLI
@@ -49,7 +50,9 @@ Notes:
   } else if (cmd === 'status') {
     await status(verbose);
   } else if (cmd === 'meta') {
-    if (!NEWO_PROJECT_ID) throw new Error('NEWO_PROJECT_ID is not set in env');
+    if (!NEWO_PROJECT_ID) {
+      throw new Error('NEWO_PROJECT_ID is not set in env');
+    }
     const meta = await getProjectMeta(client, NEWO_PROJECT_ID);
     console.log(JSON.stringify(meta, null, 2));
   } else if (cmd === 'import-akb') {
@@ -79,13 +82,16 @@ Notes:
       
       for (const [index, article] of preparedArticles.entries()) {
         try {
-          if (verbose) console.log(`  [${index + 1}/${preparedArticles.length}] Importing ${article.topic_name}...`);
+          if (verbose) {
+            console.log(`  [${index + 1}/${preparedArticles.length}] Importing ${article.topic_name}...`);
+          }
           await importAkbArticle(client, article);
           successCount++;
           if (!verbose) process.stdout.write('.');
         } catch (error) {
           errorCount++;
-          console.error(`\n❌ Failed to import ${article.topic_name}:`, error?.response?.data || error.message);
+          const errorMessage = (error as NewoApiError)?.response?.data || (error as Error).message;
+          console.error(`\n❌ Failed to import ${article.topic_name}:`, errorMessage);
         }
       }
       
@@ -93,7 +99,7 @@ Notes:
       console.log(`✅ Import complete: ${successCount} successful, ${errorCount} failed`);
       
     } catch (error) {
-      console.error('❌ AKB import failed:', error.message);
+      console.error('❌ AKB import failed:', (error as Error).message);
       process.exit(1);
     }
   } else {
@@ -102,7 +108,8 @@ Notes:
   }
 }
 
-main().catch((e) => {
-  console.error(e?.response?.data || e);
+main().catch((error: NewoApiError | Error) => {
+  const errorData = 'response' in error ? error?.response?.data : error;
+  console.error(errorData || error);
   process.exit(1);
 });

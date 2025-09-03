@@ -5,6 +5,47 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2025-09-03
+
+### Changed
+- **Complete TypeScript Refactoring**: Major codebase conversion from JavaScript to TypeScript
+  - All source files converted to TypeScript with `.ts` extensions
+  - Added comprehensive type definitions in `src/types.ts`
+  - Strict TypeScript configuration with `exactOptionalPropertyTypes` and `noUncheckedIndexedAccess`
+  - Modern ES2022 target with ESNext modules for optimal performance
+  - Enhanced IntelliSense support and developer experience
+
+### Added
+- **TypeScript Build System**: 
+  - `tsconfig.json` with strict type checking and modern ES features
+  - New build scripts: `npm run build`, `npm run build:watch`, `npm run typecheck`
+  - Development scripts: `npm run dev`, `npm run pull`, `npm run push`, `npm run status`
+  - Source map generation for debugging compiled JavaScript
+- **Enhanced Type Safety**:
+  - Complete type definitions for all NEWO API responses and data structures
+  - Strict error handling with proper TypeScript error types
+  - Optional property handling with explicit `| undefined` types
+  - Enhanced Axios integration with proper TypeScript interceptor types
+
+### Technical Details
+- **Type Definitions**: Comprehensive interfaces for `ProjectMeta`, `Agent`, `Flow`, `Skill`, `FlowEvent`, `FlowState`, and all API responses
+- **Build Output**: TypeScript compiles to `dist/` directory with JavaScript and declaration files
+- **Import Strategy**: Uses runtime `.js` extensions in TypeScript source (required for ESModules)
+- **Dependency Updates**: Added TypeScript and @types packages for full type support
+- **Package.json**: Updated with TypeScript build pipeline and development scripts
+
+### Migration for Developers
+- **New Development Workflow**: `npm run build` required before running CLI commands
+- **Source Files**: All development now in `src/*.ts` files instead of `src/*.js`
+- **Build Artifacts**: Generated JavaScript in `dist/` directory (automatically created)
+- **IDE Support**: Enhanced autocomplete, error detection, and refactoring capabilities
+
+### Backward Compatibility
+- **Runtime Behavior**: No changes to CLI command interface or functionality
+- **Environment Variables**: All existing `.env` configurations continue to work
+- **File Formats**: Same `.guidance` and `.jinja` file support as before
+- **API Compatibility**: No changes to NEWO API integration or endpoints
+
 ## [1.4.0] - 2025-08-20
 
 ### Added

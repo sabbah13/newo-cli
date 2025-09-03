@@ -1,13 +1,15 @@
 {
   "name": "newo",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "NEWO CLI: sync flows/skills between NEWO and local files, multi-project support, import AKB articles",
   "type": "module",
   "bin": {
-    "newo": "src/cli.js"
+    "newo": "dist/cli.js"
   },
   "files": [
-    "src/**/*.js",
+    "dist/**/*.js",
+    "dist/**/*.d.ts",
+    "src/**/*.ts",
     "README.md",
     "CHANGELOG.md",
     ".env.example"
@@ -47,16 +49,28 @@
     "minimist": "^1.2.8"
   },
   "devDependencies": {
-    "mocha": "^10.2.0"
+    "@types/fs-extra": "^11.0.4",
+    "@types/js-yaml": "^4.0.9",
+    "@types/minimist": "^1.2.5",
+    "@types/node": "^22.5.4",
+    "mocha": "^10.2.0",
+    "typescript": "^5.6.2"
   },
   "scripts": {
-    "dev": "node ./src/cli.js",
-    "pull": "node ./src/cli.js pull",
-    "push": "node ./src/cli.js push",
-    "status": "node ./src/cli.js status",
-    "test": "mocha test/*.test.js --timeout 60000",
-    "test:api": "mocha test/api.test.js --timeout 30000",
-    "test:sync": "mocha test/sync.test.js --timeout 60000",
-    "test:integration": "mocha test/integration.test.js --timeout 120000"
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "dev": "npm run build && node ./dist/cli.js",
+    "dev:watch": "tsc --watch & nodemon --watch dist dist/cli.js",
+    "pull": "npm run build && node ./dist/cli.js pull",
+    "push": "npm run build && node ./dist/cli.js push",
+    "status": "npm run build && node ./dist/cli.js status",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit",
+    "lint": "tsc --noEmit --strict",
+    "test": "npm run build && mocha test/*.test.js --timeout 60000",
+    "test:api": "npm run build && mocha test/api.test.js --timeout 30000",
+    "test:sync": "npm run build && mocha test/sync.test.js --timeout 60000",
+    "test:integration": "npm run build && mocha test/integration.test.js --timeout 120000",
+    "prepublishOnly": "npm run clean && npm run build"
   }
 }

@@ -1,13 +1,12 @@
 import fs from 'fs-extra';
+import type { ParsedArticle, AkbImportArticle } from './types.js';
 
 /**
  * Parse AKB file and extract articles
- * @param {string} filePath - Path to AKB file
- * @returns {Array} Array of parsed articles
  */
-function parseAkbFile(filePath) {
+export function parseAkbFile(filePath: string): ParsedArticle[] {
   const content = fs.readFileSync(filePath, 'utf8');
-  const articles = [];
+  const articles: ParsedArticle[] = [];
   
   // Split by article separators (---)
   const sections = content.split(/^---\s*$/gm).filter(section => section.trim());
@@ -27,10 +26,8 @@ function parseAkbFile(filePath) {
 
 /**
  * Parse individual article section
- * @param {Array} lines - Lines of the article section
- * @returns {Object|null} Parsed article object
  */
-function parseArticleSection(lines) {
+function parseArticleSection(lines: string[]): ParsedArticle | null {
   let topicName = '';
   let category = '';
   let summary = '';
@@ -53,7 +50,7 @@ function parseArticleSection(lines) {
   const summaryLineIndex = lines.findIndex(line => line.startsWith('## ') && line.includes(' / '));
   if (summaryLineIndex >= 0 && summaryLineIndex + 1 < lines.length) {
     const nextLine = lines[summaryLineIndex + 1];
-    if (nextLine.startsWith('## ') && !nextLine.includes(' / ')) {
+    if (nextLine && nextLine.startsWith('## ') && !nextLine.includes(' / ')) {
       summary = nextLine.replace(/^##\s+/, '').trim();
     }
   }
@@ -63,7 +60,10 @@ function parseArticleSection(lines) {
     index > summaryLineIndex + 1 && line.startsWith('## ') && !line.includes(' / ')
   );
   if (keywordsLineIndex >= 0) {
-    keywords = lines[keywordsLineIndex].replace(/^##\s+/, '').trim();
+    const keywordsLine = lines[keywordsLineIndex];
+    if (keywordsLine) {
+      keywords = keywordsLine.replace(/^##\s+/, '').trim();
+    }
   }
   
   // Extract category content
@@ -76,11 +76,7 @@ function parseArticleSection(lines) {
   }
   
   // Create topic_facts array
-  const topicFacts = [
-    category,
-    summary,
-    keywords
-  ].filter(fact => fact.trim() !== '');
+  const topicFacts = [category, summary, keywords].filter(fact => fact.trim() !== '');
   
   return {
     topic_name: category, // Use the descriptive title as topic_name
@@ -89,24 +85,19 @@ function parseArticleSection(lines) {
     topic_facts: topicFacts,
     confidence: 100,
     source: topicName, // Use the ID (r001) as source
-    labels: ["rag_context"]
+    labels: ['rag_context']
   };
 }
 
 /**
  * Convert parsed articles to API format for bulk import
- * @param {Array} articles - Parsed articles
- * @param {string} personaId - Target persona ID
- * @returns {Array} Array of articles ready for API import
  */
-function prepareArticlesForImport(articles, personaId) {
+export function prepareArticlesForImport(
+  articles: ParsedArticle[], 
+  personaId: string
+): AkbImportArticle[] {
   return articles.map(article => ({
     ...article,
     persona_id: personaId
   }));
 }
-
-export {
-  parseAkbFile,
-  prepareArticlesForImport
-};
