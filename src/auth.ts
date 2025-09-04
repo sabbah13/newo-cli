@@ -2,26 +2,36 @@ import fs from 'fs-extra';
 import path from 'path';
 import axios from 'axios';
 import { ENV } from './env.js';
-import type { TokenResponse, StoredTokens } from './types.js';
+import { customerStateDir } from './fsutil.js';
+import type { TokenResponse, StoredTokens, CustomerConfig } from './types.js';
 
 const STATE_DIR = path.join(process.cwd(), '.newo');
-const TOKENS_PATH = path.join(STATE_DIR, 'tokens.json');
 
-async function saveTokens(tokens: StoredTokens): Promise<void> {
-  await fs.ensureDir(STATE_DIR);
-  await fs.writeJson(TOKENS_PATH, tokens, { spaces: 2 });
+function tokensPath(customerIdn?: string): string {
+  if (customerIdn) {
+    return path.join(customerStateDir(customerIdn), 'tokens.json');
+  }
+  return path.join(STATE_DIR, 'tokens.json'); // Legacy path
 }
 
-async function loadTokens(): Promise<StoredTokens | null> {
+async function saveTokens(tokens: StoredTokens, customerIdn?: string): Promise<void> {
+  const filePath = tokensPath(customerIdn);
+  await fs.ensureDir(path.dirname(filePath));
+  await fs.writeJson(filePath, tokens, { spaces: 2 });
+}
+
+async function loadTokens(customerIdn?: string): Promise<StoredTokens | null> {
   try {
-    if (await fs.pathExists(TOKENS_PATH)) {
-      return await fs.readJson(TOKENS_PATH) as StoredTokens;
+    const filePath = tokensPath(customerIdn);
+    if (await fs.pathExists(filePath)) {
+      return await fs.readJson(filePath) as StoredTokens;
     }
   } catch (error: unknown) {
     console.warn('Failed to load tokens from file:', error instanceof Error ? error.message : String(error));
   }
   
-  if (ENV.NEWO_ACCESS_TOKEN || ENV.NEWO_REFRESH_TOKEN) {
+  // Fallback to environment tokens for legacy mode or bootstrap
+  if (!customerIdn && (ENV.NEWO_ACCESS_TOKEN || ENV.NEWO_REFRESH_TOKEN)) {
     const tokens: StoredTokens = {
       access_token: ENV.NEWO_ACCESS_TOKEN || '',
       refresh_token: ENV.NEWO_REFRESH_TOKEN || '',
@@ -51,9 +61,13 @@ function normalizeTokenResponse(tokenResponse: TokenResponse): { access: string;
   return { access, refresh, expiresInSec };
 }
 
-export async function exchangeApiKeyForToken(): Promise<StoredTokens> {
-  if (!ENV.NEWO_API_KEY) {
-    throw new Error('NEWO_API_KEY not set. Provide an API key in .env');
+export async function exchangeApiKeyForToken(customer?: CustomerConfig): Promise<StoredTokens> {
+  const apiKey = customer?.apiKey || ENV.NEWO_API_KEY;
+  if (!apiKey) {
+    throw new Error(customer 
+      ? `API key not set for customer ${customer.idn}` 
+      : 'NEWO_API_KEY not set. Provide an API key in .env'
+    );
   }
   
   try {
@@ -63,7 +77,7 @@ export async function exchangeApiKeyForToken(): Promise<StoredTokens> {
       {}, 
       { 
         headers: { 
-          'x-api-key': ENV.NEWO_API_KEY, 
+          'x-api-key': apiKey, 
           'accept': 'application/json' 
         } 
       }
@@ -77,15 +91,16 @@ export async function exchangeApiKeyForToken(): Promise<StoredTokens> {
       expires_at: Date.now() + expiresInSec * 1000 
     };
     
-    await saveTokens(tokens);
+    await saveTokens(tokens, customer?.idn);
     return tokens;
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    throw new Error(`Failed to exchange API key for token: ${message}`);
+    const customerInfo = customer ? ` for customer ${customer.idn}` : '';
+    throw new Error(`Failed to exchange API key for token${customerInfo}: ${message}`);
   }
 }
 
-export async function refreshWithEndpoint(refreshToken: string): Promise<StoredTokens> {
+export async function refreshWithEndpoint(refreshToken: string, customer?: CustomerConfig): Promise<StoredTokens> {
   if (!ENV.NEWO_REFRESH_URL) {
     throw new Error('NEWO_REFRESH_URL not set');
   }
@@ -106,19 +121,20 @@ export async function refreshWithEndpoint(refreshToken: string): Promise<StoredT
       expires_at: Date.now() + expiresInSec * 1000 
     };
     
-    await saveTokens(tokens);
+    await saveTokens(tokens, customer?.idn);
     return tokens;
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    throw new Error(`Failed to refresh token: ${message}`);
+    const customerInfo = customer ? ` for customer ${customer.idn}` : '';
+    throw new Error(`Failed to refresh token${customerInfo}: ${message}`);
   }
 }
 
-export async function getValidAccessToken(): Promise<string> {
-  let tokens = await loadTokens();
+export async function getValidAccessToken(customer?: CustomerConfig): Promise<string> {
+  let tokens = await loadTokens(customer?.idn);
   
   if (!tokens || !tokens.access_token) {
-    tokens = await exchangeApiKeyForToken();
+    tokens = await exchangeApiKeyForToken(customer);
     return tokens.access_token;
   }
   
@@ -128,7 +144,7 @@ export async function getValidAccessToken(): Promise<string> {
 
   if (ENV.NEWO_REFRESH_URL && tokens.refresh_token) {
     try {
-      tokens = await refreshWithEndpoint(tokens.refresh_token);
+      tokens = await refreshWithEndpoint(tokens.refresh_token, customer);
       return tokens.access_token;
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
@@ -136,11 +152,11 @@ export async function getValidAccessToken(): Promise<string> {
     }
   }
   
-  tokens = await exchangeApiKeyForToken();
+  tokens = await exchangeApiKeyForToken(customer);
   return tokens.access_token;
 }
 
-export async function forceReauth(): Promise<string> {
-  const tokens = await exchangeApiKeyForToken();
+export async function forceReauth(customer?: CustomerConfig): Promise<string> {
+  const tokens = await exchangeApiKeyForToken(customer);
   return tokens.access_token;
 }

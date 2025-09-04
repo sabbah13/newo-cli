@@ -6,9 +6,37 @@ export interface NewoEnvironment {
   NEWO_BASE_URL?: string;
   NEWO_PROJECT_ID?: string;
   NEWO_API_KEY?: string;
+  NEWO_API_KEYS?: string; // JSON string containing array of keys or key objects
   NEWO_ACCESS_TOKEN?: string;
   NEWO_REFRESH_TOKEN?: string;
   NEWO_REFRESH_URL?: string;
+  NEWO_DEFAULT_CUSTOMER?: string;
+  // Dynamic customer entries will be detected at runtime
+  [key: string]: string | undefined;
+}
+
+export interface ApiKeyConfig {
+  key: string;
+  project_id?: string;
+}
+
+export interface CustomerConfig {
+  idn: string;
+  apiKey: string;
+  projectId?: string | undefined;
+}
+
+export interface CustomerProfile {
+  id: string;
+  idn: string;
+  organization_name: string;
+  email: string;
+  [key: string]: any;
+}
+
+export interface MultiCustomerConfig {
+  customers: Record<string, CustomerConfig>;
+  defaultCustomer?: string | undefined;
 }
 
 // Authentication Types

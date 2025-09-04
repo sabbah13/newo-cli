@@ -5,8 +5,10 @@ import { makeClient, getProjectMeta, importAkbArticle } from './api.js';
 import { pullAll, pushChanged, status } from './sync.js';
 import { parseAkbFile, prepareArticlesForImport } from './akb.js';
 import { initializeEnvironment, ENV, EnvValidationError } from './env.js';
+import { parseCustomerConfigAsync, listCustomers, getCustomer, getDefaultCustomer, validateCustomerConfig } from './customerAsync.js';
+import { getValidAccessToken } from './auth.js';
 import path from 'path';
-import type { CliArgs, NewoApiError } from './types.js';
+import type { CliArgs, NewoApiError, CustomerConfig } from './types.js';
 
 dotenv.config();
 
@@ -25,46 +27,104 @@ async function main(): Promise<void> {
   const args = minimist(process.argv.slice(2)) as CliArgs;
   const cmd = args._[0];
   const verbose = Boolean(args.verbose || args.v);
+  
+  // Parse customer configuration (async for API key array support)
+  const customerConfig = await parseCustomerConfigAsync(ENV as any, verbose);
+  validateCustomerConfig(customerConfig);
+  
+  // Handle customer selection
+  let selectedCustomer: CustomerConfig;
+  
+  if (cmd === 'list-customers') {
+    const customers = listCustomers(customerConfig);
+    console.log('Available customers:');
+    for (const customerIdn of customers) {
+      const isDefault = customerConfig.defaultCustomer === customerIdn;
+      console.log(`  ${customerIdn}${isDefault ? ' (default)' : ''}`);
+    }
+    return;
+  }
+  
+  if (args.customer) {
+    const customer = getCustomer(customerConfig, args.customer as string);
+    if (!customer) {
+      console.error(`Unknown customer: ${args.customer}`);
+      console.error(`Available customers: ${listCustomers(customerConfig).join(', ')}`);
+      process.exit(1);
+    }
+    selectedCustomer = customer;
+  } else {
+    try {
+      selectedCustomer = getDefaultCustomer(customerConfig);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error(message);
+      process.exit(1);
+    }
+  }
 
   if (!cmd || ['help', '-h', '--help'].includes(cmd)) {
-    console.log(`NEWO CLI
+    console.log(`NEWO CLI - Multi-Customer Support
 Usage:
-  newo pull                    # download all projects -> ./projects/ OR specific project if NEWO_PROJECT_ID set
-  newo push                    # upload modified *.guidance/*.jinja back to NEWO
-  newo status                  # show modified files
-  newo meta                    # get project metadata (debug, requires NEWO_PROJECT_ID)
-  newo import-akb <file> <persona_id>  # import AKB articles from file
+  newo pull [--customer <idn>]                  # download projects -> ./newo_customers/<idn>/projects/
+  newo push [--customer <idn>]                  # upload modified *.guidance/*.jinja back to NEWO
+  newo status [--customer <idn>]                # show modified files
+  newo list-customers                           # list available customers
+  newo meta [--customer <idn>]                  # get project metadata (debug)
+  newo import-akb <file> <persona_id> [--customer <idn>]  # import AKB articles from file
   
 Flags:
+  --customer <idn>             # specify customer (if not set, uses default)
   --verbose, -v                # enable detailed logging
   
-Env:
-  NEWO_BASE_URL, NEWO_PROJECT_ID (optional), NEWO_API_KEY, NEWO_REFRESH_URL (optional)
+Environment Variables:
+  NEWO_BASE_URL                                 # NEWO API base URL (default: https://app.newo.ai)
+  NEWO_CUSTOMER_<IDN>_API_KEY                   # API key for customer <IDN>
+  NEWO_CUSTOMER_<IDN>_PROJECT_ID               # Optional: specific project ID for customer
+  NEWO_DEFAULT_CUSTOMER                        # Optional: default customer to use
   
-Notes:
-  - multi-project support: pull downloads all accessible projects or single project based on NEWO_PROJECT_ID
-  - If NEWO_PROJECT_ID is set, pull downloads only that project
-  - If NEWO_PROJECT_ID is not set, pull downloads all projects accessible with your API key
-  - Projects are stored in ./projects/{project-idn}/ folders
-  - Each project folder contains metadata.json and flows.yaml
+Multi-Customer Examples:
+  # Configure customers in .env:
+  NEWO_CUSTOMER_acme_API_KEY=your_acme_api_key
+  NEWO_CUSTOMER_globex_API_KEY=your_globex_api_key
+  NEWO_DEFAULT_CUSTOMER=acme
+  
+  # Commands:
+  newo pull --customer acme                    # Pull projects for Acme
+  newo push --customer globex                  # Push changes for Globex
+  newo status                                  # Status for default customer
+  
+File Structure:
+  newo_customers/
+  ├── acme/
+  │   └── projects/
+  │       └── project1/
+  └── globex/
+      └── projects/
+          └── project2/
 `);
     return;
   }
 
-  const client = await makeClient(verbose);
+  // Get access token for the selected customer
+  const accessToken = await getValidAccessToken(selectedCustomer);
+  const client = await makeClient(verbose, accessToken);
 
   if (cmd === 'pull') {
-    // If PROJECT_ID is set, pull single project; otherwise pull all projects
-    await pullAll(client, ENV.NEWO_PROJECT_ID || null, verbose);
+    // Use customer-specific project ID if set, otherwise pull all projects
+    const projectId = selectedCustomer.projectId || null;
+    await pullAll(client, selectedCustomer, projectId, verbose);
   } else if (cmd === 'push') {
-    await pushChanged(client, verbose);
+    await pushChanged(client, selectedCustomer, verbose);
   } else if (cmd === 'status') {
-    await status(verbose);
+    await status(selectedCustomer, verbose);
   } else if (cmd === 'meta') {
-    if (!ENV.NEWO_PROJECT_ID) {
-      throw new Error('NEWO_PROJECT_ID is required for meta command');
+    if (!selectedCustomer.projectId) {
+      console.error(`No project ID configured for customer ${selectedCustomer.idn}`);
+      console.error(`Set NEWO_CUSTOMER_${selectedCustomer.idn.toUpperCase()}_PROJECT_ID in your .env file`);
+      process.exit(1);
     }
-    const meta = await getProjectMeta(client, ENV.NEWO_PROJECT_ID);
+    const meta = await getProjectMeta(client, selectedCustomer.projectId);
     console.log(JSON.stringify(meta, null, 2));
   } else if (cmd === 'import-akb') {
     const akbFile = args._[1];

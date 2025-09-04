@@ -7,9 +7,13 @@ export interface ValidatedEnv {
   readonly NEWO_BASE_URL: string;
   readonly NEWO_PROJECT_ID: string | undefined;
   readonly NEWO_API_KEY: string | undefined;
+  readonly NEWO_API_KEYS: string | undefined;
   readonly NEWO_ACCESS_TOKEN: string | undefined;
   readonly NEWO_REFRESH_TOKEN: string | undefined;
   readonly NEWO_REFRESH_URL: string | undefined;
+  readonly NEWO_DEFAULT_CUSTOMER: string | undefined;
+  // Dynamic customer entries will be detected at runtime
+  readonly [key: string]: string | undefined;
 }
 
 /**
@@ -52,11 +56,12 @@ export function validateEnvironment(): ValidatedEnv {
 
   // Authentication validation - at least one method required
   const hasApiKey = !!apiKey;
+  const hasApiKeys = !!env.NEWO_API_KEYS?.trim();
   const hasDirectTokens = !!(accessToken && refreshToken);
   
-  if (!hasApiKey && !hasDirectTokens) {
+  if (!hasApiKey && !hasApiKeys && !hasDirectTokens) {
     throw new EnvValidationError(
-      'Authentication required: Set NEWO_API_KEY (recommended) or both NEWO_ACCESS_TOKEN and NEWO_REFRESH_TOKEN'
+      'Authentication required: Set NEWO_API_KEY, NEWO_API_KEYS (recommended), or both NEWO_ACCESS_TOKEN and NEWO_REFRESH_TOKEN'
     );
   }
 
@@ -71,9 +76,11 @@ export function validateEnvironment(): ValidatedEnv {
     NEWO_BASE_URL: baseUrl,
     NEWO_PROJECT_ID: projectId || undefined,
     NEWO_API_KEY: apiKey,
+    NEWO_API_KEYS: env.NEWO_API_KEYS?.trim(),
     NEWO_ACCESS_TOKEN: accessToken,
     NEWO_REFRESH_TOKEN: refreshToken,
     NEWO_REFRESH_URL: refreshUrl,
+    NEWO_DEFAULT_CUSTOMER: env.NEWO_DEFAULT_CUSTOMER?.trim(),
   };
 }
 

@@ -7,14 +7,15 @@ import type {
   Skill, 
   FlowEvent, 
   FlowState,
-  AkbImportArticle
+  AkbImportArticle,
+  CustomerProfile
 } from './types.js';
 
 // Per-request retry tracking to avoid shared state issues
 const RETRY_SYMBOL = Symbol('retried');
 
-export async function makeClient(verbose: boolean = false): Promise<AxiosInstance> {
-  let accessToken = await getValidAccessToken();
+export async function makeClient(verbose: boolean = false, token?: string): Promise<AxiosInstance> {
+  let accessToken = token || await getValidAccessToken();
   if (verbose) console.log('✓ Access token obtained');
 
   const client = axios.create({
@@ -120,5 +121,10 @@ export async function listFlowStates(client: AxiosInstance, flowId: string): Pro
 
 export async function importAkbArticle(client: AxiosInstance, articleData: AkbImportArticle): Promise<unknown> {
   const response = await client.post('/api/v1/akb/append-manual', articleData);
+  return response.data;
+}
+
+export async function getCustomerProfile(client: AxiosInstance): Promise<CustomerProfile> {
+  const response = await client.get<CustomerProfile>('/api/v1/customer/profile');
   return response.data;
 }

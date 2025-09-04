@@ -70,6 +70,7 @@ jinja-lsp.toml
 .claude/
 
 # Any potential backup files
+backup/
 *.bak
 *.backup
 *.old
