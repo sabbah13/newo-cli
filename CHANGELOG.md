@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.2] - 2025-01-15
+
+### Enhanced
+- **Documentation Overhaul**: Complete README restructuring with professional presentation
+  - Added npm, license, TypeScript, and Node.js badges for credibility
+  - Enhanced project description highlighting multi-customer support capabilities
+  - Visual feature bullets with emojis for improved readability and engagement
+- **Multi-Customer Documentation**: Comprehensive guide for multi-customer workflows
+  - Three flexible configuration methods: JSON arrays, individual env vars, mixed approaches
+  - Clear migration path from single to multi-customer setup
+  - Command examples for multi-customer operations (`--customer` flag usage)
+- **Professional Documentation Structure**:
+  - Table format for command reference with improved readability
+  - Visual folder tree showing accurate `newo_customers/` structure
+  - Enhanced CI/CD integration examples for both single and multi-customer scenarios
+  - Contributing guidelines, API reference, and support channels
+- **Corrected File Organization**: Updated folder structure documentation to match actual implementation
+  - Fixed root folder from `projects/` to `newo_customers/` 
+  - Accurate customer folder hierarchy: `newo_customers/{customerIdn}/projects/{projectIdn}/`
+  - Customer-specific state management in `.newo/{customerIdn}/`
+
+### Fixed
+- **Folder Structure Documentation**: Corrected project structure examples to match actual code implementation
+- **Package Description**: Updated npm package description to reflect multi-customer capabilities
+
+### Developer Experience
+- **GitHub/npm Ready**: Professional presentation suitable for public package repository
+- **Clear Navigation**: Improved documentation structure with proper sectioning and examples
+- **Enhanced Onboarding**: Comprehensive quick-start guide and configuration examples
+
 ## [1.5.1] - 2025-01-14
 
 ### Added
