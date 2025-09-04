@@ -42,7 +42,7 @@ describe('CLI Integration Tests', function() {
         
         // Step 1: Pull all projects
         console.log('  → Testing pull command...');
-        const pullResult = await execAsync(`node ${path.join(originalCwd, 'src/cli.js')} pull`);
+        const pullResult = await execAsync(`node ${path.join(originalCwd, 'dist/cli.js')} pull`);
         assert(!pullResult.stderr || pullResult.stderr.length === 0, 'Pull should not have errors');
         
         // Verify projects were created
@@ -54,7 +54,7 @@ describe('CLI Integration Tests', function() {
         
         // Step 2: Check status (should be clean)
         console.log('  → Testing status command...');
-        const statusResult = await execAsync(`node ${path.join(originalCwd, 'src/cli.js')} status`);
+        const statusResult = await execAsync(`node ${path.join(originalCwd, 'dist/cli.js')} status`);
         assert(statusResult.stdout.includes('Clean'), 'Status should show clean after pull');
         
         // Step 3: Make a test change
@@ -73,17 +73,17 @@ describe('CLI Integration Tests', function() {
           
           // Step 4: Check status again (should show change)
           console.log('  → Testing status after change...');
-          const statusResult2 = await execAsync(`node ${path.join(originalCwd, 'src/cli.js')} status`);
+          const statusResult2 = await execAsync(`node ${path.join(originalCwd, 'dist/cli.js')} status`);
           assert(statusResult2.stdout.includes('1 changed file'), 'Status should show 1 changed file');
           
           // Step 5: Push the change
           console.log('  → Testing push command...');
-          const pushResult = await execAsync(`node ${path.join(originalCwd, 'src/cli.js')} push`);
+          const pushResult = await execAsync(`node ${path.join(originalCwd, 'dist/cli.js')} push`);
           assert(pushResult.stdout.includes('Push complete'), 'Push should complete successfully');
           
           // Step 6: Check status again (should be clean)
           console.log('  → Testing final status...');
-          const statusResult3 = await execAsync(`node ${path.join(originalCwd, 'src/cli.js')} status`);
+          const statusResult3 = await execAsync(`node ${path.join(originalCwd, 'dist/cli.js')} status`);
           assert(statusResult3.stdout.includes('Clean'), 'Status should be clean after push');
         }
         
@@ -95,10 +95,10 @@ describe('CLI Integration Tests', function() {
 
   describe('Help and error handling', function() {
     it('should show help when requested', async function() {
-      const helpResult = await execAsync(`node ${path.join(process.cwd(), 'src/cli.js')} --help`);
+      const helpResult = await execAsync(`node ${path.join(process.cwd(), 'dist/cli.js')} --help`);
       assert(helpResult.stdout.includes('NEWO CLI'), 'Help should show CLI title');
       assert(helpResult.stdout.includes('Usage:'), 'Help should show usage information');
-      assert(helpResult.stdout.includes('multi-project'), 'Help should mention multi-project support');
+      assert(helpResult.stdout.includes('Multi-Customer'), 'Help should mention multi-customer support');
     });
 
     it('should handle missing .newo state gracefully', async function() {
@@ -111,8 +111,8 @@ describe('CLI Integration Tests', function() {
         await fs.remove(path.join(testDir, '.newo'));
         
         // Try status command without .newo directory
-        const statusResult = await execAsync(`node ${path.join(originalCwd, 'src/cli.js')} status`);
-        assert(statusResult.stdout.includes('No map'), 'Should indicate missing map file');
+        const statusResult = await execAsync(`node ${path.join(originalCwd, 'dist/cli.js')} status`);
+        assert(statusResult.stdout.includes('No map') || statusResult.stderr.includes('No map'), 'Should indicate missing map file');
         
       } finally {
         process.chdir(originalCwd);

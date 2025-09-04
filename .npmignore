@@ -6,6 +6,8 @@
 # Local NEWO project data and state
 .newo/
 project/
+projects/
+newo_customers/
 flows.yaml
 
 # Development and build files

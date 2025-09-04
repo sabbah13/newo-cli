@@ -321,13 +321,34 @@ async function generateFlowsYaml(
 ): Promise<void> {
   const flowsData: FlowsYamlData = { flows: [] };
 
+  // Calculate total flows for progress tracking
+  const totalFlows = agents.reduce((sum, agent) => sum + (agent.flows?.length || 0), 0);
+  let processedFlows = 0;
+  
+  if (!verbose && totalFlows > 0) {
+    console.log(`📄 Generating flows.yaml (${totalFlows} flows)...`);
+  }
+
   for (const agent of agents) {
     if (verbose) console.log(`  📁 Processing agent: ${agent.idn}`);
     
     const agentFlows: FlowsYamlFlow[] = [];
     
     for (const flow of agent.flows ?? []) {
-      if (verbose) console.log(`    📄 Processing flow: ${flow.idn}`);
+      processedFlows++;
+      
+      if (verbose) {
+        console.log(`    📄 Processing flow: ${flow.idn}`);
+      } else {
+        // Simple progress indicator without verbose mode
+        const percent = Math.round((processedFlows / totalFlows) * 100);
+        const progressBar = '█'.repeat(Math.floor(percent / 5)) + '░'.repeat(20 - Math.floor(percent / 5));
+        const progressText = `  [${progressBar}] ${percent}% (${processedFlows}/${totalFlows}) ${flow.idn}`;
+        
+        // Pad the line to clear any leftover text from longer previous lines
+        const padding = ' '.repeat(Math.max(0, 80 - progressText.length));
+        process.stdout.write(`\r${progressText}${padding}`);
+      }
       
       // Get skills for this flow
       const skills = await listFlowSkills(client, flow.id);
@@ -400,6 +421,11 @@ async function generateFlowsYaml(
     };
     
     flowsData.flows.push(agentData);
+  }
+  
+  // Clear progress bar and move to new line
+  if (!verbose && totalFlows > 0) {
+    process.stdout.write('\n');
   }
 
   // Convert to YAML and write to file with custom enum handling

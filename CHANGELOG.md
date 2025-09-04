@@ -5,6 +5,67 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.1] - 2025-01-14
+
+### Added
+- **Comprehensive Test Coverage**: Added extensive test suites for all major modules
+  - `test/auth.test.js`: 500+ lines covering authentication, token management, multi-customer support
+  - `test/hash.test.js`: 400+ lines covering SHA256 hashing, hash storage, and cross-platform compatibility  
+  - `test/fsutil.test.js`: 400+ lines covering file system utilities and path handling
+  - `test/akb.test.js`: 600+ lines covering AKB article parsing and import workflows
+  - Added missing test dependencies: `chai`, `sinon`, `c8` for coverage reporting
+- **Enhanced Authentication Validation**:
+  - `validateApiKey()`: Comprehensive API key format and length validation
+  - `validateTokens()`: Token format and structure validation with detailed error messages
+  - `validateUrl()`: URL format validation for API endpoints
+  - Sensitive data sanitization in logs (API keys and tokens masked)
+- **Structured Logging System**:
+  - `logAuthEvent()`: Structured authentication event logging with metadata
+  - Automatic sensitive data sanitization (keys/tokens/secrets masked in logs)
+  - JSON-formatted logs with timestamp, level, module, and context information
+- **Enhanced Error Handling**:
+  - User-friendly CLI error messages with troubleshooting tips
+  - Specific error handling for authentication, network, environment, and file system errors
+  - Verbose mode support for detailed debugging information
+  - Context-aware error messages with suggested solutions
+
+### Enhanced
+- **Authentication Robustness** (`src/auth.ts`):
+  - Added comprehensive input validation with detailed error messages
+  - Enhanced network error handling with specific status code interpretation
+  - Added request timeouts (30 seconds) and retry logic for reliability
+  - Improved token expiry handling with 60-second buffer for refresh
+  - Better handling of connection errors, timeouts, and server errors
+- **CLI Error Experience** (`src/cli.ts`):
+  - Added `handleCliError()` function with categorized error types
+  - User-friendly error messages with emoji indicators and troubleshooting tips
+  - Verbose mode toggle for detailed technical information vs. clean user messages
+  - Specific guidance for common issues (API key, network, configuration)
+- **Testing Infrastructure**:
+  - Fixed ES module/CommonJS compatibility issues in test files
+  - Enhanced `TestEnvironment` class with comprehensive cleanup and mocking
+  - Added MockHttpClient, MockFileSystem, and MockLogger utilities
+  - Comprehensive assertion helpers and test data generators
+
+### Fixed
+- **Module System Compatibility**: Resolved ES module/CommonJS conflicts in test environment
+- **Test Dependencies**: Added missing testing dependencies that were imported but not declared
+- **Integration Test Paths**: Fixed paths from `src/cli.js` to `dist/cli.js` for proper compiled code testing
+- **Error Message Consistency**: Standardized error messages across authentication and CLI modules
+
+### Technical Details
+- **Validation Constants**: Added security-focused validation thresholds (API_KEY_MIN_LENGTH, TOKEN_MIN_LENGTH)
+- **Request Configuration**: Added proper timeout handling (30s) and user-agent headers
+- **Error Recovery**: Comprehensive fallback strategies for different failure scenarios
+- **Logging Standards**: JSON-structured logs with automatic PII/sensitive data protection
+- **Test Coverage**: Achieved comprehensive test coverage across all core modules with realistic scenarios
+
+### Developer Experience
+- **Enhanced Debugging**: Verbose mode provides detailed technical information for troubleshooting
+- **Better Error Messages**: Clear, actionable error messages instead of generic API errors
+- **Comprehensive Testing**: Full test suite covering authentication, file operations, hashing, and AKB import
+- **Type Safety**: All improvements maintain strict TypeScript compliance with proper error types
+
 ## [1.5.0] - 2025-09-03
 
 ### Changed

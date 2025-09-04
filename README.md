@@ -93,7 +93,39 @@ Hashes are tracked in `.newo/hashes.json` so only changed files are pushed.
 - **AKB import**: Import knowledge base articles from structured text files
 - **Project structure export**: Generates `flows.yaml` with complete project metadata
 - **Robust authentication**: API key exchange with automatic token refresh
+- **Enhanced error handling**: User-friendly error messages with troubleshooting guidance
+- **Comprehensive testing**: Full test suite covering all major functionality
 - **CI/CD ready**: GitHub Actions workflow included
+
+## Robustness & Error Handling
+
+NEWO CLI v1.5.1+ includes comprehensive error handling and validation:
+
+### User-Friendly Error Messages
+- **Authentication Errors**: Clear guidance when API keys are invalid or missing
+- **Network Issues**: Helpful tips for connection problems and timeouts  
+- **Configuration Errors**: Step-by-step setup instructions for common issues
+- **File System Errors**: Actionable guidance for permission and path problems
+
+### Verbose Debugging
+Use the `--verbose` or `-v` flag with any command for detailed technical information:
+```bash
+npx newo pull --verbose     # Detailed pull operation logs
+npx newo push -v           # Verbose push with full error context
+```
+
+### Enhanced Validation
+- **API Key Validation**: Format and length validation with specific error messages
+- **Token Security**: Automatic sanitization of sensitive data in logs
+- **Network Timeouts**: 30-second request timeouts with proper error handling
+- **Input Validation**: Comprehensive validation for all user inputs and configuration
+
+### Troubleshooting Tips
+When errors occur, NEWO CLI provides:
+- 🔍 **Problem diagnosis** with specific error categories
+- 💡 **Solution suggestions** for common configuration issues
+- 📋 **Step-by-step guidance** for resolving authentication and network problems
+- 🔧 **Configuration validation** to ensure proper setup
 
 ## CI/CD (GitHub Actions)
 Create `.github/workflows/deploy.yml`:
@@ -179,7 +211,30 @@ npm run typecheck
 
 # Run tests
 npm test
+
+# Run tests with coverage reporting
+npm run test:coverage
+
+# Run specific test suites
+npm run test:unit          # Core module tests (api, sync, auth, hash, fsutil, akb)
+npm run test:integration   # End-to-end integration tests
 ```
+
+### Test Coverage
+NEWO CLI includes comprehensive test suites:
+- **Authentication Tests** (`test/auth.test.js`): Token management, API key validation, multi-customer support
+- **Hashing Tests** (`test/hash.test.js`): SHA256 operations, hash storage, change detection
+- **File System Tests** (`test/fsutil.test.js`): Path utilities, directory management, atomic operations
+- **AKB Import Tests** (`test/akb.test.js`): Article parsing, Unicode handling, import workflows
+- **API Tests** (`test/api.test.js`): HTTP client functionality, NEWO API integration
+- **Sync Tests** (`test/sync.test.js`): Pull/push operations, project synchronization
+- **Integration Tests** (`test/integration.test.js`): End-to-end CLI functionality
+
+Test infrastructure includes:
+- **MockHttpClient**: HTTP request/response simulation
+- **MockFileSystem**: File system operation mocking
+- **TestEnvironment**: Isolated test environments with automatic cleanup
+- **Coverage Reporting**: HTML and text coverage reports via c8
 
 ### Project Structure
 - `src/` - TypeScript source files
