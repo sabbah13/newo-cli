@@ -10,16 +10,16 @@ import {
 import { 
   ensureState, 
   skillPath, 
-  writeFileAtomic, 
+  writeFileSafe, 
   readIfExists, 
   MAP_PATH, 
-  projectDir, 
-  metadataPath 
+  metadataPath,
+  flowsYamlPath 
 } from './fsutil.js';
 import fs from 'fs-extra';
 import { sha256, loadHashes, saveHashes } from './hash.js';
 import yaml from 'js-yaml';
-import path from 'path';
+import pLimit from 'p-limit';
 import type { AxiosInstance } from 'axios';
 import type { 
   Agent, 
@@ -35,6 +35,18 @@ import type {
   FlowsYamlState
 } from './types.js';
 
+// Concurrency limits for API operations
+const concurrencyLimit = pLimit(5);
+
+// Type guards for better type safety
+function isProjectMap(x: unknown): x is ProjectMap {
+  return !!x && typeof x === 'object' && 'projects' in x;
+}
+
+function isLegacyProjectMap(x: unknown): x is LegacyProjectMap {
+  return !!x && typeof x === 'object' && 'agents' in x;
+}
+
 export async function pullSingleProject(
   client: AxiosInstance, 
   projectId: string, 
@@ -47,7 +59,7 @@ export async function pullSingleProject(
 
   // Get and save project metadata
   const projectMeta = await getProjectMeta(client, projectId);
-  await writeFileAtomic(metadataPath(projectIdn), JSON.stringify(projectMeta, null, 2));
+  await writeFileSafe(metadataPath(projectIdn), JSON.stringify(projectMeta, null, 2));
   if (verbose) console.log(`✓ Saved metadata for ${projectIdn}`);
 
   const projectMap: ProjectData = { projectId, projectIdn, agents: {} };
@@ -60,9 +72,11 @@ export async function pullSingleProject(
       projectMap.agents[aKey]!.flows[flow.idn] = { id: flow.id, skills: {} };
 
       const skills = await listFlowSkills(client, flow.id);
-      for (const skill of skills) {
+      
+      // Process skills concurrently with limited concurrency
+      await Promise.all(skills.map(skill => concurrencyLimit(async () => {
         const file = skillPath(projectIdn, agent.idn, flow.idn, skill.idn, skill.runner_type);
-        await writeFileAtomic(file, skill.prompt_script || '');
+        await writeFileSafe(file, skill.prompt_script || '');
         
         // Store complete skill metadata for push operations
         projectMap.agents[aKey]!.flows[flow.idn]!.skills[skill.idn] = {
@@ -71,17 +85,17 @@ export async function pullSingleProject(
           idn: skill.idn,
           runner_type: skill.runner_type,
           model: skill.model,
-          parameters: skill.parameters,
+          parameters: [...skill.parameters],
           path: skill.path || undefined
         };
         console.log(`✓ Pulled ${file}`);
-      }
+      })));
     }
   }
 
   // Generate flows.yaml for this project
-  if (verbose) console.log(`📄 Generating flows.yaml for ${projectIdn}...`);
-  await generateFlowsYaml(client, agents, projectIdn, verbose);
+  if (verbose) console.log(`📄 Generating flows.yaml...`);
+  await generateFlowsYaml(client, agents, verbose);
 
   return projectMap;
 }
@@ -152,7 +166,7 @@ export async function pushChanged(client: AxiosInstance, verbose: boolean = fals
   }
   
   if (verbose) console.log('📋 Loading project mapping...');
-  const idMap = await fs.readJson(MAP_PATH) as ProjectMap | LegacyProjectMap;
+  const idMapData = await fs.readJson(MAP_PATH) as unknown;
   if (verbose) console.log('🔍 Loading file hashes...');
   const oldHashes = await loadHashes();
   const newHashes: HashStore = { ...oldHashes };
@@ -161,8 +175,12 @@ export async function pushChanged(client: AxiosInstance, verbose: boolean = fals
   let pushed = 0;
   let scanned = 0;
   
-  // Handle both old single-project format and new multi-project format
-  const projects = 'projects' in idMap && idMap.projects ? idMap.projects : { '': idMap as ProjectData };
+  // Handle both old single-project format and new multi-project format with type guards
+  const projects = isProjectMap(idMapData) && idMapData.projects 
+    ? idMapData.projects 
+    : isLegacyProjectMap(idMapData)
+    ? { '': idMapData as ProjectData }
+    : (() => { throw new Error('Invalid project map format'); })();
   
   for (const [projectIdn, projectData] of Object.entries(projects)) {
     if (verbose && projectIdn) console.log(`📁 Scanning project: ${projectIdn}`);
@@ -241,12 +259,16 @@ export async function status(verbose: boolean = false): Promise<void> {
   }
   
   if (verbose) console.log('📋 Loading project mapping and hashes...');
-  const idMap = await fs.readJson(MAP_PATH) as ProjectMap | LegacyProjectMap;
+  const idMapData = await fs.readJson(MAP_PATH) as unknown;
   const hashes = await loadHashes();
   let dirty = 0;
 
-  // Handle both old single-project format and new multi-project format
-  const projects = 'projects' in idMap && idMap.projects ? idMap.projects : { '': idMap as ProjectData };
+  // Handle both old single-project format and new multi-project format with type guards
+  const projects = isProjectMap(idMapData) && idMapData.projects 
+    ? idMapData.projects 
+    : isLegacyProjectMap(idMapData)
+    ? { '': idMapData as ProjectData }
+    : (() => { throw new Error('Invalid project map format'); })();
 
   for (const [projectIdn, projectData] of Object.entries(projects)) {
     if (verbose && projectIdn) console.log(`📁 Checking project: ${projectIdn}`);
@@ -291,7 +313,6 @@ export async function status(verbose: boolean = false): Promise<void> {
 async function generateFlowsYaml(
   client: AxiosInstance, 
   agents: Agent[], 
-  projectIdn: string, 
   verbose: boolean = false
 ): Promise<void> {
   const flowsData: FlowsYamlData = { flows: [] };
@@ -309,7 +330,7 @@ async function generateFlowsYaml(
       const skillsData: FlowsYamlSkill[] = skills.map(skill => ({
         idn: skill.idn,
         title: skill.title || "",
-        prompt_script: `flows/${flow.idn}/${skill.idn}.${skill.runner_type === 'nsl' ? 'jinja' : 'nsl'}`,
+        prompt_script: `flows/${flow.idn}/${skill.idn}.${skill.runner_type === 'nsl' ? 'jinja' : 'guidance'}`,
         runner_type: `!enum "RunnerType.${skill.runner_type}"`,
         model: {
           model_idn: skill.model.model_idn,
@@ -390,7 +411,7 @@ async function generateFlowsYaml(
   // Post-process to fix enum formatting
   yamlContent = yamlContent.replace(/"(!enum "[^"]+")"/g, '$1');
   
-  const yamlPath = path.join(projectDir(projectIdn), 'flows.yaml');
-  await writeFileAtomic(yamlPath, yamlContent);
-  console.log(`✓ Generated flows.yaml for ${projectIdn}`);
+  const yamlPath = flowsYamlPath();
+  await writeFileSafe(yamlPath, yamlContent);
+  console.log(`✓ Generated flows.yaml`);
 }

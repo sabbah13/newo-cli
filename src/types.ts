@@ -30,70 +30,70 @@ export interface StoredTokens {
 
 // API Response Types
 export interface ProjectMeta {
-  id: string;
-  idn: string;
-  title: string;
-  description?: string;
-  created_at?: string;
-  updated_at?: string;
+  readonly id: string;
+  readonly idn: string;
+  readonly title: string;
+  readonly description?: string;
+  readonly created_at?: string;
+  readonly updated_at?: string;
 }
 
 export interface Agent {
-  id: string;
-  idn: string;
-  title?: string;
-  description?: string;
-  flows?: Flow[];
+  readonly id: string;
+  readonly idn: string;
+  readonly title?: string;
+  readonly description?: string;
+  readonly flows?: readonly Flow[];
 }
 
 export interface Flow {
-  id: string;
-  idn: string;
-  title: string;
-  description?: string;
-  default_runner_type: RunnerType;
-  default_model: ModelConfig;
+  readonly id: string;
+  readonly idn: string;
+  readonly title: string;
+  readonly description?: string;
+  readonly default_runner_type: RunnerType;
+  readonly default_model: ModelConfig;
 }
 
 export interface ModelConfig {
-  model_idn: string;
-  provider_idn: string;
+  readonly model_idn: string;
+  readonly provider_idn: string;
 }
 
 export interface SkillParameter {
-  name: string;
-  default_value?: string;
+  readonly name: string;
+  readonly default_value?: string;
 }
 
 export interface Skill {
-  id: string;
-  idn: string;
-  title: string;
-  prompt_script?: string;
-  runner_type: RunnerType;
-  model: ModelConfig;
-  parameters: SkillParameter[];
-  path?: string | undefined;
+  readonly id: string;
+  readonly idn: string;
+  readonly title: string;
+  prompt_script?: string; // Mutable for updates
+  readonly runner_type: RunnerType;
+  readonly model: ModelConfig;
+  readonly parameters: readonly SkillParameter[];
+  readonly path?: string | undefined;
 }
 
 export interface FlowEvent {
-  id: string;
-  idn: string;
-  description: string;
-  skill_selector: SkillSelector;
-  skill_idn?: string;
-  state_idn?: string;
-  integration_idn?: string;
-  connector_idn?: string;
-  interrupt_mode: InterruptMode;
+  readonly id: string;
+  readonly idn: string;
+  readonly description: string;
+  readonly skill_selector: SkillSelector;
+  readonly skill_idn?: string;
+  readonly state_idn?: string;
+  readonly integration_idn?: string;
+  readonly connector_idn?: string;
+  readonly interrupt_mode: InterruptMode;
 }
 
 export interface FlowState {
-  id: string;
-  idn: string;
-  title: string;
-  default_value?: string;
-  scope: StateFieldScope;
+  readonly id: string;
+  readonly idn: string;
+  readonly title: string;
+  readonly default_value?: string;
+  readonly scope: StateFieldScope;
 }
 
 // Enum Types
@@ -144,13 +144,13 @@ export interface HashStore {
 
 // AKB Types
 export interface ParsedArticle {
-  topic_name: string;
-  persona_id: string | null;
-  topic_summary: string;
-  topic_facts: string[];
-  confidence: number;
-  source: string;
-  labels: string[];
+  readonly topic_name: string;
+  readonly persona_id: string | null;
+  readonly topic_summary: string;
+  readonly topic_facts: readonly string[];
+  readonly confidence: number;
+  readonly source: string;
+  readonly labels: readonly string[];
 }
 
 export interface AkbImportArticle extends Omit<ParsedArticle, 'persona_id'> {
@@ -159,10 +159,10 @@ export interface AkbImportArticle extends Omit<ParsedArticle, 'persona_id'> {
 
 // CLI Types
 export interface CliArgs {
-  _: string[];
-  verbose?: boolean;
-  v?: boolean;
-  [key: string]: unknown;
+  readonly _: readonly string[];
+  readonly verbose?: boolean;
+  readonly v?: boolean;
+  readonly [key: string]: unknown;
 }
 
 // flows.yaml Generation Types

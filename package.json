@@ -46,7 +46,8 @@
     "dotenv": "^16.4.5",
     "fs-extra": "^11.2.0",
     "js-yaml": "^4.1.0",
-    "minimist": "^1.2.8"
+    "minimist": "^1.2.8",
+    "p-limit": "^5.0.0"
   },
   "devDependencies": {
     "@types/fs-extra": "^11.0.4",

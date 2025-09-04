@@ -4,13 +4,24 @@ import dotenv from 'dotenv';
 import { makeClient, getProjectMeta, importAkbArticle } from './api.js';
 import { pullAll, pushChanged, status } from './sync.js';
 import { parseAkbFile, prepareArticlesForImport } from './akb.js';
+import { initializeEnvironment, ENV, EnvValidationError } from './env.js';
 import path from 'path';
-import type { NewoEnvironment, CliArgs, NewoApiError } from './types.js';
+import type { CliArgs, NewoApiError } from './types.js';
 
 dotenv.config();
-const { NEWO_PROJECT_ID } = process.env as NewoEnvironment;
 
 async function main(): Promise<void> {
+  try {
+    // Initialize and validate environment at startup
+    initializeEnvironment();
+  } catch (error: unknown) {
+    if (error instanceof EnvValidationError) {
+      console.error('Environment validation failed:', error.message);
+      process.exit(1);
+    }
+    throw error;
+  }
+
   const args = minimist(process.argv.slice(2)) as CliArgs;
   const cmd = args._[0];
   const verbose = Boolean(args.verbose || args.v);
@@ -44,16 +55,16 @@ Notes:
 
   if (cmd === 'pull') {
     // If PROJECT_ID is set, pull single project; otherwise pull all projects
-    await pullAll(client, NEWO_PROJECT_ID || null, verbose);
+    await pullAll(client, ENV.NEWO_PROJECT_ID || null, verbose);
   } else if (cmd === 'push') {
     await pushChanged(client, verbose);
   } else if (cmd === 'status') {
     await status(verbose);
   } else if (cmd === 'meta') {
-    if (!NEWO_PROJECT_ID) {
-      throw new Error('NEWO_PROJECT_ID is not set in env');
+    if (!ENV.NEWO_PROJECT_ID) {
+      throw new Error('NEWO_PROJECT_ID is required for meta command');
     }
-    const meta = await getProjectMeta(client, NEWO_PROJECT_ID);
+    const meta = await getProjectMeta(client, ENV.NEWO_PROJECT_ID);
     console.log(JSON.stringify(meta, null, 2));
   } else if (cmd === 'import-akb') {
     const akbFile = args._[1];
@@ -69,7 +80,7 @@ Notes:
     
     try {
       if (verbose) console.log(`📖 Parsing AKB file: ${filePath}`);
-      const articles = parseAkbFile(filePath);
+      const articles = await parseAkbFile(filePath);
       console.log(`✓ Parsed ${articles.length} articles from ${akbFile}`);
       
       if (verbose) console.log(`🔧 Preparing articles for persona: ${personaId}`);
@@ -88,9 +99,13 @@ Notes:
           await importAkbArticle(client, article);
           successCount++;
           if (!verbose) process.stdout.write('.');
-        } catch (error) {
+        } catch (error: unknown) {
           errorCount++;
-          const errorMessage = (error as NewoApiError)?.response?.data || (error as Error).message;
+          const errorMessage = error instanceof Error && 'response' in error
+            ? (error as NewoApiError)?.response?.data
+            : error instanceof Error 
+            ? error.message
+            : String(error);
           console.error(`\n❌ Failed to import ${article.topic_name}:`, errorMessage);
         }
       }
@@ -98,8 +113,9 @@ Notes:
       if (!verbose) console.log(''); // new line after dots
       console.log(`✅ Import complete: ${successCount} successful, ${errorCount} failed`);
       
-    } catch (error) {
-      console.error('❌ AKB import failed:', (error as Error).message);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error('❌ AKB import failed:', message);
       process.exit(1);
     }
   } else {
@@ -108,8 +124,10 @@ Notes:
   }
 }
 
-main().catch((error: NewoApiError | Error) => {
-  const errorData = 'response' in error ? error?.response?.data : error;
+main().catch((error: unknown) => {
+  const errorData = error instanceof Error && 'response' in error 
+    ? (error as NewoApiError)?.response?.data 
+    : error;
   console.error(errorData || error);
   process.exit(1);
 });

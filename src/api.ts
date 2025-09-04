@@ -1,8 +1,7 @@
 import axios, { type AxiosInstance, type InternalAxiosRequestConfig, type AxiosResponse, type AxiosError } from 'axios';
-import dotenv from 'dotenv';
 import { getValidAccessToken, forceReauth } from './auth.js';
+import { ENV } from './env.js';
 import type { 
-  NewoEnvironment, 
   ProjectMeta, 
   Agent, 
   Skill, 
@@ -11,20 +10,15 @@ import type {
   AkbImportArticle
 } from './types.js';
 
-dotenv.config();
-
-const { NEWO_BASE_URL } = process.env as NewoEnvironment;
+// Per-request retry tracking to avoid shared state issues
+const RETRY_SYMBOL = Symbol('retried');
 
 export async function makeClient(verbose: boolean = false): Promise<AxiosInstance> {
   let accessToken = await getValidAccessToken();
   if (verbose) console.log('✓ Access token obtained');
 
-  if (!NEWO_BASE_URL) {
-    throw new Error('NEWO_BASE_URL is not set in environment variables');
-  }
-
   const client = axios.create({
-    baseURL: NEWO_BASE_URL,
+    baseURL: ENV.NEWO_BASE_URL,
     headers: { accept: 'application/json' }
   });
 
@@ -41,7 +35,6 @@ export async function makeClient(verbose: boolean = false): Promise<AxiosInstanc
     return config;
   });
 
-  let retried = false;
   client.interceptors.response.use(
     (response: AxiosResponse) => {
       if (verbose) {
@@ -49,7 +42,8 @@ export async function makeClient(verbose: boolean = false): Promise<AxiosInstanc
         if (response.data && Object.keys(response.data).length < 20) {
           console.log('  Response:', JSON.stringify(response.data, null, 2));
         } else if (response.data) {
-          console.log(`  Response: [${typeof response.data}] ${Array.isArray(response.data) ? response.data.length + ' items' : 'large object'}`);
+          const itemCount = Array.isArray(response.data) ? response.data.length : Object.keys(response.data).length;
+          console.log(`  Response: [${typeof response.data}] ${Array.isArray(response.data) ? itemCount + ' items' : 'large object'}`);
         }
       }
       return response;
@@ -61,15 +55,18 @@ export async function makeClient(verbose: boolean = false): Promise<AxiosInstanc
         if (error.response?.data) console.log('  Error data:', error.response.data);
       }
       
-      if (status === 401 && !retried) {
-        retried = true;
-        if (verbose) console.log('🔄 Retrying with fresh token...');
-        accessToken = await forceReauth();
-        
-        if (error.config) {
-          error.config.headers = error.config.headers || {};
-          error.config.headers.Authorization = `Bearer ${accessToken}`;
-          return client.request(error.config);
+      // Use per-request retry tracking to avoid shared state issues
+      const config = error.config as InternalAxiosRequestConfig & { [RETRY_SYMBOL]?: boolean };
+      
+      if (status === 401 && !config?.[RETRY_SYMBOL]) {
+        if (config) {
+          config[RETRY_SYMBOL] = true;
+          if (verbose) console.log('🔄 Retrying with fresh token...');
+          accessToken = await forceReauth();
+          
+          config.headers = config.headers || {};
+          config.headers.Authorization = `Bearer ${accessToken}`;
+          return client.request(config);
         }
       }
       

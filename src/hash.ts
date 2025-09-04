@@ -9,10 +9,14 @@ export function sha256(str: string): string {
 
 export async function loadHashes(): Promise<HashStore> {
   await ensureState();
-  if (await fs.pathExists(HASHES_PATH)) {
-    return fs.readJson(HASHES_PATH) as Promise<HashStore>;
+  try {
+    return await fs.readJson(HASHES_PATH) as HashStore;
+  } catch (error: unknown) {
+    if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
+      return {};
+    }
+    throw error;
   }
-  return {};
 }
 
 export async function saveHashes(hashes: HashStore): Promise<void> {

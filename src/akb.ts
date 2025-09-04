@@ -4,8 +4,8 @@ import type { ParsedArticle, AkbImportArticle } from './types.js';
 /**
  * Parse AKB file and extract articles
  */
-export function parseAkbFile(filePath: string): ParsedArticle[] {
-  const content = fs.readFileSync(filePath, 'utf8');
+export async function parseAkbFile(filePath: string): Promise<ParsedArticle[]> {
+  const content = await fs.readFile(filePath, 'utf8');
   const articles: ParsedArticle[] = [];
   
   // Split by article separators (---)
@@ -27,23 +27,28 @@ export function parseAkbFile(filePath: string): ParsedArticle[] {
 /**
  * Parse individual article section
  */
-function parseArticleSection(lines: string[]): ParsedArticle | null {
-  let topicName = '';
-  let category = '';
-  let summary = '';
-  let keywords = '';
-  let topicSummary = '';
+function parseArticleSection(lines: readonly string[]): ParsedArticle | null {
+  const state = {
+    topicName: '',
+    category: '',
+    summary: '',
+    keywords: '',
+    topicSummary: ''
+  };
   
   // Find topic name (# r001)
   const topicLine = lines.find(line => line.match(/^#\s+r\d+/));
-  if (!topicLine) return null;
+  if (!topicLine) {
+    console.warn('No topic line found in section');
+    return null;
+  }
   
-  topicName = topicLine.replace(/^#\s+/, '').trim();
+  state.topicName = topicLine.replace(/^#\s+/, '').trim();
   
   // Extract category/subcategory/description (first ## line)
   const categoryLine = lines.find(line => line.startsWith('## ') && line.includes(' / '));
   if (categoryLine) {
-    category = categoryLine.replace(/^##\s+/, '').trim();
+    state.category = categoryLine.replace(/^##\s+/, '').trim();
   }
   
   // Extract summary (second ## line)
@@ -51,7 +56,7 @@ function parseArticleSection(lines: string[]): ParsedArticle | null {
   if (summaryLineIndex >= 0 && summaryLineIndex + 1 < lines.length) {
     const nextLine = lines[summaryLineIndex + 1];
     if (nextLine && nextLine.startsWith('## ') && !nextLine.includes(' / ')) {
-      summary = nextLine.replace(/^##\s+/, '').trim();
+      state.summary = nextLine.replace(/^##\s+/, '').trim();
     }
   }
   
@@ -62,7 +67,7 @@ function parseArticleSection(lines: string[]): ParsedArticle | null {
   if (keywordsLineIndex >= 0) {
     const keywordsLine = lines[keywordsLineIndex];
     if (keywordsLine) {
-      keywords = keywordsLine.replace(/^##\s+/, '').trim();
+      state.keywords = keywordsLine.replace(/^##\s+/, '').trim();
     }
   }
   
@@ -72,19 +77,19 @@ function parseArticleSection(lines: string[]): ParsedArticle | null {
   
   if (categoryStartIndex >= 0 && categoryEndIndex >= 0) {
     const categoryLines = lines.slice(categoryStartIndex, categoryEndIndex + 1);
-    topicSummary = categoryLines.join('\n');
+    state.topicSummary = categoryLines.join('\n');
   }
   
   // Create topic_facts array
-  const topicFacts = [category, summary, keywords].filter(fact => fact.trim() !== '');
+  const topicFacts = [state.category, state.summary, state.keywords].filter(fact => fact.trim() !== '');
   
   return {
-    topic_name: category, // Use the descriptive title as topic_name
+    topic_name: state.category, // Use the descriptive title as topic_name
     persona_id: null, // Will be set when importing
-    topic_summary: topicSummary,
+    topic_summary: state.topicSummary,
     topic_facts: topicFacts,
     confidence: 100,
-    source: topicName, // Use the ID (r001) as source
+    source: state.topicName, // Use the ID (r001) as source
     labels: ['rag_context']
   };
 }
