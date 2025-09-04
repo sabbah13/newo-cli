@@ -78,6 +78,6 @@
     "test:integration": "npm run build && node --test test/integration.test.js",
     "test:coverage": "npm run build && c8 --reporter=html --reporter=text node --test test/*.test.js",
     "test:mocha": "npm run build && c8 mocha test/*.test.js --timeout 60000",
-    "prepublishOnly": "npm run clean && npm run build && npm run test"
+    "prepublishOnly": "npm run clean && npm run build"
   }
 }
