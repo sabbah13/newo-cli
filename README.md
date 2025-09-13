@@ -493,6 +493,44 @@ npm run dev push    # Build and run push
 | `npm run test:unit` | Run unit tests only |
 | `npm run test:coverage` | Generate coverage report |
 
+### Makefile Commands
+
+The project includes a comprehensive Makefile for streamlined development:
+
+#### Quick Commands
+```bash
+make help           # Show all available commands
+make setup          # Initial project setup
+make build          # Build TypeScript
+make test           # Run tests
+make dev            # Development mode
+make publish        # Publish to GitHub and NPM
+```
+
+#### Development Workflow
+```bash
+make fresh-start    # Clean + install + build + test
+make dev-pull       # Test pull command in development
+make dev-push       # Test push command in development
+make test-local     # Comprehensive local testing
+```
+
+#### Publishing Workflow
+```bash
+make pre-publish    # Complete validation before publishing
+make publish-github # Publish to GitHub with release
+make publish-npm    # Publish to NPM
+make publish        # Publish to both platforms
+```
+
+#### Quality Assurance
+```bash
+make typecheck      # TypeScript type checking
+make lint           # Code linting
+make check-all      # All quality checks
+make deps-audit     # Security audit
+```
+
 ### Local Testing
 
 After making changes to the CLI code, proper testing is essential to ensure functionality works correctly.
@@ -664,6 +702,157 @@ NEWO CLI includes comprehensive test coverage:
 - **Complete API typing** for all NEWO endpoints
 - **Enhanced IntelliSense** support in IDEs
 - **Automatic compilation** with source maps
+
+---
+
+## Publishing & Release Management
+
+The project includes automated scripts for publishing to GitHub and NPM with proper validation and release management.
+
+### Prerequisites for Publishing
+
+1. **GitHub Setup**
+   ```bash
+   # Ensure GitHub remote is configured
+   git remote -v  # Should show origin pointing to sabbah13/newo-cli
+
+   # Install GitHub CLI (optional, for automatic releases)
+   brew install gh  # macOS
+   # or
+   sudo apt install gh  # Ubuntu
+   ```
+
+2. **NPM Setup**
+   ```bash
+   # Login to NPM
+   npm login
+   npm whoami  # Verify you're logged in
+   ```
+
+### Publishing Workflow
+
+#### Option 1: Full Automated Publishing (Recommended)
+```bash
+# Complete validation and publish to both platforms
+make publish
+```
+
+This command will:
+- Run all tests and quality checks
+- Build the project
+- Prompt for version bump (patch/minor/major)
+- Publish to GitHub with release notes
+- Publish to NPM with proper tags
+- Verify publication success
+
+#### Option 2: Step-by-Step Publishing
+```bash
+# 1. Validate everything is ready
+make pre-publish
+
+# 2. Publish to GitHub first
+make publish-github
+
+# 3. Publish to NPM
+make publish-npm
+```
+
+#### Option 3: Manual Publishing
+```bash
+# Run individual scripts
+./scripts/publish-github.sh
+./scripts/publish-npm.sh
+```
+
+### Version Management
+
+Use semantic versioning with the Makefile helpers:
+
+```bash
+make version-patch  # 1.5.2 → 1.5.3 (bug fixes)
+make version-minor  # 1.5.2 → 1.6.0 (new features)
+make version-major  # 1.5.2 → 2.0.0 (breaking changes)
+```
+
+### Pre-Release Publishing
+
+For beta/alpha releases:
+```bash
+# Set pre-release version manually
+npm version 1.6.0-beta.1 --no-git-tag-version
+
+# Publish with beta tag
+make publish-npm  # Automatically detects pre-release and uses beta tag
+```
+
+### Publishing Checklist
+
+Before publishing, ensure:
+- ✅ All tests pass (`make test`)
+- ✅ TypeScript compiles without errors (`make build`)
+- ✅ Local testing completed (`make test-local`)
+- ✅ Documentation is up to date
+- ✅ CHANGELOG.md is updated (if exists)
+- ✅ Version number is appropriate
+- ✅ No uncommitted changes (or committed)
+
+### Automated Validation
+
+The publish scripts include comprehensive validation:
+- **TypeScript compilation** and type checking
+- **Test suite execution** with coverage requirements
+- **Package size analysis** and content verification
+- **Authentication verification** for GitHub and NPM
+- **Version conflict detection** to prevent duplicate publishes
+- **Security audit** of dependencies
+
+### GitHub Release Features
+
+The GitHub publish script automatically:
+- Creates semantic version tags (`v1.5.3`)
+- Generates comprehensive release notes
+- Marks releases as "latest" on GitHub
+- Links to NPM package and documentation
+- Includes installation instructions
+
+### NPM Package Features
+
+The NPM publish script ensures:
+- Proper package.json validation
+- Binary CLI availability verification
+- File inclusion/exclusion validation
+- Pre-release tag detection (`beta`, `alpha`, `rc`)
+- Post-publish verification
+
+### Rollback Procedures
+
+If issues are discovered after publishing:
+
+**NPM Rollback:**
+```bash
+# Deprecate problematic version
+npm deprecate newo@1.5.3 "Version has known issues, use 1.5.2 instead"
+
+# Publish fixed version immediately
+make version-patch
+make publish-npm
+```
+
+**GitHub Rollback:**
+```bash
+# Delete tag and release (if needed)
+git tag -d v1.5.3
+git push origin :refs/tags/v1.5.3
+gh release delete v1.5.3
+```
+
+### Monitoring Post-Publication
+
+After publishing, monitor:
+- **NPM downloads**: https://npmjs.com/package/newo
+- **GitHub releases**: https://github.com/sabbah13/newo-cli/releases
+- **Issue reports**: https://github.com/sabbah13/newo-cli/issues
+- **Badge updates**: README badges should reflect new version
 
 ---
 
