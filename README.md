@@ -127,7 +127,7 @@ NEWO_REFRESH_URL=custom_refresh_endpoint   # Custom refresh endpoint
 
 | Command | Description | Examples |
 |---------|-------------|----------|
-| `newo pull` | Download projects from NEWO | `newo pull`<br>`newo pull --customer=ACME`<br>`newo pull --project=uuid` |
+| `newo pull` | Download projects from NEWO | `newo pull` (all customers if no default)<br>`newo pull --customer=ACME`<br>`newo pull --project=uuid` |
 | `newo push` | Upload local changes to NEWO | `newo push`<br>`newo push --customer=BETA` |
 | `newo status` | Show modified files | `newo status`<br>`newo status --verbose` |
 | `newo list-customers` | List configured customers | `newo list-customers` |
@@ -146,8 +146,8 @@ newo pull --customer=NEWO_ABC123
 # Push changes to specific customer
 newo push --customer=NEWO_XYZ789
 
-# Work with default customer (all projects)
-newo pull    # Uses default or prompts for selection
+# Work with default customer (or auto multi-customer)
+newo pull    # Uses default customer OR pulls from all customers if no default set
 newo push    # Pushes to appropriate customers based on file origin
 ```
 
@@ -492,6 +492,138 @@ npm run dev push    # Build and run push
 | `npm test` | Run full test suite |
 | `npm run test:unit` | Run unit tests only |
 | `npm run test:coverage` | Generate coverage report |
+
+### Local Testing
+
+After making changes to the CLI code, proper testing is essential to ensure functionality works correctly.
+
+#### Quick Testing Commands
+
+```bash
+# Build and test core functionality
+npm run build                                    # Compile TypeScript
+node ./dist/cli.js --help                       # Test CLI loads correctly
+node ./dist/cli.js list-customers                # Test customer configuration
+
+# Test single customer operations
+node ./dist/cli.js pull --customer=CUSTOMER_IDN  # Test specific customer pull
+node ./dist/cli.js status --customer=CUSTOMER_IDN # Test specific customer status
+
+# Test multi-customer operations (if multiple API keys configured)
+node ./dist/cli.js pull                          # Test auto multi-customer pull
+node ./dist/cli.js pull --verbose                # Test with detailed logging
+```
+
+#### Complete Testing Workflow
+
+1. **Environment Setup**
+   ```bash
+   # Ensure clean environment
+   cp .env.example .env
+   # Edit .env with your API key(s)
+   ```
+
+2. **Build & Syntax Check**
+   ```bash
+   npm run build              # Must complete without TypeScript errors
+   npm run typecheck          # Verify type safety
+   ```
+
+3. **Basic CLI Tests**
+   ```bash
+   node ./dist/cli.js --help                    # Should show updated help text
+   node ./dist/cli.js list-customers            # Should show configured customers
+   ```
+
+4. **Authentication Tests**
+   ```bash
+   # Test API key exchange and token generation
+   node ./dist/cli.js meta --verbose            # Forces authentication
+   ```
+
+5. **Pull Operation Tests**
+   ```bash
+   # Single customer (if specific customer configured)
+   node ./dist/cli.js pull --customer=YOUR_CUSTOMER_IDN --verbose
+
+   # Multi-customer (if multiple API keys configured)
+   node ./dist/cli.js pull --verbose            # Should pull from all customers
+
+   # Check file structure was created correctly
+   ls -la newo_customers/                       # Should show customer folders
+   ```
+
+6. **Status & Push Tests**
+   ```bash
+   node ./dist/cli.js status --verbose          # Should show no changes initially
+
+   # Make a test change to a .guidance or .jinja file
+   echo "# Test comment" >> newo_customers/*/projects/*/*/*/*.guidance
+
+   node ./dist/cli.js status                    # Should detect the change
+   node ./dist/cli.js push --verbose            # Should upload the change
+   ```
+
+#### Testing Multi-Customer Functionality
+
+If you have multiple API keys configured, test the new auto-pull behavior:
+
+```bash
+# Test that pull works without specifying customer
+node ./dist/cli.js pull                          # Should pull from ALL customers
+
+# Test individual customer selection still works
+node ./dist/cli.js pull --customer=CUSTOMER_A    # Should pull from specific customer
+node ./dist/cli.js push --customer=CUSTOMER_B    # Should push to specific customer
+```
+
+#### Common Testing Issues & Solutions
+
+**Issue: "Multiple customers configured but no default specified" error**
+- **Cause**: You're using `npx newo` instead of the local build
+- **Solution**: Use `node ./dist/cli.js` instead of `npx newo`
+
+**Issue: Changes not reflected in CLI behavior**
+- **Cause**: TypeScript not compiled or using cached version
+- **Solution**: Run `npm run build` first, then test with `node ./dist/cli.js`
+
+**Issue: Authentication errors during testing**
+- **Cause**: Invalid API keys or network issues
+- **Solution**: Verify API keys in `.env`, test with `--verbose` flag for details
+
+**Issue: File permission errors**
+- **Cause**: Insufficient permissions in project directory
+- **Solution**: Ensure write permissions: `chmod 755 .` and check disk space
+
+#### Performance Testing
+
+For testing with large projects or multiple customers:
+
+```bash
+# Test with timeout to avoid hanging
+timeout 30s node ./dist/cli.js pull --verbose   # Should complete or show progress
+
+# Test memory usage
+node --max-old-space-size=512 ./dist/cli.js pull # Test with limited memory
+```
+
+#### Integration Testing
+
+Test complete workflows that users would actually perform:
+
+```bash
+# Complete development workflow
+node ./dist/cli.js pull                          # Download latest
+# Edit some .guidance/.jinja files
+node ./dist/cli.js status                        # Check changes
+node ./dist/cli.js push                          # Upload changes
+
+# Multi-customer workflow
+node ./dist/cli.js list-customers                # See available customers
+node ./dist/cli.js pull --customer=CUSTOMER_A    # Work with specific customer
+# Make changes
+node ./dist/cli.js push --customer=CUSTOMER_A    # Push to specific customer
+```
 
 ### Project Architecture
 

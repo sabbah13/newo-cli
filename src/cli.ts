@@ -5,7 +5,7 @@ import { makeClient, getProjectMeta, importAkbArticle } from './api.js';
 import { pullAll, pushChanged, status } from './sync.js';
 import { parseAkbFile, prepareArticlesForImport } from './akb.js';
 import { initializeEnvironment, ENV, EnvValidationError } from './env.js';
-import { parseCustomerConfigAsync, listCustomers, getCustomer, getDefaultCustomer, validateCustomerConfig } from './customerAsync.js';
+import { parseCustomerConfigAsync, listCustomers, getCustomer, getDefaultCustomer, tryGetDefaultCustomer, getAllCustomers, validateCustomerConfig } from './customerAsync.js';
 import { getValidAccessToken } from './auth.js';
 import path from 'path';
 import type { CliArgs, NewoApiError, CustomerConfig } from './types.js';
@@ -131,7 +131,7 @@ async function main(): Promise<void> {
   const cmd = args._[0];
   const verbose = Boolean(args.verbose || args.v);
   
-  // Parse customer configuration (async for API key array support)  
+  // Parse customer configuration (async for API key array support)
   let customerConfig;
   try {
     customerConfig = await parseCustomerConfigAsync(ENV as any, verbose);
@@ -145,8 +145,9 @@ async function main(): Promise<void> {
   }
   
   // Handle customer selection
-  let selectedCustomer: CustomerConfig;
-  
+  let selectedCustomer: CustomerConfig | null = null;
+  let allCustomers: CustomerConfig[] = [];
+
   if (cmd === 'list-customers') {
     const customers = listCustomers(customerConfig);
     console.log('Available customers:');
@@ -156,7 +157,7 @@ async function main(): Promise<void> {
     }
     return;
   }
-  
+
   if (args.customer) {
     const customer = getCustomer(customerConfig, args.customer as string);
     if (!customer) {
@@ -166,12 +167,29 @@ async function main(): Promise<void> {
     }
     selectedCustomer = customer;
   } else {
-    try {
-      selectedCustomer = getDefaultCustomer(customerConfig);
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : String(error);
-      console.error(message);
-      process.exit(1);
+    // For pull command, try to get default but fall back to all customers if multiple exist
+    if (cmd === 'pull') {
+      try {
+        selectedCustomer = tryGetDefaultCustomer(customerConfig);
+        if (!selectedCustomer) {
+          // Multiple customers exist with no default, pull from all
+          allCustomers = getAllCustomers(customerConfig);
+          if (verbose) console.log(`📥 No default customer specified, pulling from all ${allCustomers.length} customers`);
+        }
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : String(error);
+        console.error(message);
+        process.exit(1);
+      }
+    } else {
+      // For other commands, require explicit customer selection
+      try {
+        selectedCustomer = getDefaultCustomer(customerConfig);
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : String(error);
+        console.error(message);
+        process.exit(1);
+      }
     }
   }
 
@@ -184,28 +202,29 @@ Usage:
   newo list-customers                           # list available customers
   newo meta [--customer <idn>]                  # get project metadata (debug)
   newo import-akb <file> <persona_id> [--customer <idn>]  # import AKB articles from file
-  
+
 Flags:
-  --customer <idn>             # specify customer (if not set, uses default)
+  --customer <idn>             # specify customer (if not set, uses default or all for pull)
   --verbose, -v                # enable detailed logging
-  
+
 Environment Variables:
   NEWO_BASE_URL                                 # NEWO API base URL (default: https://app.newo.ai)
   NEWO_CUSTOMER_<IDN>_API_KEY                   # API key for customer <IDN>
   NEWO_CUSTOMER_<IDN>_PROJECT_ID               # Optional: specific project ID for customer
   NEWO_DEFAULT_CUSTOMER                        # Optional: default customer to use
-  
+
 Multi-Customer Examples:
   # Configure customers in .env:
   NEWO_CUSTOMER_acme_API_KEY=your_acme_api_key
   NEWO_CUSTOMER_globex_API_KEY=your_globex_api_key
   NEWO_DEFAULT_CUSTOMER=acme
-  
+
   # Commands:
-  newo pull --customer acme                    # Pull projects for Acme
+  newo pull                                    # Pull from all customers (if no default set)
+  newo pull --customer acme                    # Pull projects for Acme only
   newo push --customer globex                  # Push changes for Globex
   newo status                                  # Status for default customer
-  
+
 File Structure:
   newo_customers/
   ├── acme/
@@ -218,15 +237,39 @@ File Structure:
     return;
   }
 
+  if (cmd === 'pull') {
+    if (selectedCustomer) {
+      // Single customer pull
+      const accessToken = await getValidAccessToken(selectedCustomer);
+      const client = await makeClient(verbose, accessToken);
+      const projectId = selectedCustomer.projectId || null;
+      await pullAll(client, selectedCustomer, projectId, verbose);
+    } else if (allCustomers.length > 0) {
+      // Multi-customer pull
+      console.log(`🔄 Pulling from ${allCustomers.length} customers...`);
+      for (const customer of allCustomers) {
+        console.log(`\n📥 Pulling from customer: ${customer.idn}`);
+        const accessToken = await getValidAccessToken(customer);
+        const client = await makeClient(verbose, accessToken);
+        const projectId = customer.projectId || null;
+        await pullAll(client, customer, projectId, verbose);
+      }
+      console.log(`\n✅ Pull completed for all ${allCustomers.length} customers`);
+    }
+    return;
+  }
+
+  // For all other commands, require a single selected customer
+  if (!selectedCustomer) {
+    console.error('Customer selection required for this command');
+    process.exit(1);
+  }
+
   // Get access token for the selected customer
   const accessToken = await getValidAccessToken(selectedCustomer);
   const client = await makeClient(verbose, accessToken);
 
-  if (cmd === 'pull') {
-    // Use customer-specific project ID if set, otherwise pull all projects
-    const projectId = selectedCustomer.projectId || null;
-    await pullAll(client, selectedCustomer, projectId, verbose);
-  } else if (cmd === 'push') {
+  if (cmd === 'push') {
     await pushChanged(client, selectedCustomer, verbose);
   } else if (cmd === 'status') {
     await status(selectedCustomer, verbose);

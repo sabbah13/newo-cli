@@ -40,7 +40,7 @@ export function getDefaultCustomer(config: MultiCustomerConfig): CustomerConfig 
     const customer = getCustomer(config, config.defaultCustomer);
     if (customer) return customer;
   }
-  
+
   const customerIdns = listCustomers(config);
   if (customerIdns.length === 1) {
     const firstCustomerIdn = customerIdns[0];
@@ -48,15 +48,47 @@ export function getDefaultCustomer(config: MultiCustomerConfig): CustomerConfig 
       return config.customers[firstCustomerIdn]!;
     }
   }
-  
+
   if (customerIdns.length === 0) {
     throw new Error('No customers configured. Please set NEWO_API_KEYS or NEWO_CUSTOMER_[IDN]_API_KEY in your .env file.');
   }
-  
+
   throw new Error(
     `Multiple customers configured but no default specified. Available: ${customerIdns.join(', ')}. ` +
     `Set NEWO_DEFAULT_CUSTOMER or use --customer flag.`
   );
+}
+
+/**
+ * Attempt to get default customer, return null if multiple customers exist without default
+ */
+export function tryGetDefaultCustomer(config: MultiCustomerConfig): CustomerConfig | null {
+  if (config.defaultCustomer) {
+    const customer = getCustomer(config, config.defaultCustomer);
+    if (customer) return customer;
+  }
+
+  const customerIdns = listCustomers(config);
+  if (customerIdns.length === 1) {
+    const firstCustomerIdn = customerIdns[0];
+    if (firstCustomerIdn) {
+      return config.customers[firstCustomerIdn]!;
+    }
+  }
+
+  if (customerIdns.length === 0) {
+    throw new Error('No customers configured. Please set NEWO_API_KEYS or NEWO_CUSTOMER_[IDN]_API_KEY in your .env file.');
+  }
+
+  // Return null if multiple customers exist without default (don't throw)
+  return null;
+}
+
+/**
+ * Get all customers as an array
+ */
+export function getAllCustomers(config: MultiCustomerConfig): CustomerConfig[] {
+  return listCustomers(config).map(idn => getCustomer(config, idn)!);
 }
 
 /**
