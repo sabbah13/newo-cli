@@ -1,6 +1,6 @@
 {
   "name": "newo",
-  "version": "1.5.2",
+  "version": "1.6.0",
   "description": "NEWO CLI: sync AI Agent skills between NEWO platform and local files. Multi-customer workspaces, Git-first workflows, comprehensive project management.",
   "type": "module",
   "bin": {
