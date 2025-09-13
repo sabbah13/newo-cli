@@ -439,7 +439,7 @@ async function generateFlowsYaml(
   });
   
   // Post-process to fix enum formatting
-  yamlContent = yamlContent.replace(/"(!enum "[^"]+")"/g, '$1');
+  yamlContent = yamlContent.replace(/"(!enum \\"([^"]+)\\")"/g, '!enum "$2"');
   
   const yamlPath = flowsYamlPath(customer.idn);
   await writeFileSafe(yamlPath, yamlContent);
