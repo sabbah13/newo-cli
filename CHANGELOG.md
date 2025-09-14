@@ -5,6 +5,70 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.1] - 2025-09-13
+
+### Fixed
+- **YAML Enum Formatting**: Fixed enum formatting in `flows.yaml` generation to properly handle NEWO enum types
+  - Corrected enum value serialization from quoted strings to proper YAML enum format
+  - Fixed issue where enum values like `!enum "RunnerType.guidance"` were incorrectly quoted
+  - Ensures generated `flows.yaml` files are properly formatted for NEWO platform consumption
+
+### Enhanced
+- **ES Module Support**: Added `"type": "module"` to package.json for proper ES module handling
+  - Resolves Node.js warnings about module type detection
+  - Improves performance by eliminating module type guessing
+  - Ensures consistent ES module behavior across all environments
+
+## [1.6.0] - 2025-09-13
+
+### Added
+- **Multi-Customer Auto-Pull**: Revolutionary workflow improvement for multi-customer environments
+  - `newo pull` now automatically pulls from ALL customers when no default customer is set
+  - Eliminates the need to specify `--customer` flag or set `NEWO_DEFAULT_CUSTOMER` for bulk operations
+  - Maintains backward compatibility - individual customer selection still works with `--customer` flag
+  - Smart detection: single customer setup works as before, multi-customer setup auto-pulls all
+- **Publishing Infrastructure**: Complete automated publishing system for professional releases
+  - `scripts/publish-github.sh`: Automated GitHub publishing with releases, tags, and version management
+  - `scripts/publish-npm.sh`: Automated NPM publishing with validation and safety checks
+  - Comprehensive Makefile with 40+ commands for development and publishing workflows
+  - Version bump helpers (patch/minor/major) with semantic versioning support
+- **Enhanced Documentation**: Professional publishing and development documentation
+  - Complete "Publishing & Release Management" section with step-by-step workflows
+  - "Local Testing" section with comprehensive testing procedures
+  - Makefile command reference with organized development workflows
+  - Troubleshooting guides for common development and publishing issues
+
+### Enhanced
+- **Customer Configuration Logic**: New functions for flexible customer handling
+  - `tryGetDefaultCustomer()`: Non-throwing version that returns null for multi-customer scenarios
+  - `getAllCustomers()`: Returns array of all configured customers for batch operations
+  - Improved error handling and user feedback for customer selection scenarios
+- **CLI User Experience**: Enhanced command behavior and help documentation
+  - Updated help text to reflect auto-pull behavior: "uses default or all for pull"
+  - Clear progress indicators for multi-customer operations
+  - Better error messages and troubleshooting guidance
+- **Development Workflow**: Professional development and publishing infrastructure
+  - Makefile with color-coded output and comprehensive command organization
+  - Automated validation pipelines for publishing (build, test, lint, typecheck)
+  - Publishing scripts with safety checks and rollback procedures
+
+### Changed
+- **Pull Command Behavior**: Breaking change in multi-customer environments (improvement)
+  - Previously: Required explicit customer selection or default customer configuration
+  - Now: Automatically pulls from all customers when no default is set
+  - Single customer setups: No change in behavior
+  - Multi-customer setups: Significantly improved user experience
+- **Help Documentation**: Updated command descriptions and examples
+  - `newo pull` now shows "(all customers if no default)" in help text
+  - Enhanced multi-customer examples with auto-pull scenarios
+  - Updated usage patterns to reflect new workflow capabilities
+
+### Developer Experience
+- **Publishing Automation**: One-command publishing to both GitHub and NPM with full validation
+- **Comprehensive Testing**: Enhanced local testing documentation with step-by-step procedures
+- **Professional Infrastructure**: Industry-standard publishing pipeline with version management
+- **Quality Gates**: Automated validation before publishing (TypeScript, linting, building, package validation)
+
 ## [1.5.2] - 2025-01-15
 
 ### Enhanced

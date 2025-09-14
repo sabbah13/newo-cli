@@ -25,7 +25,7 @@ Mirror NEWO "Project → Agent → Flow → Skills" structure to local files wit
 
 **Option 1: Global Installation (Recommended)**
 ```bash
-npm install -g newo
+npm install -g newo@latest
 ```
 
 **Option 2: Local Project Installation**
