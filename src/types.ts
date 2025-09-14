@@ -210,17 +210,17 @@ export interface FlowsYamlEvent {
   title: string;
   idn: string;
   skill_selector: string;
-  skill_idn?: string | undefined;
-  state_idn?: string | undefined;
-  integration_idn?: string | undefined;
-  connector_idn?: string | undefined;
+  skill_idn?: string | null;
+  state_idn?: string | null;
+  integration_idn?: string | null;
+  connector_idn?: string | null;
   interrupt_mode: string;
 }
 
 export interface FlowsYamlState {
   title: string;
   idn: string;
-  default_value?: string | undefined;
+  default_value?: string | null;
   scope: string;
 }
 
@@ -238,7 +238,7 @@ export interface FlowsYamlFlow {
 
 export interface FlowsYamlAgent {
   agent_idn: string;
-  agent_description?: string | undefined;
+  agent_description?: string | null;
   agent_flows: FlowsYamlFlow[];
 }
 

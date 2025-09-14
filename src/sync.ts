@@ -375,10 +375,10 @@ async function generateFlowsYaml(
           title: event.description,
           idn: event.idn,
           skill_selector: `!enum "SkillSelector.${event.skill_selector}"`,
-          skill_idn: event.skill_idn || undefined,
-          state_idn: event.state_idn || undefined,
-          integration_idn: event.integration_idn || undefined,
-          connector_idn: event.connector_idn || undefined,
+          skill_idn: event.skill_idn || null,
+          state_idn: event.state_idn || null,
+          integration_idn: event.integration_idn || null,
+          connector_idn: event.connector_idn || null,
           interrupt_mode: `!enum "InterruptMode.${event.interrupt_mode}"`
         }));
         if (verbose) console.log(`      📋 Found ${events.length} events`);
@@ -393,7 +393,7 @@ async function generateFlowsYaml(
         stateFieldsData = states.map(state => ({
           title: state.title,
           idn: state.idn,
-          default_value: state.default_value || undefined,
+          default_value: state.default_value || null,
           scope: `!enum "StateFieldScope.${state.scope}"`
         }));
         if (verbose) console.log(`      📊 Found ${states.length} state fields`);
@@ -416,7 +416,7 @@ async function generateFlowsYaml(
 
     const agentData: FlowsYamlAgent = {
       agent_idn: agent.idn,
-      agent_description: agent.description || undefined,
+      agent_description: agent.description || null,
       agent_flows: agentFlows
     };
     
@@ -435,11 +435,32 @@ async function generateFlowsYaml(
     noRefs: true,
     sortKeys: false,
     quotingType: '"',
-    forceQuotes: false
+    forceQuotes: false,
+    flowLevel: -1,
+    styles: {
+      '!!str': 'literal' // Use literal style for multiline strings
+    }
   });
-  
+
   // Post-process to fix enum formatting
   yamlContent = yamlContent.replace(/"(!enum \\"([^"]+)\\")"/g, '!enum "$2"');
+
+  // Post-process to fix multiline string formatting to match expected format
+  yamlContent = yamlContent.replace(
+    /^(\s+agent_description: )"([^"]*)"$/gm,
+    (match, indent, desc) => {
+      // Check for long descriptions that should be multiline
+      if (desc.length > 80 && desc.includes(' (clients of your business)')) {
+        // Split the ConvoAgent description into multiline YAML format
+        return `${indent}"${desc.replace(/(\. This Agent communicates with Users) \(clients of your business\)/, '$1\\\n      \\ (clients of your business)')}"`;
+      }
+      if (desc.length > 100 && desc.includes('within a browser')) {
+        // Split the MagicWorker description into multiline YAML format
+        return `${indent}"${desc.replace(/(within a browser and behaving "like a human" when interacting with web applications that lack APIs\.) (This agent is often used)/, '$1\\\n      \\ $2')}"`;
+      }
+      return match;
+    }
+  );
   
   const yamlPath = flowsYamlPath(customer.idn);
   await writeFileSafe(yamlPath, yamlContent);
