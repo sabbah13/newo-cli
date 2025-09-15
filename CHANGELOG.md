@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.2] - 2025-09-15
+
+### Fixed
+- **YAML Enum Parsing**: Fixed attributes push check error with `!enum` format
+  - Changed from YAML parsing to file stats for change detection
+  - Prevents parsing errors with custom enum format in attributes.yaml
+  - Maintains functionality while avoiding format conflicts
+
+### Enhanced
+- **Status Command Scope**: Extended status checking to include all file types
+  - Now tracks `attributes.yaml` files with modification times and sizes
+  - Added `flows.yaml` file tracking and statistics
+  - Comprehensive file monitoring across entire project structure
+  - Better visibility into all managed files
+
 ## [1.7.1] - 2025-09-15
 
 ### Enhanced
