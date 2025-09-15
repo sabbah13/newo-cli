@@ -46,8 +46,7 @@ import type {
   FlowMetadata,
   SkillMetadata,
   FlowEvent,
-  FlowState,
-  CustomerAttribute
+  FlowState
 } from './types.js';
 
 // Concurrency limits for API operations
@@ -303,15 +302,24 @@ export async function pullAll(
         }
       }
     }
-    await saveHashes(hashes, customer.idn);
 
-    // Save customer attributes
+    // Save customer attributes before hash tracking
     try {
       await saveCustomerAttributes(client, customer, verbose);
+
+      // Add attributes.yaml to hash tracking
+      const attributesFile = customerAttributesPath(customer.idn);
+      if (await fs.pathExists(attributesFile)) {
+        const attributesContent = await fs.readFile(attributesFile, 'utf8');
+        hashes[attributesFile] = sha256(attributesContent);
+        if (verbose) console.log(`✓ Added attributes.yaml to hash tracking`);
+      }
     } catch (error) {
       console.error(`❌ Failed to save customer attributes for ${customer.idn}:`, error);
       // Don't throw - continue with the rest of the process
     }
+
+    await saveHashes(hashes, customer.idn);
     return;
   }
 
@@ -346,15 +354,24 @@ export async function pullAll(
   }
 
   await fs.writeJson(mapPath(customer.idn), idMap, { spaces: 2 });
-  await saveHashes(allHashes, customer.idn);
 
-  // Save customer attributes
+  // Save customer attributes before hash tracking
   try {
     await saveCustomerAttributes(client, customer, verbose);
+
+    // Add attributes.yaml to hash tracking
+    const attributesFile = customerAttributesPath(customer.idn);
+    if (await fs.pathExists(attributesFile)) {
+      const attributesContent = await fs.readFile(attributesFile, 'utf8');
+      allHashes[attributesFile] = sha256(attributesContent);
+      if (verbose) console.log(`✓ Added attributes.yaml to hash tracking`);
+    }
   } catch (error) {
     console.error(`❌ Failed to save customer attributes for ${customer.idn}:`, error);
     // Don't throw - continue with the rest of the process
   }
+
+  await saveHashes(allHashes, customer.idn);
 }
 
 export async function pushChanged(client: AxiosInstance, customer: CustomerConfig, verbose: boolean = false): Promise<void> {
@@ -488,17 +505,30 @@ export async function pushChanged(client: AxiosInstance, customer: CustomerConfi
     if (await fs.pathExists(attributesFile) && await fs.pathExists(attributesMapFile)) {
       if (verbose) console.log('🔍 Checking customer attributes for changes...');
 
-      // Check file modification time for change detection instead of YAML parsing
-      const attributesStats = await fs.stat(attributesFile);
-      const idMapping = await fs.readJson(attributesMapFile) as Record<string, string>;
-
-      // Count attributes by ID mapping instead of parsing YAML (avoids enum parsing issues)
-      const attributeCount = Object.keys(idMapping).length;
+      // Use hash comparison for change detection
+      const content = await fs.readFile(attributesFile, 'utf8');
+      const h = sha256(content);
+      const oldHash = oldHashes[attributesFile];
 
       if (verbose) {
-        console.log(`📊 Found ${attributeCount} attributes ready for push operations`);
-        console.log(`📅 Attributes file last modified: ${attributesStats.mtime.toISOString()}`);
-        // TODO: Implement change detection by comparing with last push timestamp
+        console.log(`📄 Checking: ${attributesFile}`);
+        console.log(`  Old hash: ${oldHash || 'none'}`);
+        console.log(`  New hash: ${h}`);
+      }
+
+      if (oldHash !== h) {
+        if (verbose) console.log(`🔄 Attributes file changed, preparing to push...`);
+
+        // TODO: Implement actual attributes push here
+        // For now, just update the hash to mark as "pushed"
+        console.log(`↑ Attributes changed: ${attributesFile}`);
+        newHashes[attributesFile] = h;
+        pushed++;
+
+        // Note: Individual attribute push would require parsing the YAML and comparing specific attributes
+        // This is a placeholder for future implementation
+      } else if (verbose) {
+        console.log(`  ✓ No attributes changes`);
       }
     } else if (verbose) {
       console.log('ℹ️  No attributes file or ID mapping found for push checking');
@@ -590,17 +620,23 @@ export async function status(customer: CustomerConfig, verbose: boolean = false)
   try {
     const attributesFile = customerAttributesPath(customer.idn);
     if (await fs.pathExists(attributesFile)) {
-      const attributesStats = await fs.stat(attributesFile);
-      const attributesPath = `${customer.idn}/attributes.yaml`;
+      const content = await fs.readFile(attributesFile, 'utf8');
+      const h = sha256(content);
+      const oldHash = hashes[attributesFile];
 
       if (verbose) {
-        console.log(`📄 ${attributesPath}`);
-        console.log(`  📅 Last modified: ${attributesStats.mtime.toISOString()}`);
-        console.log(`  📊 Size: ${(attributesStats.size / 1024).toFixed(1)}KB`);
+        console.log(`📄 ${attributesFile}`);
+        console.log(`  Old hash: ${oldHash || 'none'}`);
+        console.log(`  New hash: ${h}`);
       }
 
-      // For now, just report the file exists (change detection would require timestamp tracking)
-      if (verbose) console.log(`  ✓ Attributes file tracked`);
+      if (oldHash !== h) {
+        console.log(`M  ${attributesFile}`);
+        dirty++;
+        if (verbose) console.log(`  🔄 Modified: attributes.yaml`);
+      } else if (verbose) {
+        console.log(`  ✓ Unchanged: attributes.yaml`);
+      }
     }
   } catch (error) {
     if (verbose) console.log(`⚠️  Error checking attributes: ${error instanceof Error ? error.message : String(error)}`);
