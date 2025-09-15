@@ -39,18 +39,74 @@ export function flowsYamlPath(customerIdn: string): string {
   return path.posix.join(customerProjectsDir(customerIdn), 'flows.yaml');
 }
 
+export function customerAttributesPath(customerIdn: string): string {
+  return path.posix.join(customerDir(customerIdn), 'attributes.yaml');
+}
+
+export function customerAttributesMapPath(customerIdn: string): string {
+  return path.join(customerStateDir(customerIdn), 'attributes-map.json');
+}
+
+// Legacy skill path - direct file
 export function skillPath(
   customerIdn: string,
-  projectIdn: string, 
-  agentIdn: string, 
-  flowIdn: string, 
-  skillIdn: string, 
+  projectIdn: string,
+  agentIdn: string,
+  flowIdn: string,
+  skillIdn: string,
   runnerType: RunnerType = 'guidance'
 ): string {
   const extension = runnerType === 'nsl' ? '.jinja' : '.guidance';
   return path.posix.join(customerProjectsDir(customerIdn), projectIdn, agentIdn, flowIdn, `${skillIdn}${extension}`);
 }
 
+// New hierarchical structure paths
+export function skillFolderPath(
+  customerIdn: string,
+  projectIdn: string,
+  agentIdn: string,
+  flowIdn: string,
+  skillIdn: string
+): string {
+  return path.posix.join(customerProjectsDir(customerIdn), projectIdn, agentIdn, flowIdn, skillIdn);
+}
+
+export function skillScriptPath(
+  customerIdn: string,
+  projectIdn: string,
+  agentIdn: string,
+  flowIdn: string,
+  skillIdn: string,
+  runnerType: RunnerType = 'guidance'
+): string {
+  const extension = runnerType === 'nsl' ? '.jinja' : '.guidance';
+  return path.posix.join(skillFolderPath(customerIdn, projectIdn, agentIdn, flowIdn, skillIdn), `skill${extension}`);
+}
+
+// Metadata paths for hierarchical structure
+export function projectMetadataPath(customerIdn: string, projectIdn: string): string {
+  return path.posix.join(customerProjectsDir(customerIdn), projectIdn, 'metadata.yaml');
+}
+
+export function agentMetadataPath(customerIdn: string, projectIdn: string, agentIdn: string): string {
+  return path.posix.join(customerProjectsDir(customerIdn), projectIdn, agentIdn, 'metadata.yaml');
+}
+
+export function flowMetadataPath(customerIdn: string, projectIdn: string, agentIdn: string, flowIdn: string): string {
+  return path.posix.join(customerProjectsDir(customerIdn), projectIdn, agentIdn, flowIdn, 'metadata.yaml');
+}
+
+export function skillMetadataPath(
+  customerIdn: string,
+  projectIdn: string,
+  agentIdn: string,
+  flowIdn: string,
+  skillIdn: string
+): string {
+  return path.posix.join(skillFolderPath(customerIdn, projectIdn, agentIdn, flowIdn, skillIdn), 'metadata.yaml');
+}
+
+// Legacy metadata path - keep for backwards compatibility
 export function metadataPath(customerIdn: string, projectIdn: string): string {
   return path.posix.join(customerProjectsDir(customerIdn), projectIdn, 'metadata.json');
 }

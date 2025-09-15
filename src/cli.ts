@@ -2,7 +2,7 @@
 import minimist from 'minimist';
 import dotenv from 'dotenv';
 import { makeClient, getProjectMeta, importAkbArticle } from './api.js';
-import { pullAll, pushChanged, status } from './sync.js';
+import { pullAll, pushChanged, status, saveCustomerAttributes } from './sync.js';
 import { parseAkbFile, prepareArticlesForImport } from './akb.js';
 import { initializeEnvironment, ENV, EnvValidationError } from './env.js';
 import { parseCustomerConfigAsync, listCustomers, getCustomer, getDefaultCustomer, tryGetDefaultCustomer, getAllCustomers, validateCustomerConfig } from './customerAsync.js';
@@ -281,6 +281,10 @@ File Structure:
     }
     const meta = await getProjectMeta(client, selectedCustomer.projectId);
     console.log(JSON.stringify(meta, null, 2));
+  } else if (cmd === 'pull-attributes') {
+    console.log(`🔍 Fetching customer attributes for ${selectedCustomer.idn}...`);
+    await saveCustomerAttributes(client, selectedCustomer, verbose);
+    console.log(`✅ Customer attributes saved to newo_customers/${selectedCustomer.idn}/attributes.yaml`);
   } else if (cmd === 'import-akb') {
     const akbFile = args._[1];
     const personaId = args._[2];

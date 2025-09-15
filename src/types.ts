@@ -34,6 +34,23 @@ export interface CustomerProfile {
   [key: string]: any;
 }
 
+export interface CustomerAttribute {
+  id?: string; // Required for push operations
+  idn: string;
+  value: string | object;
+  title: string;
+  description: string;
+  group: string;
+  is_hidden: boolean;
+  possible_values: string[];
+  value_type: string;
+}
+
+export interface CustomerAttributesResponse {
+  groups: string[];
+  attributes: CustomerAttribute[];
+}
+
 export interface MultiCustomerConfig {
   customers: Record<string, CustomerConfig>;
   defaultCustomer?: string | undefined;
@@ -273,4 +290,50 @@ export interface StatusResult {
   status: FileStatus;
   oldHash?: string;
   newHash?: string;
+}
+
+// Hierarchical Metadata Types for Individual YAML Files
+export interface ProjectMetadata {
+  id: string;
+  idn: string;
+  title: string;
+  description?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface AgentMetadata {
+  id: string;
+  idn: string;
+  title?: string;
+  description?: string;
+  // Additional agent settings from UI could be added here
+  persona?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface FlowMetadata {
+  id: string;
+  idn: string;
+  title: string;
+  description?: string;
+  default_runner_type: RunnerType;
+  default_model: ModelConfig;
+  events: FlowEvent[];
+  state_fields: FlowState[];
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface SkillMetadata {
+  id: string;
+  idn: string;
+  title: string;
+  runner_type: RunnerType;
+  model: ModelConfig;
+  parameters: SkillParameter[];
+  path?: string;
+  created_at?: string;
+  updated_at?: string;
 }

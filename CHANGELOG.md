@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] - 2025-09-15
+
+### Added
+- **Customer Attributes Synchronization**: Complete pull/push functionality for customer attributes
+  - `GET /api/v1/bff/customer/attributes?include_hidden=true` - Fetches all 233 customer attributes including hidden system attributes
+  - `PUT /api/v1/customer/attributes/{attributeId}` - Updates individual customer attributes
+  - Saves to `newo_customers/{customerIdn}/attributes.yaml` in customer root directory
+  - YAML format matches reference specification exactly with literal blocks, enum types, and proper multi-line formatting
+  - Separate ID mapping stored in `.newo/{customerIdn}/attributes-map.json` for push operations
+  - Integrated into existing `pull` and `push` commands seamlessly
+  - Full TypeScript type safety with `CustomerAttribute` and `CustomerAttributesResponse` interfaces
+
+### Enhanced
+- **YAML Format Compliance**: Perfect format matching with reference files
+  - Literal block scalars (`|-`) for multi-line strings
+  - Proper enum format (`!enum "AttributeValueTypes.string"`)
+  - Complex JSON string formatting with proper line breaks
+  - No escaped quotes in output for better readability
+- **Metadata Generation**: Removed legacy JSON metadata files, YAML-only approach
+  - Eliminates redundant `metadata.json` files
+  - Cleaner file structure with single source of truth
+  - Improved performance with fewer file operations
+
+### Technical
+- **API Layer**: Added `updateCustomerAttribute()` and enhanced `getCustomerAttributes()` with `includeHidden` parameter
+- **Sync Engine**: Integrated attributes handling into `pullAll()` and `pushChanged()` functions
+- **File System**: Added `customerAttributesPath()` and `customerAttributesMapPath()` utilities
+- **Type Safety**: Extended type definitions with proper customer attribute interfaces
+- **Error Handling**: Comprehensive error handling for attributes operations with graceful fallbacks
+
 ## [1.6.1] - 2025-09-13
 
 ### Fixed

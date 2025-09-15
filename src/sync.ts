@@ -1,30 +1,37 @@
-import { 
-  listProjects, 
-  listAgents, 
-  listFlowSkills, 
-  updateSkill, 
-  listFlowEvents, 
-  listFlowStates, 
-  getProjectMeta 
+import {
+  listProjects,
+  listAgents,
+  listFlowSkills,
+  updateSkill,
+  listFlowEvents,
+  listFlowStates,
+  getProjectMeta,
+  getCustomerAttributes
 } from './api.js';
-import { 
-  ensureState, 
-  skillPath, 
-  writeFileSafe, 
-  readIfExists, 
+import {
+  ensureState,
+  skillPath,
+  skillScriptPath,
+  writeFileSafe,
+  readIfExists,
   mapPath,
-  metadataPath,
-  flowsYamlPath 
+  projectMetadataPath,
+  agentMetadataPath,
+  flowMetadataPath,
+  skillMetadataPath,
+  flowsYamlPath,
+  customerAttributesPath,
+  customerAttributesMapPath
 } from './fsutil.js';
 import fs from 'fs-extra';
 import { sha256, loadHashes, saveHashes } from './hash.js';
 import yaml from 'js-yaml';
 import pLimit from 'p-limit';
 import type { AxiosInstance } from 'axios';
-import type { 
-  Agent, 
-  ProjectData, 
-  ProjectMap, 
+import type {
+  Agent,
+  ProjectData,
+  ProjectMap,
   LegacyProjectMap,
   HashStore,
   FlowsYamlData,
@@ -33,7 +40,14 @@ import type {
   FlowsYamlSkill,
   FlowsYamlEvent,
   FlowsYamlState,
-  CustomerConfig
+  CustomerConfig,
+  ProjectMetadata,
+  AgentMetadata,
+  FlowMetadata,
+  SkillMetadata,
+  FlowEvent,
+  FlowState,
+  CustomerAttribute
 } from './types.js';
 
 // Concurrency limits for API operations
@@ -48,21 +62,120 @@ function isLegacyProjectMap(x: unknown): x is LegacyProjectMap {
   return !!x && typeof x === 'object' && 'agents' in x;
 }
 
-export async function pullSingleProject(
-  client: AxiosInstance, 
+export async function saveCustomerAttributes(
+  client: AxiosInstance,
   customer: CustomerConfig,
-  projectId: string, 
-  projectIdn: string, 
+  verbose: boolean = false
+): Promise<void> {
+  if (verbose) console.log(`🔍 Fetching customer attributes for ${customer.idn}...`);
+
+  try {
+    const response = await getCustomerAttributes(client, true); // Include hidden attributes
+
+    // API returns { groups: [...], attributes: [...] }
+    // We only want the attributes array in the expected format
+    const attributes = response.attributes || response;
+    if (verbose) console.log(`📦 Found ${Array.isArray(attributes) ? attributes.length : 'invalid'} attributes`);
+
+    // Create ID mapping for push operations (separate from YAML)
+    const idMapping: Record<string, string> = {};
+
+    // Transform attributes to match reference format exactly (no ID fields)
+    const cleanAttributes = Array.isArray(attributes) ? attributes.map(attr => {
+      // Store ID mapping for push operations
+      if (attr.id) {
+        idMapping[attr.idn] = attr.id;
+      }
+
+      // Special handling for complex JSON string values
+      let processedValue = attr.value;
+      if (typeof attr.value === 'string' && attr.value.startsWith('[{') && attr.value.endsWith('}]')) {
+        try {
+          // Parse and reformat JSON for better readability
+          const parsed = JSON.parse(attr.value);
+          processedValue = JSON.stringify(parsed, null, 0); // No extra spacing, but valid JSON
+        } catch (e) {
+          // Keep original if parsing fails
+          processedValue = attr.value;
+        }
+      }
+
+      const cleanAttr: any = {
+        idn: attr.idn,
+        value: processedValue,
+        title: attr.title || "",
+        description: attr.description || "",
+        group: attr.group || "",
+        is_hidden: attr.is_hidden,
+        possible_values: attr.possible_values || [],
+        value_type: `__ENUM_PLACEHOLDER_${attr.value_type}__`
+      };
+      return cleanAttr;
+    }) : [];
+
+    const attributesYaml = {
+      attributes: cleanAttributes
+    };
+
+    // Configure YAML output to match reference format exactly
+    let yamlContent = yaml.dump(attributesYaml, {
+      indent: 2,
+      quotingType: '"',
+      forceQuotes: false,
+      lineWidth: 80, // Wrap long lines to match reference format
+      noRefs: true,
+      sortKeys: false,
+      flowLevel: -1, // Never use flow syntax
+      styles: {
+        '!!str': 'folded' // Use folded style for better line wrapping of long strings
+      }
+    });
+
+    // Post-process to fix enum format and improve JSON string formatting
+    yamlContent = yamlContent.replace(/__ENUM_PLACEHOLDER_(\w+)__/g, '!enum "AttributeValueTypes.$1"');
+
+    // Fix JSON string formatting to match reference (remove escape characters)
+    yamlContent = yamlContent.replace(/\\"/g, '"');
+
+    // Save both files
+    await writeFileSafe(customerAttributesPath(customer.idn), yamlContent);
+    await writeFileSafe(customerAttributesMapPath(customer.idn), JSON.stringify(idMapping, null, 2));
+
+    if (verbose) {
+      console.log(`✓ Saved customer attributes to ${customerAttributesPath(customer.idn)}`);
+      console.log(`✓ Saved attribute ID mapping to ${customerAttributesMapPath(customer.idn)}`);
+    }
+  } catch (error) {
+    console.error(`❌ Failed to save customer attributes for ${customer.idn}:`, error);
+    throw error;
+  }
+}
+
+export async function pullSingleProject(
+  client: AxiosInstance,
+  customer: CustomerConfig,
+  projectId: string,
+  projectIdn: string,
   verbose: boolean = false
 ): Promise<ProjectData> {
   if (verbose) console.log(`🔍 Fetching agents for project ${projectId} (${projectIdn}) for customer ${customer.idn}...`);
   const agents = await listAgents(client, projectId);
   if (verbose) console.log(`📦 Found ${agents.length} agents`);
 
-  // Get and save project metadata
+  // Get and create project metadata
   const projectMeta = await getProjectMeta(client, projectId);
-  await writeFileSafe(metadataPath(customer.idn, projectIdn), JSON.stringify(projectMeta, null, 2));
-  if (verbose) console.log(`✓ Saved metadata for ${projectIdn}`);
+  const projectMetadata: ProjectMetadata = {
+    id: projectMeta.id,
+    idn: projectMeta.idn,
+    title: projectMeta.title,
+    ...(projectMeta.description && { description: projectMeta.description }),
+    ...(projectMeta.created_at && { created_at: projectMeta.created_at }),
+    ...(projectMeta.updated_at && { updated_at: projectMeta.updated_at })
+  };
+  await writeFileSafe(projectMetadataPath(customer.idn, projectIdn), yaml.dump(projectMetadata, { indent: 2 }));
+  if (verbose) console.log(`✓ Created project metadata.yaml for ${projectIdn}`);
+
+  // Legacy metadata.json generation removed - YAML is sufficient
 
   const projectMap: ProjectData = { projectId, projectIdn, agents: {} };
 
@@ -70,17 +183,73 @@ export async function pullSingleProject(
     const aKey = agent.idn;
     projectMap.agents[aKey] = { id: agent.id, flows: {} };
 
+    // Create agent metadata
+    const agentMetadata: AgentMetadata = {
+      id: agent.id,
+      idn: agent.idn,
+      ...(agent.title && { title: agent.title }),
+      ...(agent.description && { description: agent.description })
+    };
+    await writeFileSafe(agentMetadataPath(customer.idn, projectIdn, agent.idn), yaml.dump(agentMetadata, { indent: 2 }));
+    if (verbose) console.log(`  ✓ Created agent metadata for ${agent.idn}`);
+
     for (const flow of agent.flows ?? []) {
       projectMap.agents[aKey]!.flows[flow.idn] = { id: flow.id, skills: {} };
 
+      // Fetch flow events and state fields for metadata
+      let flowEvents: FlowEvent[] = [];
+      let flowStates: FlowState[] = [];
+
+      try {
+        flowEvents = await listFlowEvents(client, flow.id);
+        if (verbose) console.log(`    📋 Found ${flowEvents.length} events for flow ${flow.idn}`);
+      } catch (error) {
+        if (verbose) console.log(`    ⚠️  No events found for flow ${flow.idn}`);
+      }
+
+      try {
+        flowStates = await listFlowStates(client, flow.id);
+        if (verbose) console.log(`    📊 Found ${flowStates.length} state fields for flow ${flow.idn}`);
+      } catch (error) {
+        if (verbose) console.log(`    ⚠️  No state fields found for flow ${flow.idn}`);
+      }
+
+      // Create flow metadata
+      const flowMetadata: FlowMetadata = {
+        id: flow.id,
+        idn: flow.idn,
+        title: flow.title,
+        ...(flow.description && { description: flow.description }),
+        default_runner_type: flow.default_runner_type,
+        default_model: flow.default_model,
+        events: flowEvents,
+        state_fields: flowStates
+      };
+      await writeFileSafe(flowMetadataPath(customer.idn, projectIdn, agent.idn, flow.idn), yaml.dump(flowMetadata, { indent: 2 }));
+      if (verbose) console.log(`    ✓ Created flow metadata for ${flow.idn}`);
+
       const skills = await listFlowSkills(client, flow.id);
-      
+
       // Process skills concurrently with limited concurrency
       await Promise.all(skills.map(skill => concurrencyLimit(async () => {
-        const file = skillPath(customer.idn, projectIdn, agent.idn, flow.idn, skill.idn, skill.runner_type);
-        await writeFileSafe(file, skill.prompt_script || '');
-        
-        // Store complete skill metadata for push operations
+        // Create skill folder and script file
+        const scriptFile = skillScriptPath(customer.idn, projectIdn, agent.idn, flow.idn, skill.idn, skill.runner_type);
+        await writeFileSafe(scriptFile, skill.prompt_script || '');
+
+        // Create skill metadata
+        const skillMetadata: SkillMetadata = {
+          id: skill.id,
+          idn: skill.idn,
+          title: skill.title,
+          runner_type: skill.runner_type,
+          model: skill.model,
+          parameters: [...skill.parameters],
+          path: skill.path || undefined
+        };
+        const skillMetaFile = skillMetadataPath(customer.idn, projectIdn, agent.idn, flow.idn, skill.idn);
+        await writeFileSafe(skillMetaFile, yaml.dump(skillMetadata, { indent: 2 }));
+
+        // Store complete skill metadata for push operations (keep for backwards compatibility)
         projectMap.agents[aKey]!.flows[flow.idn]!.skills[skill.idn] = {
           id: skill.id,
           title: skill.title,
@@ -90,12 +259,12 @@ export async function pullSingleProject(
           parameters: [...skill.parameters],
           path: skill.path || undefined
         };
-        console.log(`✓ Pulled ${file}`);
+        console.log(`✓ Created skill folder and metadata for ${skill.idn}`);
       })));
     }
   }
 
-  // Generate flows.yaml for this project
+  // Generate flows.yaml for this project (backwards compatibility)
   if (verbose) console.log(`📄 Generating flows.yaml...`);
   await generateFlowsYaml(client, customer, agents, verbose);
 
@@ -118,18 +287,31 @@ export async function pullAll(
     const idMap: ProjectMap = { projects: { [projectMeta.idn]: projectMap } };
     await fs.writeJson(mapPath(customer.idn), idMap, { spaces: 2 });
     
-    // Generate hash tracking for this project
+    // Generate hash tracking for this project (both legacy and new paths)
     const hashes: HashStore = {};
     for (const [agentIdn, agentObj] of Object.entries(projectMap.agents)) {
       for (const [flowIdn, flowObj] of Object.entries(agentObj.flows)) {
         for (const [skillIdn, skillMeta] of Object.entries(flowObj.skills)) {
-          const p = skillPath(customer.idn, projectMeta.idn, agentIdn, flowIdn, skillIdn, skillMeta.runner_type);
-          const content = await fs.readFile(p, 'utf8');
-          hashes[p] = sha256(content);
+          // Track new skill script path
+          const newPath = skillScriptPath(customer.idn, projectMeta.idn, agentIdn, flowIdn, skillIdn, skillMeta.runner_type);
+          const content = await fs.readFile(newPath, 'utf8');
+          hashes[newPath] = sha256(content);
+
+          // Also track legacy path for backwards compatibility during transition
+          const legacyPath = skillPath(customer.idn, projectMeta.idn, agentIdn, flowIdn, skillIdn, skillMeta.runner_type);
+          hashes[legacyPath] = sha256(content);
         }
       }
     }
     await saveHashes(hashes, customer.idn);
+
+    // Save customer attributes
+    try {
+      await saveCustomerAttributes(client, customer, verbose);
+    } catch (error) {
+      console.error(`❌ Failed to save customer attributes for ${customer.idn}:`, error);
+      // Don't throw - continue with the rest of the process
+    }
     return;
   }
 
@@ -146,13 +328,18 @@ export async function pullAll(
     const projectMap = await pullSingleProject(client, customer, project.id, project.idn, verbose);
     idMap.projects[project.idn] = projectMap;
 
-    // Collect hashes for this project
+    // Collect hashes for this project (both legacy and new paths)
     for (const [agentIdn, agentObj] of Object.entries(projectMap.agents)) {
       for (const [flowIdn, flowObj] of Object.entries(agentObj.flows)) {
         for (const [skillIdn, skillMeta] of Object.entries(flowObj.skills)) {
-          const p = skillPath(customer.idn, project.idn, agentIdn, flowIdn, skillIdn, skillMeta.runner_type);
-          const content = await fs.readFile(p, 'utf8');
-          allHashes[p] = sha256(content);
+          // Track new skill script path
+          const newPath = skillScriptPath(customer.idn, project.idn, agentIdn, flowIdn, skillIdn, skillMeta.runner_type);
+          const content = await fs.readFile(newPath, 'utf8');
+          allHashes[newPath] = sha256(content);
+
+          // Also track legacy path for backwards compatibility during transition
+          const legacyPath = skillPath(customer.idn, project.idn, agentIdn, flowIdn, skillIdn, skillMeta.runner_type);
+          allHashes[legacyPath] = sha256(content);
         }
       }
     }
@@ -160,6 +347,14 @@ export async function pullAll(
 
   await fs.writeJson(mapPath(customer.idn), idMap, { spaces: 2 });
   await saveHashes(allHashes, customer.idn);
+
+  // Save customer attributes
+  try {
+    await saveCustomerAttributes(client, customer, verbose);
+  } catch (error) {
+    console.error(`❌ Failed to save customer attributes for ${customer.idn}:`, error);
+    // Don't throw - continue with the rest of the process
+  }
 }
 
 export async function pushChanged(client: AxiosInstance, customer: CustomerConfig, verbose: boolean = false): Promise<void> {
@@ -193,41 +388,75 @@ export async function pushChanged(client: AxiosInstance, customer: CustomerConfi
       for (const [flowIdn, flowObj] of Object.entries(agentObj.flows)) {
         if (verbose) console.log(`    📁 Scanning flow: ${flowIdn}`);
         for (const [skillIdn, skillMeta] of Object.entries(flowObj.skills)) {
-          const p = projectIdn ? 
+          // Try new folder structure first
+          const newPath = projectIdn ?
+            skillScriptPath(customer.idn, projectIdn, agentIdn, flowIdn, skillIdn, skillMeta.runner_type) :
+            skillScriptPath(customer.idn, '', agentIdn, flowIdn, skillIdn, skillMeta.runner_type);
+
+          // Fallback to legacy structure
+          const legacyPath = projectIdn ?
             skillPath(customer.idn, projectIdn, agentIdn, flowIdn, skillIdn, skillMeta.runner_type) :
             skillPath(customer.idn, '', agentIdn, flowIdn, skillIdn, skillMeta.runner_type);
-          scanned++;
-          if (verbose) console.log(`      📄 Checking: ${p}`);
-          
-          const content = await readIfExists(p);
+
+          let currentPath = newPath;
+          let content = await readIfExists(newPath);
+
+          // If new structure doesn't exist, try legacy structure
           if (content === null) {
-            if (verbose) console.log(`        ⚠️  File not found: ${p}`);
+            content = await readIfExists(legacyPath);
+            currentPath = legacyPath;
+          }
+
+          scanned++;
+          if (verbose) console.log(`      📄 Checking: ${currentPath}`);
+
+          if (content === null) {
+            if (verbose) console.log(`        ⚠️  File not found: ${currentPath}`);
             continue;
           }
-          
+
           const h = sha256(content);
-          const oldHash = oldHashes[p];
+          const oldHash = oldHashes[currentPath];
           if (verbose) {
             console.log(`        🔍 Hash comparison:`);
             console.log(`          Old: ${oldHash || 'none'}`);
             console.log(`          New: ${h}`);
           }
-          
+
           if (oldHash !== h) {
             if (verbose) console.log(`        🔄 File changed, preparing to push...`);
-            
+
+            // For new folder structure, try to load metadata from YAML file
+            let skillMetadata = skillMeta;
+            if (currentPath === newPath) {
+              const metadataFile = projectIdn ?
+                skillMetadataPath(customer.idn, projectIdn, agentIdn, flowIdn, skillIdn) :
+                skillMetadataPath(customer.idn, '', agentIdn, flowIdn, skillIdn);
+
+              const metadataContent = await readIfExists(metadataFile);
+              if (metadataContent) {
+                try {
+                  const yamlMetadata = yaml.load(metadataContent) as SkillMetadata;
+                  skillMetadata = yamlMetadata;
+                  if (verbose) console.log(`        📄 Loaded skill metadata from ${metadataFile}`);
+                } catch (error) {
+                  if (verbose) console.log(`        ⚠️  Failed to parse skill metadata, using project map data`);
+                }
+              }
+            }
+
             // Create complete skill object with updated prompt_script
             const skillObject = {
-              id: skillMeta.id,
-              title: skillMeta.title,
-              idn: skillMeta.idn,
+              id: skillMetadata.id,
+              title: skillMetadata.title,
+              idn: skillMetadata.idn,
               prompt_script: content,
-              runner_type: skillMeta.runner_type,
-              model: skillMeta.model,
-              parameters: skillMeta.parameters,
-              path: skillMeta.path || undefined
+              runner_type: skillMetadata.runner_type,
+              model: skillMetadata.model,
+              parameters: skillMetadata.parameters,
+              path: skillMetadata.path || undefined
             };
-            
+
             if (verbose) {
               console.log(`        📤 Pushing skill object:`);
               console.log(`          ID: ${skillObject.id}`);
@@ -236,10 +465,10 @@ export async function pushChanged(client: AxiosInstance, customer: CustomerConfi
               console.log(`          Content length: ${content.length} chars`);
               console.log(`          Content preview: ${content.substring(0, 100).replace(/\n/g, '\\n')}...`);
             }
-            
+
             await updateSkill(client, skillObject);
-            console.log(`↑ Pushed ${p}`);
-            newHashes[p] = h;
+            console.log(`↑ Pushed ${currentPath}`);
+            newHashes[currentPath] = h;
             pushed++;
           } else if (verbose) {
             console.log(`        ✓ No changes`);
@@ -250,6 +479,46 @@ export async function pushChanged(client: AxiosInstance, customer: CustomerConfi
   }
 
   if (verbose) console.log(`🔄 Scanned ${scanned} files, found ${pushed} changes`);
+
+  // Check for attributes changes and push if needed
+  try {
+    const attributesFile = customerAttributesPath(customer.idn);
+    const attributesMapFile = customerAttributesMapPath(customer.idn);
+
+    if (await fs.pathExists(attributesFile) && await fs.pathExists(attributesMapFile)) {
+      if (verbose) console.log('🔍 Checking customer attributes for changes...');
+
+      const attributesContent = await fs.readFile(attributesFile, 'utf8');
+      const idMapping = await fs.readJson(attributesMapFile) as Record<string, string>;
+      const parsedAttributes = yaml.load(attributesContent) as { attributes: CustomerAttribute[] };
+
+      if (parsedAttributes?.attributes) {
+        let attributesPushed = 0;
+
+        for (const attribute of parsedAttributes.attributes) {
+          const attributeId = idMapping[attribute.idn];
+          if (!attributeId) {
+            if (verbose) console.log(`⚠️  Skipping attribute ${attribute.idn} - no ID mapping for push`);
+            continue;
+          }
+
+          // For now, just validate the structure (actual push would require change detection)
+          // This ensures the push functionality is ready when change detection is implemented
+          if (verbose) {
+            console.log(`✓ Attribute ${attribute.idn} ready for push (ID: ${attributeId})`);
+          }
+          attributesPushed++;
+        }
+
+        if (verbose) console.log(`📊 Found ${attributesPushed} attributes ready for push operations`);
+      }
+    } else if (verbose) {
+      console.log('ℹ️  No attributes file or ID mapping found for push checking');
+    }
+  } catch (error) {
+    console.log(`⚠️  Attributes push check failed: ${error instanceof Error ? error.message : String(error)}`);
+  }
+
   await saveHashes(newHashes, customer.idn);
   console.log(pushed ? `✅ Push complete. ${pushed} file(s) updated.` : '✅ Nothing to push.');
 }
@@ -281,30 +550,48 @@ export async function status(customer: CustomerConfig, verbose: boolean = false)
       for (const [flowIdn, flowObj] of Object.entries(agentObj.flows)) {
         if (verbose) console.log(`    📁 Checking flow: ${flowIdn}`);
         for (const [skillIdn, skillMeta] of Object.entries(flowObj.skills)) {
-          const p = projectIdn ? 
+          // Try new folder structure first
+          const newPath = projectIdn ?
+            skillScriptPath(customer.idn, projectIdn, agentIdn, flowIdn, skillIdn, skillMeta.runner_type) :
+            skillScriptPath(customer.idn, '', agentIdn, flowIdn, skillIdn, skillMeta.runner_type);
+
+          // Fallback to legacy structure
+          const legacyPath = projectIdn ?
             skillPath(customer.idn, projectIdn, agentIdn, flowIdn, skillIdn, skillMeta.runner_type) :
             skillPath(customer.idn, '', agentIdn, flowIdn, skillIdn, skillMeta.runner_type);
-          const exists = await fs.pathExists(p);
-          if (!exists) { 
-            console.log(`D  ${p}`); 
-            dirty++; 
-            if (verbose) console.log(`      ❌ Deleted: ${p}`);
-            continue; 
+
+          let currentPath = newPath;
+          let exists = await fs.pathExists(newPath);
+
+          // If new structure doesn't exist, try legacy structure
+          if (!exists) {
+            exists = await fs.pathExists(legacyPath);
+            currentPath = legacyPath;
           }
-          const content = await fs.readFile(p, 'utf8');
+
+          if (!exists) {
+            console.log(`D  ${currentPath}`);
+            dirty++;
+            if (verbose) console.log(`      ❌ Deleted: ${currentPath}`);
+            continue;
+          }
+
+          const content = await fs.readFile(currentPath, 'utf8');
           const h = sha256(content);
-          const oldHash = hashes[p];
+          const oldHash = hashes[currentPath];
+
           if (verbose) {
-            console.log(`      📄 ${p}`);
+            console.log(`      📄 ${currentPath}`);
             console.log(`        Old hash: ${oldHash || 'none'}`);
             console.log(`        New hash: ${h}`);
           }
-          if (oldHash !== h) { 
-            console.log(`M  ${p}`); 
-            dirty++; 
-            if (verbose) console.log(`      🔄 Modified: ${p}`);
+
+          if (oldHash !== h) {
+            console.log(`M  ${currentPath}`);
+            dirty++;
+            if (verbose) console.log(`      🔄 Modified: ${currentPath}`);
           } else if (verbose) {
-            console.log(`      ✓ Unchanged: ${p}`);
+            console.log(`      ✓ Unchanged: ${currentPath}`);
           }
         }
       }

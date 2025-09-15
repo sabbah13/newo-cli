@@ -1,14 +1,16 @@
 import axios, { type AxiosInstance, type InternalAxiosRequestConfig, type AxiosResponse, type AxiosError } from 'axios';
 import { getValidAccessToken, forceReauth } from './auth.js';
 import { ENV } from './env.js';
-import type { 
-  ProjectMeta, 
-  Agent, 
-  Skill, 
-  FlowEvent, 
+import type {
+  ProjectMeta,
+  Agent,
+  Skill,
+  FlowEvent,
   FlowState,
   AkbImportArticle,
-  CustomerProfile
+  CustomerProfile,
+  CustomerAttribute,
+  CustomerAttributesResponse
 } from './types.js';
 
 // Per-request retry tracking to avoid shared state issues
@@ -127,4 +129,27 @@ export async function importAkbArticle(client: AxiosInstance, articleData: AkbIm
 export async function getCustomerProfile(client: AxiosInstance): Promise<CustomerProfile> {
   const response = await client.get<CustomerProfile>('/api/v1/customer/profile');
   return response.data;
+}
+
+export async function getCustomerAttributes(client: AxiosInstance, includeHidden: boolean = true): Promise<CustomerAttributesResponse> {
+  const response = await client.get<CustomerAttributesResponse>('/api/v1/bff/customer/attributes', {
+    params: { include_hidden: includeHidden }
+  });
+  return response.data;
+}
+
+export async function updateCustomerAttribute(client: AxiosInstance, attribute: CustomerAttribute): Promise<void> {
+  if (!attribute.id) {
+    throw new Error(`Attribute ${attribute.idn} is missing ID - cannot update`);
+  }
+  await client.put(`/api/v1/customer/attributes/${attribute.id}`, {
+    idn: attribute.idn,
+    value: attribute.value,
+    title: attribute.title,
+    description: attribute.description,
+    group: attribute.group,
+    is_hidden: attribute.is_hidden,
+    possible_values: attribute.possible_values,
+    value_type: attribute.value_type
+  });
 }
