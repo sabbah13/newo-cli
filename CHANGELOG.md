@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.1] - 2025-09-15
+
+### Enhanced
+- **Multi-Customer Commands**: Improved user experience for multi-customer operations
+  - `newo status` now automatically checks all customers when no default is specified
+  - `newo push` provides interactive customer selection dialog when multiple customers exist
+  - No more error messages for commands that support multi-customer operations
+  - Better user guidance with clear options for customer selection
+
+### Fixed
+- **Command Flow**: Moved customer selection logic into command-specific handlers
+  - Prevents early exit errors for multi-customer operations
+  - Each command now handles customer selection appropriately
+  - Maintains backward compatibility with single-customer setups
+
 ## [1.7.0] - 2025-09-15
 
 ### Added

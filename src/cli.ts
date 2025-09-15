@@ -158,40 +158,9 @@ async function main(): Promise<void> {
     return;
   }
 
-  if (args.customer) {
-    const customer = getCustomer(customerConfig, args.customer as string);
-    if (!customer) {
-      console.error(`Unknown customer: ${args.customer}`);
-      console.error(`Available customers: ${listCustomers(customerConfig).join(', ')}`);
-      process.exit(1);
-    }
-    selectedCustomer = customer;
-  } else {
-    // For pull command, try to get default but fall back to all customers if multiple exist
-    if (cmd === 'pull') {
-      try {
-        selectedCustomer = tryGetDefaultCustomer(customerConfig);
-        if (!selectedCustomer) {
-          // Multiple customers exist with no default, pull from all
-          allCustomers = getAllCustomers(customerConfig);
-          if (verbose) console.log(`📥 No default customer specified, pulling from all ${allCustomers.length} customers`);
-        }
-      } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : String(error);
-        console.error(message);
-        process.exit(1);
-      }
-    } else {
-      // For other commands, require explicit customer selection
-      try {
-        selectedCustomer = getDefaultCustomer(customerConfig);
-      } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : String(error);
-        console.error(message);
-        process.exit(1);
-      }
-    }
-  }
+  // Customer selection logic moved inside command processing to avoid early failures
+
+  if (verbose) console.log(`🔍 Command parsed: "${cmd}"`);
 
   if (!cmd || ['help', '-h', '--help'].includes(cmd)) {
     console.log(`NEWO CLI - Multi-Customer Support
@@ -204,7 +173,7 @@ Usage:
   newo import-akb <file> <persona_id> [--customer <idn>]  # import AKB articles from file
 
 Flags:
-  --customer <idn>             # specify customer (if not set, uses default or all for pull)
+  --customer <idn>             # specify customer (if not set, uses default or interactive selection)
   --verbose, -v                # enable detailed logging
 
 Environment Variables:
@@ -222,8 +191,9 @@ Multi-Customer Examples:
   # Commands:
   newo pull                                    # Pull from all customers (if no default set)
   newo pull --customer acme                    # Pull projects for Acme only
-  newo push --customer globex                  # Push changes for Globex
-  newo status                                  # Status for default customer
+  newo status                                  # Status for all customers (if no default set)
+  newo push                                    # Interactive selection for multiple customers
+  newo push --customer globex                  # Push changes for Globex only
 
 File Structure:
   newo_customers/
@@ -237,7 +207,27 @@ File Structure:
     return;
   }
 
+  if (verbose) console.log(`🔍 Starting command processing for: ${cmd}`);
+
   if (cmd === 'pull') {
+    // Handle customer selection for pull command
+    if (args.customer) {
+      const customer = getCustomer(customerConfig, args.customer as string);
+      if (!customer) {
+        console.error(`Unknown customer: ${args.customer}`);
+        console.error(`Available customers: ${listCustomers(customerConfig).join(', ')}`);
+        process.exit(1);
+      }
+      selectedCustomer = customer;
+    } else {
+      // Try to get default, fall back to all customers
+      selectedCustomer = tryGetDefaultCustomer(customerConfig);
+      if (!selectedCustomer) {
+        allCustomers = getAllCustomers(customerConfig);
+        if (verbose) console.log(`📥 No default customer specified, pulling from all ${allCustomers.length} customers`);
+      }
+    }
+
     if (selectedCustomer) {
       // Single customer pull
       const accessToken = await getValidAccessToken(selectedCustomer);
@@ -259,7 +249,128 @@ File Structure:
     return;
   }
 
+  if (cmd === 'status') {
+    // Handle customer selection for status command
+    if (args.customer) {
+      const customer = getCustomer(customerConfig, args.customer as string);
+      if (!customer) {
+        console.error(`Unknown customer: ${args.customer}`);
+        console.error(`Available customers: ${listCustomers(customerConfig).join(', ')}`);
+        process.exit(1);
+      }
+      selectedCustomer = customer;
+    } else {
+      // Try to get default, fall back to all customers
+      selectedCustomer = tryGetDefaultCustomer(customerConfig);
+      if (!selectedCustomer) {
+        allCustomers = getAllCustomers(customerConfig);
+        console.log(`🔄 Checking status for ${allCustomers.length} customers...`);
+      }
+    }
+
+    if (selectedCustomer) {
+      // Single customer status
+      await status(selectedCustomer, verbose);
+    } else if (allCustomers.length > 0) {
+      // Multi-customer status
+      for (const customer of allCustomers) {
+        console.log(`\n📋 Status for customer: ${customer.idn}`);
+        await status(customer, verbose);
+      }
+      console.log(`\n✅ Status check completed for all ${allCustomers.length} customers`);
+    }
+    return;
+  }
+
+  if (cmd === 'push') {
+    // Handle customer selection for push command
+    if (args.customer) {
+      const customer = getCustomer(customerConfig, args.customer as string);
+      if (!customer) {
+        console.error(`Unknown customer: ${args.customer}`);
+        console.error(`Available customers: ${listCustomers(customerConfig).join(', ')}`);
+        process.exit(1);
+      }
+      selectedCustomer = customer;
+    } else {
+      // Try to get default, provide interactive selection if multiple exist
+      selectedCustomer = tryGetDefaultCustomer(customerConfig);
+      if (!selectedCustomer) {
+        // Multiple customers exist with no default, ask user
+        allCustomers = getAllCustomers(customerConfig);
+        console.log(`\n📤 Multiple customers available for push:`);
+        allCustomers.forEach((customer, index) => {
+          console.log(`  ${index + 1}. ${customer.idn}`);
+        });
+        console.log(`  ${allCustomers.length + 1}. All customers`);
+
+        const readline = await import('readline');
+        const rl = readline.createInterface({
+          input: process.stdin,
+          output: process.stdout
+        });
+
+        const choice = await new Promise<string>((resolve) => {
+          rl.question(`\nSelect customer to push (1-${allCustomers.length + 1}): `, resolve);
+        });
+        rl.close();
+
+        const choiceNum = parseInt(choice.trim());
+        if (choiceNum === allCustomers.length + 1) {
+          // User selected "All customers"
+          console.log(`🔄 Pushing to all ${allCustomers.length} customers...`);
+        } else if (choiceNum >= 1 && choiceNum <= allCustomers.length) {
+          // User selected specific customer
+          selectedCustomer = allCustomers[choiceNum - 1] || null;
+          allCustomers = []; // Clear to indicate single customer mode
+          if (selectedCustomer) {
+            console.log(`🔄 Pushing to customer: ${selectedCustomer.idn}`);
+          }
+        } else {
+          console.error('Invalid choice. Exiting.');
+          process.exit(1);
+        }
+      }
+    }
+
+    if (selectedCustomer) {
+      // Single customer push
+      const accessToken = await getValidAccessToken(selectedCustomer);
+      const client = await makeClient(verbose, accessToken);
+      await pushChanged(client, selectedCustomer, verbose);
+    } else if (allCustomers.length > 0) {
+      // Multi-customer push (user selected "All customers")
+      console.log(`🔄 Pushing to ${allCustomers.length} customers...`);
+      for (const customer of allCustomers) {
+        console.log(`\n📤 Pushing for customer: ${customer.idn}`);
+        const accessToken = await getValidAccessToken(customer);
+        const client = await makeClient(verbose, accessToken);
+        await pushChanged(client, customer, verbose);
+      }
+      console.log(`\n✅ Push completed for all ${allCustomers.length} customers`);
+    }
+    return;
+  }
+
   // For all other commands, require a single selected customer
+  if (args.customer) {
+    const customer = getCustomer(customerConfig, args.customer as string);
+    if (!customer) {
+      console.error(`Unknown customer: ${args.customer}`);
+      console.error(`Available customers: ${listCustomers(customerConfig).join(', ')}`);
+      process.exit(1);
+    }
+    selectedCustomer = customer;
+  } else {
+    try {
+      selectedCustomer = getDefaultCustomer(customerConfig);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error(message);
+      process.exit(1);
+    }
+  }
+
   if (!selectedCustomer) {
     console.error('Customer selection required for this command');
     process.exit(1);
@@ -269,11 +380,7 @@ File Structure:
   const accessToken = await getValidAccessToken(selectedCustomer);
   const client = await makeClient(verbose, accessToken);
 
-  if (cmd === 'push') {
-    await pushChanged(client, selectedCustomer, verbose);
-  } else if (cmd === 'status') {
-    await status(selectedCustomer, verbose);
-  } else if (cmd === 'meta') {
+  if (cmd === 'meta') {
     if (!selectedCustomer.projectId) {
       console.error(`No project ID configured for customer ${selectedCustomer.idn}`);
       console.error(`Set NEWO_CUSTOMER_${selectedCustomer.idn.toUpperCase()}_PROJECT_ID in your .env file`);
