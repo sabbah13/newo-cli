@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.3] - 2025-09-15
+
+### Added
+- **Complete Attributes Change Tracking**: Full hash-based change detection for customer attributes
+  - Attributes.yaml files now included in hash tracking during pull operations
+  - Status command detects and reports modifications to attributes.yaml files
+  - Push command detects and handles attributes changes with proper synchronization
+  - Comprehensive workflow: modify → status shows change → push applies change → status shows clean
+
+### Enhanced
+- **File Synchronization Scope**: Extended to cover all file types in NEWO workspace
+  - Skills: .guidance and .jinja files with full hash tracking ✓
+  - Attributes: customer attributes.yaml with change detection ✓
+  - Metadata: flows.yaml and metadata.yaml files tracked ✓
+  - Multi-customer: all file types synchronized across multiple customers ✓
+
 ## [1.7.2] - 2025-09-15
 
 ### Fixed
