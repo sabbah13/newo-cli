@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.0] - 2025-09-15
+
+### Added
+- **Complete Metadata Change Tracking**: Comprehensive metadata.yaml file synchronization
+  - All metadata.yaml files now tracked with hash-based change detection
+  - Status command shows detailed metadata changes (title, runner_type, model)
+  - Push command automatically updates skills when metadata changes
+  - flows.yaml automatically regenerated when metadata changes detected
+  - Preserves flows.yaml format consistency with backup/comparison system
+
+### Enhanced
+- **Comprehensive File Synchronization**: All NEWO workspace files fully tracked
+  - Skills: .guidance and .jinja script files with hash tracking ✓
+  - Metadata: metadata.yaml files with skill updates + flows.yaml regeneration ✓
+  - Attributes: attributes.yaml with diff-based sync for 233 customer attributes ✓
+  - Flows: flows.yaml with automatic regeneration and format preservation ✓
+  - Multi-customer: All file types synchronized across multiple customer workspaces ✓
+
+### Technical
+- **flows.yaml Regeneration**: Automatic regeneration pipeline when metadata changes
+  - Creates backup before regeneration for format comparison
+  - Re-fetches project data to ensure accuracy
+  - Updates hash tracking for regenerated flows.yaml
+  - Maintains consistent YAML format structure
+
 ## [1.7.3] - 2025-09-15
 
 ### Added

@@ -301,6 +301,13 @@ export async function pullAll(
           const content = await fs.readFile(newPath, 'utf8');
           hashes[newPath] = sha256(content);
 
+          // Track skill metadata.yaml file
+          const metadataPath = skillMetadataPath(customer.idn, projectMeta.idn, agentIdn, flowIdn, skillIdn);
+          if (await fs.pathExists(metadataPath)) {
+            const metadataContent = await fs.readFile(metadataPath, 'utf8');
+            hashes[metadataPath] = sha256(metadataContent);
+          }
+
           // Also track legacy path for backwards compatibility during transition
           const legacyPath = skillPath(customer.idn, projectMeta.idn, agentIdn, flowIdn, skillIdn, skillMeta.runner_type);
           hashes[legacyPath] = sha256(content);
@@ -318,6 +325,14 @@ export async function pullAll(
         const attributesContent = await fs.readFile(attributesFile, 'utf8');
         hashes[attributesFile] = sha256(attributesContent);
         if (verbose) console.log(`✓ Added attributes.yaml to hash tracking`);
+      }
+
+      // Add flows.yaml to hash tracking
+      const flowsFile = flowsYamlPath(customer.idn);
+      if (await fs.pathExists(flowsFile)) {
+        const flowsContent = await fs.readFile(flowsFile, 'utf8');
+        hashes[flowsFile] = sha256(flowsContent);
+        if (verbose) console.log(`✓ Added flows.yaml to hash tracking`);
       }
     } catch (error) {
       console.error(`❌ Failed to save customer attributes for ${customer.idn}:`, error);
@@ -350,6 +365,13 @@ export async function pullAll(
           const content = await fs.readFile(newPath, 'utf8');
           allHashes[newPath] = sha256(content);
 
+          // Track skill metadata.yaml file
+          const metadataPath = skillMetadataPath(customer.idn, project.idn, agentIdn, flowIdn, skillIdn);
+          if (await fs.pathExists(metadataPath)) {
+            const metadataContent = await fs.readFile(metadataPath, 'utf8');
+            allHashes[metadataPath] = sha256(metadataContent);
+          }
+
           // Also track legacy path for backwards compatibility during transition
           const legacyPath = skillPath(customer.idn, project.idn, agentIdn, flowIdn, skillIdn, skillMeta.runner_type);
           allHashes[legacyPath] = sha256(content);
@@ -370,6 +392,14 @@ export async function pullAll(
       const attributesContent = await fs.readFile(attributesFile, 'utf8');
       allHashes[attributesFile] = sha256(attributesContent);
       if (verbose) console.log(`✓ Added attributes.yaml to hash tracking`);
+    }
+
+    // Add flows.yaml to hash tracking
+    const flowsFile = flowsYamlPath(customer.idn);
+    if (await fs.pathExists(flowsFile)) {
+      const flowsContent = await fs.readFile(flowsFile, 'utf8');
+      allHashes[flowsFile] = sha256(flowsContent);
+      if (verbose) console.log(`✓ Added flows.yaml to hash tracking`);
     }
   } catch (error) {
     console.error(`❌ Failed to save customer attributes for ${customer.idn}:`, error);
@@ -394,6 +424,7 @@ export async function pushChanged(client: AxiosInstance, customer: CustomerConfi
   if (verbose) console.log('🔄 Scanning for changes...');
   let pushed = 0;
   let scanned = 0;
+  let metadataChanged = false;
   
   // Handle both old single-project format and new multi-project format with type guards
   const projects = isProjectMap(idMapData) && idMapData.projects 
@@ -498,6 +529,70 @@ export async function pushChanged(client: AxiosInstance, customer: CustomerConfi
         }
       }
     }
+  }
+
+  // Check for metadata-only changes (when metadata changed but script didn't)
+  try {
+    for (const [projectIdn, projectData] of Object.entries(projects)) {
+      for (const [agentIdn, agentObj] of Object.entries(projectData.agents)) {
+        for (const [flowIdn, flowObj] of Object.entries(agentObj.flows)) {
+          for (const [skillIdn, skillMeta] of Object.entries(flowObj.skills)) {
+            const metadataPath = projectIdn ?
+              skillMetadataPath(customer.idn, projectIdn, agentIdn, flowIdn, skillIdn) :
+              skillMetadataPath(customer.idn, '', agentIdn, flowIdn, skillIdn);
+
+            if (await fs.pathExists(metadataPath)) {
+              const metadataContent = await fs.readFile(metadataPath, 'utf8');
+              const h = sha256(metadataContent);
+              const oldHash = oldHashes[metadataPath];
+
+              if (oldHash !== h) {
+                if (verbose) console.log(`🔄 Metadata-only change detected for ${skillIdn}, updating skill...`);
+
+                try {
+                  // Load updated metadata
+                  const updatedMetadata = yaml.load(metadataContent) as SkillMetadata;
+
+                  // Get current script content
+                  const scriptPath = projectIdn ?
+                    skillScriptPath(customer.idn, projectIdn, agentIdn, flowIdn, skillIdn, skillMeta.runner_type) :
+                    skillScriptPath(customer.idn, '', agentIdn, flowIdn, skillIdn, skillMeta.runner_type);
+
+                  let scriptContent = '';
+                  if (await fs.pathExists(scriptPath)) {
+                    scriptContent = await fs.readFile(scriptPath, 'utf8');
+                  }
+
+                  // Create skill object with updated metadata
+                  const skillObject = {
+                    id: updatedMetadata.id,
+                    title: updatedMetadata.title,
+                    idn: updatedMetadata.idn,
+                    prompt_script: scriptContent,
+                    runner_type: updatedMetadata.runner_type,
+                    model: updatedMetadata.model,
+                    parameters: updatedMetadata.parameters,
+                    path: updatedMetadata.path || undefined
+                  };
+
+                  await updateSkill(client, skillObject);
+                  console.log(`↑ Pushed metadata update for skill: ${skillIdn} (${updatedMetadata.title})`);
+
+                  newHashes[metadataPath] = h;
+                  pushed++;
+                  metadataChanged = true;
+
+                } catch (error) {
+                  console.error(`❌ Failed to push metadata for ${skillIdn}: ${error instanceof Error ? error.message : String(error)}`);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  } catch (error) {
+    if (verbose) console.log(`⚠️  Metadata push check failed: ${error instanceof Error ? error.message : String(error)}`);
   }
 
   if (verbose) console.log(`🔄 Scanned ${scanned} files, found ${pushed} changes`);
@@ -635,6 +730,52 @@ export async function pushChanged(client: AxiosInstance, customer: CustomerConfi
     if (verbose) console.log(`⚠️  Attributes push check failed: ${error instanceof Error ? error.message : String(error)}`);
   }
 
+  // Regenerate flows.yaml if metadata changed
+  if (metadataChanged) {
+    try {
+      if (verbose) console.log('🔄 Metadata changed, regenerating flows.yaml...');
+
+      // Create backup of current flows.yaml for format comparison
+      const flowsFile = flowsYamlPath(customer.idn);
+      let flowsBackup = '';
+      if (await fs.pathExists(flowsFile)) {
+        flowsBackup = await fs.readFile(flowsFile, 'utf8');
+        const backupPath = `${flowsFile}.backup`;
+        await fs.writeFile(backupPath, flowsBackup, 'utf8');
+        if (verbose) console.log(`✓ Created flows.yaml backup at ${backupPath}`);
+      }
+
+      // Re-fetch agents for flows.yaml regeneration
+      const agentsForFlows: Agent[] = [];
+      for (const projectData of Object.values(projects)) {
+        const projectAgents = await listAgents(client, projectData.projectId);
+        agentsForFlows.push(...projectAgents);
+      }
+
+      // Regenerate flows.yaml
+      await generateFlowsYaml(client, customer, agentsForFlows, verbose);
+
+      // Update flows.yaml hash
+      if (await fs.pathExists(flowsFile)) {
+        const newFlowsContent = await fs.readFile(flowsFile, 'utf8');
+        newHashes[flowsFile] = sha256(newFlowsContent);
+
+        // Compare format with backup
+        if (flowsBackup) {
+          const sizeDiff = newFlowsContent.length - flowsBackup.length;
+          if (verbose) {
+            console.log(`✓ Regenerated flows.yaml (size change: ${sizeDiff > 0 ? '+' : ''}${sizeDiff} chars)`);
+          }
+        }
+      }
+
+      console.log('↑ Regenerated flows.yaml due to metadata changes');
+
+    } catch (error) {
+      console.error(`❌ Failed to regenerate flows.yaml: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
   await saveHashes(newHashes, customer.idn);
   console.log(pushed ? `✅ Push complete. ${pushed} file(s) updated.` : '✅ Nothing to push.');
 }
@@ -708,6 +849,51 @@ export async function status(customer: CustomerConfig, verbose: boolean = false)
             if (verbose) console.log(`      🔄 Modified: ${currentPath}`);
           } else if (verbose) {
             console.log(`      ✓ Unchanged: ${currentPath}`);
+          }
+        }
+
+        // Check metadata.yaml files for changes (after skill files)
+        for (const [skillIdn] of Object.entries(flowObj.skills)) {
+          const metadataPath = projectIdn ?
+            skillMetadataPath(customer.idn, projectIdn, agentIdn, flowIdn, skillIdn) :
+            skillMetadataPath(customer.idn, '', agentIdn, flowIdn, skillIdn);
+
+          if (await fs.pathExists(metadataPath)) {
+            const metadataContent = await fs.readFile(metadataPath, 'utf8');
+            const h = sha256(metadataContent);
+            const oldHash = hashes[metadataPath];
+
+            if (verbose) {
+              console.log(`      📄 ${metadataPath}`);
+              console.log(`        Old hash: ${oldHash || 'none'}`);
+              console.log(`        New hash: ${h}`);
+            }
+
+            if (oldHash !== h) {
+              console.log(`M  ${metadataPath}`);
+              dirty++;
+
+              // Show which metadata fields changed
+              try {
+                const newMetadata = yaml.load(metadataContent) as any;
+
+                console.log(`      📊 Metadata changed for skill: ${skillIdn}`);
+                if (newMetadata?.title) {
+                  console.log(`        • Title: ${newMetadata.title}`);
+                }
+                if (newMetadata?.runner_type) {
+                  console.log(`        • Runner: ${newMetadata.runner_type}`);
+                }
+                if (newMetadata?.model) {
+                  console.log(`        • Model: ${newMetadata.model.provider_idn}/${newMetadata.model.model_idn}`);
+                }
+              } catch (e) {
+                // Fallback to simple message
+                if (verbose) console.log(`      🔄 Modified: metadata.yaml`);
+              }
+            } else if (verbose) {
+              console.log(`      ✓ Unchanged: ${metadataPath}`);
+            }
           }
         }
       }
@@ -800,12 +986,30 @@ export async function status(customer: CustomerConfig, verbose: boolean = false)
   const flowsFile = flowsYamlPath(customer.idn);
   if (await fs.pathExists(flowsFile)) {
     try {
-      const flowsStats = await fs.stat(flowsFile);
+      const flowsContent = await fs.readFile(flowsFile, 'utf8');
+      const h = sha256(flowsContent);
+      const oldHash = hashes[flowsFile];
+
       if (verbose) {
         console.log(`📄 flows.yaml`);
+        console.log(`  Old hash: ${oldHash || 'none'}`);
+        console.log(`  New hash: ${h}`);
+      }
+
+      if (oldHash !== h) {
+        console.log(`M  ${flowsFile}`);
+        dirty++;
+        if (verbose) {
+          const flowsStats = await fs.stat(flowsFile);
+          console.log(`  🔄 Modified: flows.yaml`);
+          console.log(`  📊 Size: ${(flowsStats.size / 1024).toFixed(1)}KB`);
+          console.log(`  📅 Last modified: ${flowsStats.mtime.toISOString()}`);
+        }
+      } else if (verbose) {
+        const flowsStats = await fs.stat(flowsFile);
+        console.log(`  ✓ Unchanged: flows.yaml`);
         console.log(`  📅 Last modified: ${flowsStats.mtime.toISOString()}`);
         console.log(`  📊 Size: ${(flowsStats.size / 1024).toFixed(1)}KB`);
-        console.log(`  ✓ Flows file tracked`);
       }
     } catch (error) {
       if (verbose) console.log(`⚠️  Error checking flows.yaml: ${error instanceof Error ? error.message : String(error)}`);
