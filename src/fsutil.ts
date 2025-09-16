@@ -47,6 +47,10 @@ export function customerAttributesMapPath(customerIdn: string): string {
   return path.join(customerStateDir(customerIdn), 'attributes-map.json');
 }
 
+export function customerAttributesBackupPath(customerIdn: string): string {
+  return path.join(customerStateDir(customerIdn), 'attributes-backup.yaml');
+}
+
 // Legacy skill path - direct file
 export function skillPath(
   customerIdn: string,

@@ -6,7 +6,8 @@ import {
   listFlowEvents,
   listFlowStates,
   getProjectMeta,
-  getCustomerAttributes
+  getCustomerAttributes,
+  updateCustomerAttribute
 } from './api.js';
 import {
   ensureState,
@@ -21,7 +22,8 @@ import {
   skillMetadataPath,
   flowsYamlPath,
   customerAttributesPath,
-  customerAttributesMapPath
+  customerAttributesMapPath,
+  customerAttributesBackupPath
 } from './fsutil.js';
 import fs from 'fs-extra';
 import { sha256, loadHashes, saveHashes } from './hash.js';
@@ -46,7 +48,8 @@ import type {
   FlowMetadata,
   SkillMetadata,
   FlowEvent,
-  FlowState
+  FlowState,
+  CustomerAttribute
 } from './types.js';
 
 // Concurrency limits for API operations
@@ -136,13 +139,15 @@ export async function saveCustomerAttributes(
     // Fix JSON string formatting to match reference (remove escape characters)
     yamlContent = yamlContent.replace(/\\"/g, '"');
 
-    // Save both files
+    // Save all files: attributes.yaml, ID mapping, and backup for diff tracking
     await writeFileSafe(customerAttributesPath(customer.idn), yamlContent);
     await writeFileSafe(customerAttributesMapPath(customer.idn), JSON.stringify(idMapping, null, 2));
+    await writeFileSafe(customerAttributesBackupPath(customer.idn), yamlContent);
 
     if (verbose) {
       console.log(`✓ Saved customer attributes to ${customerAttributesPath(customer.idn)}`);
       console.log(`✓ Saved attribute ID mapping to ${customerAttributesMapPath(customer.idn)}`);
+      console.log(`✓ Created attributes backup for diff tracking`);
     }
   } catch (error) {
     console.error(`❌ Failed to save customer attributes for ${customer.idn}:`, error);
@@ -497,38 +502,131 @@ export async function pushChanged(client: AxiosInstance, customer: CustomerConfi
 
   if (verbose) console.log(`🔄 Scanned ${scanned} files, found ${pushed} changes`);
 
-  // Check for attributes changes and push if needed
+  // Check for attributes changes and push specific changed attributes only
   try {
     const attributesFile = customerAttributesPath(customer.idn);
     const attributesMapFile = customerAttributesMapPath(customer.idn);
+    const attributesBackupFile = customerAttributesBackupPath(customer.idn);
 
     if (await fs.pathExists(attributesFile) && await fs.pathExists(attributesMapFile)) {
       if (verbose) console.log('🔍 Checking customer attributes for changes...');
 
-      // Use hash comparison for change detection
-      const content = await fs.readFile(attributesFile, 'utf8');
-      const h = sha256(content);
-      const oldHash = oldHashes[attributesFile];
+      const currentContent = await fs.readFile(attributesFile, 'utf8');
 
-      if (verbose) {
-        console.log(`📄 Checking: ${attributesFile}`);
-        console.log(`  Old hash: ${oldHash || 'none'}`);
-        console.log(`  New hash: ${h}`);
-      }
+      // Check if backup exists for diff comparison
+      if (await fs.pathExists(attributesBackupFile)) {
+        const backupContent = await fs.readFile(attributesBackupFile, 'utf8');
 
-      if (oldHash !== h) {
-        if (verbose) console.log(`🔄 Attributes file changed, preparing to push...`);
+        if (currentContent !== backupContent) {
+          if (verbose) console.log(`🔄 Attributes file changed, analyzing differences...`);
 
-        // TODO: Implement actual attributes push here
-        // For now, just update the hash to mark as "pushed"
-        console.log(`↑ Attributes changed: ${attributesFile}`);
-        newHashes[attributesFile] = h;
-        pushed++;
+          try {
+            // Load ID mapping for push operations
+            const idMapping = await fs.readJson(attributesMapFile) as Record<string, string>;
 
-        // Note: Individual attribute push would require parsing the YAML and comparing specific attributes
-        // This is a placeholder for future implementation
-      } else if (verbose) {
-        console.log(`  ✓ No attributes changes`);
+            // Parse both versions to find changed attributes
+            const parseYaml = (content: string) => {
+              let yamlContent = content.replace(/!enum "([^"]+)"/g, '"$1"');
+              return yaml.load(yamlContent) as { attributes: any[] };
+            };
+
+            const currentData = parseYaml(currentContent);
+            const backupData = parseYaml(backupContent);
+
+            if (currentData?.attributes && backupData?.attributes) {
+              // Create maps for comparison
+              const currentAttrs = new Map(currentData.attributes.map(attr => [attr.idn, attr]));
+              const backupAttrs = new Map(backupData.attributes.map(attr => [attr.idn, attr]));
+
+              let attributesPushed = 0;
+
+              // Find changed attributes
+              for (const [idn, currentAttr] of currentAttrs) {
+                const backupAttr = backupAttrs.get(idn);
+
+                // Check if attribute changed (deep comparison of key fields)
+                const hasChanged = !backupAttr ||
+                  currentAttr.value !== backupAttr.value ||
+                  currentAttr.title !== backupAttr.title ||
+                  currentAttr.description !== backupAttr.description ||
+                  currentAttr.group !== backupAttr.group ||
+                  currentAttr.is_hidden !== backupAttr.is_hidden;
+
+                if (hasChanged) {
+                  const attributeId = idMapping[idn];
+                  if (!attributeId) {
+                    if (verbose) console.log(`⚠️  Skipping ${idn} - no ID mapping`);
+                    continue;
+                  }
+
+                  // Create attribute object for push
+                  const attributeToUpdate: CustomerAttribute = {
+                    id: attributeId,
+                    idn: currentAttr.idn,
+                    value: currentAttr.value,
+                    title: currentAttr.title || "",
+                    description: currentAttr.description || "",
+                    group: currentAttr.group || "",
+                    is_hidden: currentAttr.is_hidden,
+                    possible_values: currentAttr.possible_values || [],
+                    value_type: currentAttr.value_type?.replace(/^"?AttributeValueTypes\.(.+)"?$/, '$1') || "string"
+                  };
+
+                  await updateCustomerAttribute(client, attributeToUpdate);
+                  attributesPushed++;
+
+                  if (verbose) {
+                    console.log(`  ✓ Pushed changed attribute: ${idn}`);
+                    console.log(`    Old value: ${backupAttr?.value || 'N/A'}`);
+                    console.log(`    New value: ${currentAttr.value}`);
+                  }
+                }
+              }
+
+              if (attributesPushed > 0) {
+                console.log(`↑ Pushed ${attributesPushed} changed customer attributes to NEWO API`);
+
+                // Show summary of what was pushed
+                console.log(`  📊 Pushed attributes:`);
+                for (const [idn, currentAttr] of currentAttrs) {
+                  const backupAttr = backupAttrs.get(idn);
+                  const hasChanged = !backupAttr ||
+                    currentAttr.value !== backupAttr.value ||
+                    currentAttr.title !== backupAttr.title ||
+                    currentAttr.description !== backupAttr.description ||
+                    currentAttr.group !== backupAttr.group ||
+                    currentAttr.is_hidden !== backupAttr.is_hidden;
+
+                  if (hasChanged) {
+                    console.log(`    • ${idn}: ${currentAttr.title || 'No title'}`);
+                    console.log(`      Value: ${currentAttr.value}`);
+                  }
+                }
+
+                // Update backup file after successful push
+                await fs.writeFile(attributesBackupFile, currentContent, 'utf8');
+
+                newHashes[attributesFile] = sha256(currentContent);
+                pushed++;
+              } else if (verbose) {
+                console.log(`  ✓ No attribute value changes detected`);
+              }
+
+            } else {
+              console.log(`⚠️  Failed to parse attributes for comparison`);
+            }
+
+          } catch (error) {
+            console.error(`❌ Failed to push changed attributes: ${error instanceof Error ? error.message : String(error)}`);
+            // Don't update hash/backup on failure so it will retry next time
+          }
+        } else if (verbose) {
+          console.log(`  ✓ No attributes file changes`);
+        }
+      } else {
+        // No backup exists, create initial backup
+        await fs.writeFile(attributesBackupFile, currentContent, 'utf8');
+        if (verbose) console.log(`✓ Created initial attributes backup for diff tracking`);
       }
     } else if (verbose) {
       console.log('ℹ️  No attributes file or ID mapping found for push checking');
@@ -633,6 +731,62 @@ export async function status(customer: CustomerConfig, verbose: boolean = false)
       if (oldHash !== h) {
         console.log(`M  ${attributesFile}`);
         dirty++;
+
+        // Show which attributes changed by comparing with backup
+        try {
+          const attributesBackupFile = customerAttributesBackupPath(customer.idn);
+          if (await fs.pathExists(attributesBackupFile)) {
+            const backupContent = await fs.readFile(attributesBackupFile, 'utf8');
+
+            const parseYaml = (content: string) => {
+              let yamlContent = content.replace(/!enum "([^"]+)"/g, '"$1"');
+              return yaml.load(yamlContent) as { attributes: any[] };
+            };
+
+            const currentData = parseYaml(content);
+            const backupData = parseYaml(backupContent);
+
+            if (currentData?.attributes && backupData?.attributes) {
+              const currentAttrs = new Map(currentData.attributes.map(attr => [attr.idn, attr]));
+              const backupAttrs = new Map(backupData.attributes.map(attr => [attr.idn, attr]));
+
+              const changedAttributes: string[] = [];
+
+              for (const [idn, currentAttr] of currentAttrs) {
+                const backupAttr = backupAttrs.get(idn);
+                const hasChanged = !backupAttr ||
+                  currentAttr.value !== backupAttr.value ||
+                  currentAttr.title !== backupAttr.title ||
+                  currentAttr.description !== backupAttr.description ||
+                  currentAttr.group !== backupAttr.group ||
+                  currentAttr.is_hidden !== backupAttr.is_hidden;
+
+                if (hasChanged) {
+                  changedAttributes.push(idn);
+                }
+              }
+
+              if (changedAttributes.length > 0) {
+                console.log(`  📊 Changed attributes (${changedAttributes.length}):`);
+                changedAttributes.slice(0, 5).forEach(idn => {
+                  const current = currentAttrs.get(idn);
+                  const backup = backupAttrs.get(idn);
+                  console.log(`    • ${idn}: ${current?.title || 'No title'}`);
+                  if (verbose) {
+                    console.log(`      Old: ${backup?.value || 'N/A'}`);
+                    console.log(`      New: ${current?.value || 'N/A'}`);
+                  }
+                });
+                if (changedAttributes.length > 5) {
+                  console.log(`    ... and ${changedAttributes.length - 5} more`);
+                }
+              }
+            }
+          }
+        } catch (e) {
+          // Fallback to simple message if diff analysis fails
+        }
+
         if (verbose) console.log(`  🔄 Modified: attributes.yaml`);
       } else if (verbose) {
         console.log(`  ✓ Unchanged: attributes.yaml`);
