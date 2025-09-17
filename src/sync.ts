@@ -1234,24 +1234,41 @@ export async function pullConversations(
         const actsPerPage = 100; // Higher limit for acts
         let hasMoreActs = true;
 
-        while (hasMoreActs) {
-          // First try the chat history API as alternative
+        // Get user actor IDs from persona actors first
+        const userActors = persona.actors.filter(actor =>
+          actor.integration_idn === 'newo_voice' &&
+          actor.connector_idn === 'newo_voice_connector'
+        );
+
+        if (userActors.length === 0) {
+          if (verbose) console.log(`  👤 ${persona.name}: No voice actors found, skipping`);
+          // No voice actors, can't get chat history - add persona with empty acts
+          processedPersonas.push({
+            id: persona.id,
+            name: persona.name,
+            phone,
+            act_count: persona.act_count,
+            acts: []
+          });
+          if (verbose) console.log(`  ✓ Processed ${persona.name}: 0 acts (no voice actors)`);
+          return; // Return from the concurrency function
+        }
+
+        // Safety mechanism to prevent infinite loops
+        const maxPages = 50; // Limit to 50 pages (5000 acts max per persona)
+
+        while (hasMoreActs && actPage <= maxPages) {
           try {
-            // Get user actor IDs from persona actors
-            const userActors = persona.actors.filter(actor =>
-              actor.integration_idn === 'newo_voice' &&
-              actor.connector_idn === 'newo_voice_connector'
-            );
+            const chatHistoryParams = {
+              user_actor_id: userActors[0]!.id,
+              page: actPage,
+              per: actsPerPage
+            };
 
-            if (userActors.length > 0) {
-              const chatHistoryParams = {
-                user_actor_id: userActors[0]!.id,
-                page: actPage,
-                per: actsPerPage
-              };
+            if (verbose) console.log(`    📄 ${persona.name}: Fetching page ${actPage}...`);
+            const chatResponse = await getChatHistory(client, chatHistoryParams);
 
-              const chatResponse = await getChatHistory(client, chatHistoryParams);
-              if (chatResponse.items && chatResponse.items.length > 0) {
+            if (chatResponse.items && chatResponse.items.length > 0) {
                 // Convert chat history format to acts format - create minimal ConversationAct objects
                 const convertedActs: ConversationAct[] = chatResponse.items.map((item: any) => ({
                   id: item.id || `chat_${Math.random()}`,
@@ -1288,18 +1305,30 @@ export async function pullConversations(
                   console.log(`  👤 ${persona.name}: Chat History - ${convertedActs.length} messages (${allActs.length} total)`);
                 }
 
+                // Check if we should continue paginating
+                const hasMetadata = chatResponse.metadata?.total !== undefined;
+                const currentTotal = chatResponse.metadata?.total || 0;
+
                 hasMoreActs = chatResponse.items.length === actsPerPage &&
-                             chatResponse.metadata?.total !== undefined &&
-                             allActs.length < chatResponse.metadata.total;
+                             hasMetadata &&
+                             allActs.length < currentTotal;
+
                 actPage++;
-                continue; // Skip the original acts API call
+
+                if (verbose) console.log(`    📊 ${persona.name}: Page ${actPage - 1} done, ${allActs.length}/${currentTotal} total acts`);
+              } else {
+                // No more items
+                hasMoreActs = false;
+                if (verbose) console.log(`    📊 ${persona.name}: No more chat history items`);
               }
-            }
           } catch (chatError) {
             if (verbose) console.log(`  ⚠️  Chat history failed for ${persona.name}: ${chatError instanceof Error ? chatError.message : String(chatError)}`);
-            // No fallback - only use chat history API
             hasMoreActs = false;
           }
+        }
+
+        if (actPage > maxPages) {
+          if (verbose) console.log(`  ⚠️  ${persona.name}: Reached max pages limit (${maxPages}), stopping pagination`);
         }
 
         // Sort acts by datetime ascending (chronological order)

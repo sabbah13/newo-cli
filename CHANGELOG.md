@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.2] - 2025-09-16
+
+### Fixed
+- **Pagination Safety**: Prevent infinite loops and hanging during conversation processing
+  - Added max pages limit (50 pages = 5000 acts per persona) to prevent infinite pagination
+  - Improved persona filtering for voice actors to avoid unnecessary API calls
+  - Better error handling and verbose logging for debugging conversation processing
+  - Graceful handling of personas without voice actors (adds with empty acts array)
+
+### Enhanced
+- **Performance Optimization**: Faster conversation processing with early exits
+  - Skip personas without newo_voice actors immediately
+  - Clear verbose logging for pagination progress
+  - Optimized control flow to prevent hanging during large conversation extraction
+
 ## [1.9.1] - 2025-09-16
 
 ### Fixed
