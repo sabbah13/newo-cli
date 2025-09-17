@@ -12,8 +12,8 @@ import {
   refreshWithEndpoint, 
   getValidAccessToken, 
   forceReauth 
-} from '../src/auth.js';
-import { ENV } from '../src/env.js';
+} from '../dist/auth.js';
+import { ENV } from '../dist/env.js';
 import { TestEnvironment } from './test-utils.js';
 
 describe('Auth Functions', function() {

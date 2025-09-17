@@ -23,7 +23,7 @@ import {
   ROOT_DIR,
   MAP_PATH,
   HASHES_PATH
-} from '../src/fsutil.js';
+} from '../dist/fsutil.js';
 import { TestEnvironment } from './test-utils.js';
 
 describe('File System Utilities', function() {

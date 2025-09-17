@@ -5,7 +5,7 @@ import assert from 'assert';
 import { expect } from 'chai';
 import fs from 'fs-extra';
 import path from 'path';
-import { parseAkbFile, prepareArticlesForImport } from '../src/akb.js';
+import { parseAkbFile, prepareArticlesForImport } from '../dist/akb.js';
 import { TestEnvironment } from './test-utils.js';
 
 describe('AKB Import Functions', function() {

@@ -4,9 +4,9 @@
 import assert from 'assert';
 import fs from 'fs-extra';
 import path from 'path';
-import { pullAll, status } from '../src/sync.js';
-import { makeClient } from '../src/api.js';
-import { ROOT_DIR, STATE_DIR } from '../src/fsutil.js';
+import { pullAll, status } from '../dist/sync.js';
+import { makeClient } from '../dist/api.js';
+import { ROOT_DIR, STATE_DIR } from '../dist/fsutil.js';
 
 describe('Sync Functions', function() {
   this.timeout(30000); // Set longer timeout for sync operations

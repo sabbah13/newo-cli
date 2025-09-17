@@ -1,12 +1,12 @@
 /**
  * Unit tests for hash functions
  */
-const assert = require('assert');
-const { expect } = require('chai');
-const fs = require('fs-extra');
-const path = require('path');
-const { sha256, loadHashes, saveHashes } = require('../dist/hash');
-const { TestEnvironment } = require('./test-utils');
+import assert from 'assert';
+import { expect } from 'chai';
+import fs from 'fs-extra';
+import path from 'path';
+import { sha256, loadHashes, saveHashes } from '../dist/hash.js';
+import { TestEnvironment } from './test-utils.js';
 
 describe('Hash Functions', function() {
   let testEnv;
@@ -102,7 +102,7 @@ describe('Hash Functions', function() {
       };
       
       // Mock ensureState function to avoid actual directory creation issues
-      const fsutil = require('../dist/fsutil');
+      const fsutil = await import('../dist/fsutil.js');
       testEnv.createStub(fsutil, 'ensureState').resolves();
       
       // Mock hashesPath to return predictable path
@@ -152,7 +152,7 @@ describe('Hash Functions', function() {
       const hashesFile = path.join(invalidDir, '.newo', 'hashes.json');
       await fs.ensureDir(hashesFile); // Create as directory instead of file
       
-      const fsutil = require('../dist/fsutil');
+      const fsutil = await import('../dist/fsutil.js');
       testEnv.createStub(fsutil, 'hashesPath').returns(hashesFile);
       testEnv.createStub(fsutil, 'ensureState').resolves();
       

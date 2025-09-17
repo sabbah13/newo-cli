@@ -2,7 +2,7 @@
  * Unit tests for API functions
  */
 import assert from 'assert';
-import { makeClient, listProjects, listAgents, getProjectMeta } from '../src/api.js';
+import { makeClient, listProjects, listAgents, getProjectMeta } from '../dist/api.js';
 
 describe('API Functions', function() {
   this.timeout(10000); // Set longer timeout for API calls

@@ -5,6 +5,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.3] - 2025-09-17
+
+### 🏗️ Major Architecture Refactoring
+
+**CLI Module Restructuring:**
+- **BREAKING**: Main CLI entry point moved from `dist/cli.js` to `dist/cli/index.js`
+- Split monolithic 500+ line `cli.ts` into focused modules:
+  - `cli/index.ts` - Main entry point and command routing
+  - `cli/errors.ts` - Centralized error handling with user-friendly messages
+  - `cli/customer-selection.ts` - Customer management and selection logic
+  - `cli/commands/` - Individual command handlers (pull, push, status, conversations, etc.)
+
+**Sync Module Restructuring:**
+- Extracted key functions from 1400+ line `sync.ts` into focused modules:
+  - `sync/attributes.ts` - Customer attributes synchronization
+  - `sync/conversations.ts` - Conversation history management
+  - `sync/status.ts` - File status checking and change detection
+  - `sync/index.ts` - Unified exports with backward compatibility
+
+**Testing Infrastructure:**
+- Fixed all test imports to use compiled JavaScript from `dist/` directory
+- Converted test utilities from CommonJS to ES modules
+- Improved test isolation and ES module compatibility
+
+### 🔧 Technical Improvements
+- **Maintainability**: Single-responsibility modules with clear interfaces
+- **Testability**: Each module can be tested independently with clear dependencies
+- **Readability**: Focused modules replace hard-to-navigate monolithic files
+- **Extensibility**: Easy to add new commands and sync operations
+- **Type Safety**: Enhanced TypeScript compilation with zero errors
+
+### 📚 Documentation Updates
+- Updated CLAUDE.md with new modular architecture documentation
+- Added comprehensive module descriptions and benefits
+- Updated development patterns for the new structure
+
 ## [1.9.2] - 2025-09-16
 
 ### Fixed
