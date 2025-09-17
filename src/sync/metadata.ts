@@ -5,7 +5,6 @@ import {
   writeFileSafe,
   flowMetadataPath,
   agentMetadataPath,
-  skillScriptPath,
   flowsYamlPath
 } from '../fsutil.js';
 import fs from 'fs-extra';
@@ -63,30 +62,12 @@ export async function generateFlowsYaml(
         }
 
         const skills: FlowsYamlSkill[] = [];
-        for (const [skillIdn, skillMeta] of Object.entries(flowData.skills as Record<string, SkillMetadata>)) {
-          // Load skill script content using the new file discovery
-          const { getSingleSkillFile } = await import('./skill-files.js');
-          const skillFile = await getSingleSkillFile(customerIdn, projectIdn, agentIdn, flowIdn, skillIdn);
-
-          let scriptContent = '';
-          if (skillFile) {
-            scriptContent = skillFile.content;
-          } else {
-            // Fallback to old path for backward compatibility
-            const scriptPath = skillScriptPath(customerIdn, projectIdn, agentIdn, flowIdn, skillIdn, skillMeta.runner_type);
-            try {
-              if (await fs.pathExists(scriptPath)) {
-                scriptContent = await fs.readFile(scriptPath, 'utf8');
-              }
-            } catch (e) {
-              if (verbose) console.log(`        ⚠️  Could not load script for ${skillIdn}`);
-            }
-          }
+        for (const [, skillMeta] of Object.entries(flowData.skills as Record<string, SkillMetadata>)) {
+          // Note: We don't need to load script content since prompt_script is excluded from flows.yaml
 
           skills.push({
             idn: skillMeta.idn,
             title: skillMeta.title,
-            prompt_script: scriptContent,
             runner_type: skillMeta.runner_type,
             model: skillMeta.model,
             parameters: skillMeta.parameters.map((p: any) => ({

@@ -214,7 +214,6 @@ export interface CliArgs {
 export interface FlowsYamlSkill {
   idn: string;
   title: string;
-  prompt_script: string;
   runner_type: string;
   model: ModelConfig;
   parameters: Array<{
