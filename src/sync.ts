@@ -9,7 +9,6 @@ import {
   getCustomerAttributes,
   updateCustomerAttribute,
   listUserPersonas,
-  getConversationActs,
   getChatHistory
 } from './api.js';
 import {
@@ -1297,35 +1296,9 @@ export async function pullConversations(
               }
             }
           } catch (chatError) {
-            if (verbose) console.log(`  ⚠️  Chat history failed for ${persona.name}, trying acts API: ${chatError instanceof Error ? chatError.message : String(chatError)}`);
-          }
-
-          // Fallback to original acts API
-          const actsParams = {
-            user_persona_id: persona.id,
-            page: actPage,
-            per: actsPerPage,
-            turn_type: 'messages',
-            connectors: options.connectors?.join(',') || 'newo_voice/*',
-            ...(options.fromDate && { from_date: options.fromDate }),
-            ...(options.toDate && { to_date: options.toDate })
-          };
-
-          const actsResponse = await getConversationActs(client, actsParams);
-          allActs.push(...actsResponse.items);
-
-          if (verbose && actsResponse.items.length > 0) {
-            console.log(`  👤 ${persona.name}: Page ${actPage} - ${actsResponse.items.length} acts (${allActs.length}/${actsResponse.metadata.total} total)`);
-          }
-
-          hasMoreActs = actsResponse.items.length === actsPerPage && allActs.length < actsResponse.metadata.total;
-          actPage++;
-
-          // Apply per-persona act limit if specified
-          if (options.maxActsPerPersona && allActs.length >= options.maxActsPerPersona) {
-            allActs.splice(options.maxActsPerPersona);
+            if (verbose) console.log(`  ⚠️  Chat history failed for ${persona.name}: ${chatError instanceof Error ? chatError.message : String(chatError)}`);
+            // No fallback - only use chat history API
             hasMoreActs = false;
-            if (verbose) console.log(`    ⚠️  Limited to ${options.maxActsPerPersona} acts for ${persona.name}`);
           }
         }
 
