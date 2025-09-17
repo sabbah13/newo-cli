@@ -2,7 +2,7 @@
  * Conversations command handler
  */
 import { makeClient } from '../../api.js';
-import { pullConversations } from '../../sync/index.js';
+import { pullConversations } from '../../sync.js';
 import { getValidAccessToken } from '../../auth.js';
 import { selectSingleCustomer } from '../customer-selection.js';
 import type { MultiCustomerConfig, CliArgs } from '../../types.js';

@@ -2,7 +2,7 @@
  * Pull command handler
  */
 import { makeClient } from '../../api.js';
-import { pullAll } from '../../sync/index.js';
+import { pullAll } from '../../sync.js';
 import { getValidAccessToken } from '../../auth.js';
 import { selectSingleCustomer } from '../customer-selection.js';
 import type { MultiCustomerConfig, CliArgs } from '../../types.js';

@@ -1,7 +1,7 @@
 /**
  * Status command handler
  */
-import { status } from '../../sync/index.js';
+import { status } from '../../sync.js';
 import { selectSingleCustomer } from '../customer-selection.js';
 import type { MultiCustomerConfig, CliArgs } from '../../types.js';
 

@@ -2,7 +2,7 @@
  * Pull attributes command handler
  */
 import { makeClient } from '../../api.js';
-import { saveCustomerAttributes } from '../../sync/index.js';
+import { saveCustomerAttributes } from '../../sync.js';
 import { getValidAccessToken } from '../../auth.js';
 import { requireSingleCustomer } from '../customer-selection.js';
 import type { MultiCustomerConfig, CliArgs } from '../../types.js';

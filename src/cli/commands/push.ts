@@ -2,7 +2,7 @@
  * Push command handler
  */
 import { makeClient } from '../../api.js';
-import { pushChanged } from '../../sync/index.js';
+import { pushChanged } from '../../sync.js';
 import { getValidAccessToken } from '../../auth.js';
 import { selectSingleCustomer, interactiveCustomerSelection } from '../customer-selection.js';
 import type { MultiCustomerConfig, CliArgs } from '../../types.js';
