@@ -16,6 +16,7 @@ import { sha256, loadHashes, saveHashes } from '../hash.js';
 import yaml from 'js-yaml';
 import { generateFlowsYaml } from './metadata.js';
 import { isProjectMap, isLegacyProjectMap } from './projects.js';
+import { flowsYamlPath } from '../fsutil.js';
 import type { AxiosInstance } from 'axios';
 import type {
   ProjectData,
@@ -182,14 +183,18 @@ export async function pushChanged(client: AxiosInstance, customer: CustomerConfi
 
   if (verbose) console.log(`🔄 Scanned ${scanned} files, found ${pushed} changes`);
 
-  // Save updated hashes
-  await saveHashes(newHashes, customer.idn);
-
   // Regenerate flows.yaml if metadata was changed
   if (metadataChanged) {
     if (verbose) console.log(`🔄 Regenerating flows.yaml due to metadata changes...`);
-    await generateFlowsYaml({ projects } as ProjectMap, customer.idn, verbose);
+    const flowsYamlContent = await generateFlowsYaml({ projects } as ProjectMap, customer.idn, verbose);
+
+    // Update hash for flows.yaml
+    const flowsYamlFilePath = flowsYamlPath(customer.idn);
+    newHashes[flowsYamlFilePath] = sha256(flowsYamlContent);
   }
+
+  // Save updated hashes
+  await saveHashes(newHashes, customer.idn);
 
   console.log(pushed ? `${pushed} file(s) pushed.` : 'No changes to push.');
 }

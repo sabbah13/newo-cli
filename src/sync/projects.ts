@@ -17,7 +17,8 @@ import {
   flowMetadataPath,
   skillMetadataPath,
   skillScriptPath,
-  skillFolderPath
+  skillFolderPath,
+  flowsYamlPath
 } from '../fsutil.js';
 import {
   findSkillScriptFiles,
@@ -312,11 +313,15 @@ export async function pullSingleProject(
   // Save updated project map
   await writeFileSafe(mapFile, JSON.stringify(existingMap, null, 2));
 
-  // Save hashes
-  await saveHashes(newHashes, customer.idn);
+  // Generate flows.yaml and get its content for hashing
+  const flowsYamlContent = await generateFlowsYaml(existingMap, customer.idn, verbose);
 
-  // Generate flows.yaml
-  await generateFlowsYaml(existingMap, customer.idn, verbose);
+  // Add flows.yaml hash to the hash store
+  const flowsYamlFilePath = flowsYamlPath(customer.idn);
+  newHashes[flowsYamlFilePath] = sha256(flowsYamlContent);
+
+  // Save hashes (now including flows.yaml)
+  await saveHashes(newHashes, customer.idn);
 }
 
 /**

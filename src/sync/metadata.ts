@@ -28,7 +28,7 @@ export async function generateFlowsYaml(
   projectMap: ProjectMap | { [key: string]: ProjectData },
   customerIdn: string,
   verbose: boolean = false
-): Promise<void> {
+): Promise<string> {
   if (verbose) console.log(`📊 Generating flows.yaml for customer ${customerIdn}...`);
 
   const flowsData: FlowsYamlData = {
@@ -150,7 +150,7 @@ export async function generateFlowsYaml(
     }
   }
 
-  // Save flows.yaml
+  // Generate flows.yaml content
   const flowsYamlContent = yaml.dump(flowsData, {
     indent: 2,
     quotingType: '"',
@@ -161,8 +161,12 @@ export async function generateFlowsYaml(
     flowLevel: -1
   });
 
+  // Save flows.yaml
   const flowsFilePath = flowsYamlPath(customerIdn);
   await writeFileSafe(flowsFilePath, flowsYamlContent);
 
   if (verbose) console.log(`✓ Generated flows.yaml with ${flowsData.flows.length} agents`);
+
+  // Return content for hash calculation
+  return flowsYamlContent;
 }
