@@ -18,7 +18,8 @@ import {
   skillMetadataPath,
   skillScriptPath,
   skillFolderPath,
-  flowsYamlPath
+  flowsYamlPath,
+  customerAttributesPath
 } from '../fsutil.js';
 import {
   findSkillScriptFiles,
@@ -30,6 +31,7 @@ import fs from 'fs-extra';
 import { sha256, saveHashes } from '../hash.js';
 import yaml from 'js-yaml';
 import { generateFlowsYaml } from './metadata.js';
+import { saveCustomerAttributes } from './attributes.js';
 import type { AxiosInstance } from 'axios';
 import type {
   ProjectData,
@@ -313,6 +315,21 @@ export async function pullSingleProject(
   // Save updated project map
   await writeFileSafe(mapFile, JSON.stringify(existingMap, null, 2));
 
+  // Pull customer attributes as part of the project pull
+  try {
+    if (verbose) console.log(`🔍 Fetching customer attributes for ${customer.idn}...`);
+    const attributesContent = await saveCustomerAttributes(client, customer, verbose);
+
+    // Add attributes.yaml hash to the hash store
+    const attributesPath = customerAttributesPath(customer.idn);
+    newHashes[attributesPath] = sha256(attributesContent);
+
+    if (verbose) console.log(`✅ Customer attributes saved to newo_customers/${customer.idn}/attributes.yaml`);
+  } catch (error) {
+    console.warn(`⚠️  Failed to fetch customer attributes for ${customer.idn}: ${error instanceof Error ? error.message : String(error)}`);
+    if (verbose) console.warn('You can manually pull attributes using: newo pull-attributes');
+  }
+
   // Generate flows.yaml and get its content for hashing
   const flowsYamlContent = await generateFlowsYaml(existingMap, customer.idn, verbose);
 
@@ -320,7 +337,7 @@ export async function pullSingleProject(
   const flowsYamlFilePath = flowsYamlPath(customer.idn);
   newHashes[flowsYamlFilePath] = sha256(flowsYamlContent);
 
-  // Save hashes (now including flows.yaml)
+  // Save hashes (now including flows.yaml and attributes.yaml)
   await saveHashes(newHashes, customer.idn);
 }
 

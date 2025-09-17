@@ -13,13 +13,13 @@ import type { AxiosInstance } from 'axios';
 import type { CustomerConfig } from '../types.js';
 
 /**
- * Save customer attributes to YAML format
+ * Save customer attributes to YAML format and return content for hashing
  */
 export async function saveCustomerAttributes(
   client: AxiosInstance,
   customer: CustomerConfig,
   verbose: boolean = false
-): Promise<void> {
+): Promise<string> {
   if (verbose) console.log(`🔍 Fetching customer attributes for ${customer.idn}...`);
 
   try {
@@ -100,6 +100,9 @@ export async function saveCustomerAttributes(
       console.log(`✓ Saved attribute ID mapping to ${customerAttributesMapPath(customer.idn)}`);
       console.log(`✓ Created attributes backup for diff tracking`);
     }
+
+    // Return content for hash calculation
+    return yamlContent;
   } catch (error) {
     console.error(`❌ Failed to save customer attributes for ${customer.idn}:`, error);
     throw error;
