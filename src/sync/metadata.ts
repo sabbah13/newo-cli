@@ -64,16 +64,23 @@ export async function generateFlowsYaml(
 
         const skills: FlowsYamlSkill[] = [];
         for (const [skillIdn, skillMeta] of Object.entries(flowData.skills as Record<string, SkillMetadata>)) {
-          // Load skill script content
-          const scriptPath = skillScriptPath(customerIdn, projectIdn, agentIdn, flowIdn, skillIdn, skillMeta.runner_type);
-          let scriptContent = '';
+          // Load skill script content using the new file discovery
+          const { getSingleSkillFile } = await import('./skill-files.js');
+          const skillFile = await getSingleSkillFile(customerIdn, projectIdn, agentIdn, flowIdn, skillIdn);
 
-          try {
-            if (await fs.pathExists(scriptPath)) {
-              scriptContent = await fs.readFile(scriptPath, 'utf8');
+          let scriptContent = '';
+          if (skillFile) {
+            scriptContent = skillFile.content;
+          } else {
+            // Fallback to old path for backward compatibility
+            const scriptPath = skillScriptPath(customerIdn, projectIdn, agentIdn, flowIdn, skillIdn, skillMeta.runner_type);
+            try {
+              if (await fs.pathExists(scriptPath)) {
+                scriptContent = await fs.readFile(scriptPath, 'utf8');
+              }
+            } catch (e) {
+              if (verbose) console.log(`        ⚠️  Could not load script for ${skillIdn}`);
             }
-          } catch (e) {
-            if (verbose) console.log(`        ⚠️  Could not load script: ${scriptPath}`);
           }
 
           skills.push({

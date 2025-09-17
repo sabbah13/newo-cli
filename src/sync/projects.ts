@@ -93,6 +93,24 @@ export async function pullSingleProject(
 
   const newHashes: HashStore = {};
 
+  // Progress tracking
+  let totalSkills = 0;
+  let processedSkills = 0;
+
+  // Count total skills for progress tracking
+  for (const project of projects) {
+    const agents = await listAgents(client, project.id);
+    for (const agent of agents) {
+      const flows = agent.flows || [];
+      for (const flow of flows) {
+        const skills = await listFlowSkills(client, flow.id);
+        totalSkills += skills.length;
+      }
+    }
+  }
+
+  if (verbose) console.log(`📊 Total skills to process: ${totalSkills}`);
+
   for (const project of projects) {
     if (verbose) console.log(`📁 Processing project: ${project.title} (${project.idn})`);
 
@@ -184,7 +202,17 @@ export async function pullSingleProject(
         if (verbose) console.log(`      📋 Found ${skills.length} skills in flow ${flow.title}`);
 
         for (const skill of skills) {
-          if (verbose) console.log(`      📄 Processing skill: ${skill.title} (${skill.idn})`);
+          processedSkills++;
+          const progress = `[${processedSkills}/${totalSkills}]`;
+
+          if (verbose) {
+            console.log(`      📄 ${progress} Processing skill: ${skill.title} (${skill.idn})`);
+          } else {
+            // Show progress for non-verbose mode
+            if (processedSkills % 10 === 0 || processedSkills === totalSkills) {
+              process.stdout.write(`\r📄 Processing skills: ${processedSkills}/${totalSkills} (${Math.round(processedSkills/totalSkills*100)}%)`);
+            }
+          }
 
           // Create skill metadata
           const skillMeta: SkillMetadata = {
@@ -203,28 +231,34 @@ export async function pullSingleProject(
           await writeFileSafe(skillMetaPath, skillMetaYaml);
           newHashes[skillMetaPath] = sha256(skillMetaYaml);
 
-          // Handle skill script with overwrite detection
+          // Handle skill script with IDN-based naming and overwrite detection
           const scriptContent = skill.prompt_script || '';
-          const scriptPath = skillScriptPath(customer.idn, project.idn, agent.idn, flow.idn, skill.idn, skill.runner_type);
+          const targetScriptPath = skillScriptPath(customer.idn, project.idn, agent.idn, flow.idn, skill.idn, skill.runner_type);
           const folderPath = skillFolderPath(customer.idn, project.idn, agent.idn, flow.idn, skill.idn);
 
           // Check for existing script files in the skill folder
           const existingFiles = await findSkillScriptFiles(folderPath);
           let shouldWrite = true;
+          let hasContentMatch = false;
 
           if (existingFiles.length > 0) {
             // Check if any existing file has the same content
-            const contentMatches = existingFiles.some(file => !isContentDifferent(file.content, scriptContent));
+            hasContentMatch = existingFiles.some(file => !isContentDifferent(file.content, scriptContent));
 
-            if (contentMatches) {
-              // Content is the same, no need to ask for overwrite
-              if (verbose) console.log(`        ✓ Content unchanged for ${skill.idn}, skipping overwrite`);
-              shouldWrite = false;
-
-              // Find the matching file and use its path for hashing
+            if (hasContentMatch) {
+              // Content is the same - remove old files and write with correct IDN name
               const matchingFile = existingFiles.find(file => !isContentDifferent(file.content, scriptContent));
-              if (matchingFile) {
+              const correctName = `${skill.idn}.${getExtensionForRunner(skill.runner_type)}`;
+
+              if (matchingFile && matchingFile.fileName !== correctName) {
+                // Remove old file and write with correct IDN-based name
+                await fs.remove(matchingFile.filePath);
+                if (verbose) console.log(`        🔄 Renamed ${matchingFile.fileName} → ${correctName}`);
+              } else if (matchingFile && matchingFile.fileName === correctName) {
+                // Already has correct name and content
+                shouldWrite = false;
                 newHashes[matchingFile.filePath] = sha256(scriptContent);
+                if (verbose) console.log(`        ✓ Content unchanged for ${skill.idn}, keeping existing file`);
               }
             } else if (!silentOverwrite) {
               // Content is different, ask for overwrite
@@ -255,9 +289,10 @@ export async function pullSingleProject(
           }
 
           if (shouldWrite) {
-            await writeFileSafe(scriptPath, scriptContent);
-            newHashes[scriptPath] = sha256(scriptContent);
-            if (verbose) console.log(`        ✓ Saved ${skill.idn}.${getExtensionForRunner(skill.runner_type)}`);
+            await writeFileSafe(targetScriptPath, scriptContent);
+            newHashes[targetScriptPath] = sha256(scriptContent);
+            const fileName = `${skill.idn}.${getExtensionForRunner(skill.runner_type)}`;
+            if (verbose) console.log(`        ✓ Saved ${fileName}`);
           }
 
           projectData.agents[agent.idn]!.flows[flow.idn]!.skills[skill.idn] = skillMeta;
@@ -267,6 +302,11 @@ export async function pullSingleProject(
 
     // Store project data in map
     existingMap.projects[project.idn] = projectData;
+  }
+
+  // Clear progress line for non-verbose mode
+  if (!verbose && totalSkills > 0) {
+    console.log(`\n✅ Processed ${totalSkills} skills`);
   }
 
   // Save updated project map
