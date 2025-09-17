@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.1] - 2025-09-16
+
+### Fixed
+- **Clean Chat History Implementation**: Remove conversations acts API fallback entirely
+  - Eliminates all 403 "Invalid token or account_id field missing" errors
+  - Uses only `/api/v1/chat/history` endpoint which works with current API keys
+  - Removed unused `getConversationActs()` function and related types
+  - Clean implementation without permission-dependent fallbacks
+
+### Removed
+- **Obsolete Code Cleanup**: Remove unused conversation acts API components
+  - `getConversationActs()` function (unused after chat history integration)
+  - `ConversationActsParams` and `ConversationActsResponse` interfaces
+  - Fallback logic that caused 403 errors for personas without proper permissions
+
 ## [1.9.0] - 2025-09-16
 
 ### Added

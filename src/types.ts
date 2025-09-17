@@ -399,24 +399,6 @@ export interface UserPersonaResponse {
   };
 }
 
-export interface ConversationActsResponse {
-  readonly items: readonly ConversationAct[];
-  readonly metadata: {
-    readonly page: number;
-    readonly per: number;
-    readonly total: number;
-  };
-}
-
-export interface ConversationActsParams {
-  readonly turn_type?: string;
-  readonly connectors?: string;
-  readonly user_persona_id: string;
-  readonly page?: number;
-  readonly per?: number;
-  readonly from_date?: string;
-  readonly to_date?: string;
-}
 
 export interface ChatHistoryParams {
   readonly user_actor_id: string;
