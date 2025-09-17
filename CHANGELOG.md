@@ -5,6 +5,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.0] - 2025-09-16
+
+### Added
+- **User Conversations Pull Functionality**: Complete conversation history extraction
+  - New `newo conversations` command to download user conversations and personas
+  - Multi-customer conversation support with `--customer <idn>` flag
+  - Chat History API integration (`/api/v1/chat/history`) with fallback to conversations acts API
+  - Automatic phone number extraction from persona actors
+  - Comprehensive pagination handling for large conversation datasets
+  - Clean YAML output format in `newo_customers/{customerIdn}/conversations.yaml`
+
+### Enhanced
+- **Conversation Data Processing**: Optimized structure and chronological ordering
+  - Acts sorted by datetime ascending (chronological conversation flow)
+  - Personas sorted by most recent activity (descending)
+  - Redundant fields removed (`is_agent`, `session_id: unknown`, etc.)
+  - Clean persona structure: `id` → `name` → `phone` → `act_count` → `acts`
+  - Proper datetime extraction from chat history API responses
+
+### Technical
+- **New API Functions**: Type-safe conversation API integration
+  - `listUserPersonas()` - Get all user personas with pagination
+  - `getChatHistory()` - Get conversation history for user actors
+  - `getConversationActs()` - Fallback for accounts with proper permissions
+  - `pullConversations()` - Complete conversation sync orchestration
+- **NPM Scripts**: Added convenient conversation commands
+  - `npm run conversations` - Build and pull conversations
+  - `npm run conversations:all` - Legacy alias for compatibility
+
+### Performance
+- **Concurrent Processing**: Efficient conversation data extraction
+  - Parallel API calls with concurrency limiting (p-limit)
+  - Graceful error handling with persona-level fault tolerance
+  - No artificial limits on personas or acts (loads all available data)
+  - Multi-customer support with authentication reuse
+
 ## [1.8.0] - 2025-09-15
 
 ### Added

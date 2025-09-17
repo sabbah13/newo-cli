@@ -2,7 +2,7 @@
 import minimist from 'minimist';
 import dotenv from 'dotenv';
 import { makeClient, getProjectMeta, importAkbArticle } from './api.js';
-import { pullAll, pushChanged, status, saveCustomerAttributes } from './sync.js';
+import { pullAll, pushChanged, status, saveCustomerAttributes, pullConversations } from './sync.js';
 import { parseAkbFile, prepareArticlesForImport } from './akb.js';
 import { initializeEnvironment, ENV, EnvValidationError } from './env.js';
 import { parseCustomerConfigAsync, listCustomers, getCustomer, getDefaultCustomer, tryGetDefaultCustomer, getAllCustomers, validateCustomerConfig } from './customerAsync.js';
@@ -168,12 +168,14 @@ Usage:
   newo pull [--customer <idn>]                  # download projects -> ./newo_customers/<idn>/projects/
   newo push [--customer <idn>]                  # upload modified *.guidance/*.jinja back to NEWO
   newo status [--customer <idn>]                # show modified files
+  newo conversations [--customer <idn>] [--all] # download user conversations -> ./newo_customers/<idn>/conversations.yaml
   newo list-customers                           # list available customers
   newo meta [--customer <idn>]                  # get project metadata (debug)
   newo import-akb <file> <persona_id> [--customer <idn>]  # import AKB articles from file
 
 Flags:
   --customer <idn>             # specify customer (if not set, uses default or interactive selection)
+  --all                        # include all available data (for conversations: all personas and acts)
   --verbose, -v                # enable detailed logging
 
 Environment Variables:
@@ -348,6 +350,53 @@ File Structure:
         await pushChanged(client, customer, verbose);
       }
       console.log(`\n✅ Push completed for all ${allCustomers.length} customers`);
+    }
+    return;
+  }
+
+  if (cmd === 'conversations') {
+    // Handle customer selection for conversations command
+    if (args.customer) {
+      const customer = getCustomer(customerConfig, args.customer as string);
+      if (!customer) {
+        console.error(`Unknown customer: ${args.customer}`);
+        console.error(`Available customers: ${listCustomers(customerConfig).join(', ')}`);
+        process.exit(1);
+      }
+      selectedCustomer = customer;
+    } else {
+      // Try to get default, fall back to all customers
+      selectedCustomer = tryGetDefaultCustomer(customerConfig);
+      if (!selectedCustomer) {
+        allCustomers = getAllCustomers(customerConfig);
+        if (verbose) console.log(`💬 No default customer specified, pulling conversations from all ${allCustomers.length} customers`);
+      }
+    }
+
+    // Parse conversation-specific options - load all data by default
+    const conversationOptions = {
+      includeAll: true, // Always include all data for conversations
+      maxPersonas: undefined, // No limit on personas
+      maxActsPerPersona: undefined // No limit on acts per persona
+    };
+
+    if (selectedCustomer) {
+      // Single customer conversations
+      const accessToken = await getValidAccessToken(selectedCustomer);
+      const client = await makeClient(verbose, accessToken);
+      console.log(`💬 Pulling conversations for customer: ${selectedCustomer.idn} (all data)`);
+      await pullConversations(client, selectedCustomer, conversationOptions, verbose);
+      console.log(`✅ Conversations saved to newo_customers/${selectedCustomer.idn}/conversations.yaml`);
+    } else if (allCustomers.length > 0) {
+      // Multi-customer conversations
+      console.log(`💬 Pulling conversations from ${allCustomers.length} customers (all data)...`);
+      for (const customer of allCustomers) {
+        console.log(`\n💬 Pulling conversations for customer: ${customer.idn}`);
+        const accessToken = await getValidAccessToken(customer);
+        const client = await makeClient(verbose, accessToken);
+        await pullConversations(client, customer, conversationOptions, verbose);
+      }
+      console.log(`\n✅ Conversations pull completed for all ${allCustomers.length} customers`);
     }
     return;
   }

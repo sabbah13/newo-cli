@@ -337,3 +337,135 @@ export interface SkillMetadata {
   created_at?: string;
   updated_at?: string;
 }
+
+// Conversation Types
+export interface Actor {
+  readonly id: string;
+  readonly conversation_is_active: boolean;
+  readonly act_count: number;
+  readonly external_id: string;
+  readonly integration_idn: string;
+  readonly connector_idn: string;
+  readonly contact_information: string;
+}
+
+export interface UserPersona {
+  readonly id: string;
+  readonly name: string;
+  readonly last_session_id: string;
+  readonly session_is_active: boolean;
+  readonly last_act_time: string;
+  readonly last_act_text: string;
+  readonly act_count: number;
+  readonly actors: readonly Actor[];
+  readonly not_found: boolean;
+}
+
+export interface ConversationAct {
+  readonly id: string;
+  readonly command_act_id: string | null;
+  readonly external_event_id: string;
+  readonly arguments: readonly any[];
+  readonly reference_idn: string;
+  readonly runtime_context_id: string;
+  readonly source_text: string;
+  readonly original_text: string;
+  readonly datetime: string;
+  readonly user_actor_id: string;
+  readonly agent_actor_id: string | null;
+  readonly user_persona_id: string;
+  readonly user_persona_name: string;
+  readonly agent_persona_id: string;
+  readonly external_id: string | null;
+  readonly integration_idn: string;
+  readonly connector_idn: string;
+  readonly to_integration_idn: string | null;
+  readonly to_connector_idn: string | null;
+  readonly is_agent: boolean;
+  readonly project_idn: string | null;
+  readonly flow_idn: string;
+  readonly skill_idn: string;
+  readonly session_id: string;
+  readonly recordings: readonly any[];
+  readonly contact_information: string | null;
+}
+
+export interface UserPersonaResponse {
+  readonly items: readonly UserPersona[];
+  readonly metadata: {
+    readonly page: number;
+    readonly per: number;
+    readonly total: number;
+  };
+}
+
+export interface ConversationActsResponse {
+  readonly items: readonly ConversationAct[];
+  readonly metadata: {
+    readonly page: number;
+    readonly per: number;
+    readonly total: number;
+  };
+}
+
+export interface ConversationActsParams {
+  readonly turn_type?: string;
+  readonly connectors?: string;
+  readonly user_persona_id: string;
+  readonly page?: number;
+  readonly per?: number;
+  readonly from_date?: string;
+  readonly to_date?: string;
+}
+
+export interface ChatHistoryParams {
+  readonly user_actor_id: string;
+  readonly agent_actor_id?: string;
+  readonly page?: number;
+  readonly per?: number;
+}
+
+export interface ChatHistoryResponse {
+  readonly items: readonly any[]; // We'll define this after seeing the response structure
+  readonly metadata?: {
+    readonly page: number;
+    readonly per: number;
+    readonly total: number;
+  };
+}
+
+export interface ConversationOptions {
+  readonly includeAll?: boolean;
+  readonly connectors?: string[];
+  readonly fromDate?: string;
+  readonly toDate?: string;
+  readonly fields?: string[];
+  readonly maxPersonas?: number | undefined;
+  readonly maxActsPerPersona?: number | undefined;
+}
+
+// Processed conversation data for YAML output
+export interface ProcessedAct {
+  readonly datetime: string;
+  readonly type: string;
+  readonly message: string;
+  readonly contact_information?: string | null;
+  readonly flow_idn?: string;
+  readonly skill_idn?: string;
+  readonly session_id?: string;
+}
+
+export interface ProcessedPersona {
+  readonly id: string;
+  readonly name: string;
+  readonly phone: string | null;
+  readonly act_count: number;
+  readonly acts: readonly ProcessedAct[];
+}
+
+export interface ConversationsData {
+  readonly personas: readonly ProcessedPersona[];
+  readonly total_personas: number;
+  readonly total_acts: number;
+  readonly generated_at: string;
+}

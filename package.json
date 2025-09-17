@@ -1,7 +1,7 @@
 {
   "name": "newo",
-  "version": "1.8.0",
-  "description": "NEWO CLI: comprehensive sync for AI Agent skills, customer attributes, and metadata between NEWO platform and local files. Multi-customer workspaces, complete change tracking, Git-first workflows.",
+  "version": "1.9.0",
+  "description": "NEWO CLI: comprehensive sync for AI Agent skills, customer attributes, conversations, and metadata between NEWO platform and local files. Multi-customer workspaces, conversation history extraction, complete change tracking, Git-first workflows.",
   "type": "module",
   "bin": {
     "newo": "dist/cli.js"
@@ -26,7 +26,10 @@
     "knowledge-base",
     "import",
     "multi-project",
-    "workspace"
+    "workspace",
+    "conversations",
+    "chat-history",
+    "personas"
   ],
   "author": "sabbah13",
   "license": "MIT",
@@ -71,6 +74,8 @@
     "pull": "npm run build && node ./dist/cli.js pull",
     "push": "npm run build && node ./dist/cli.js push",
     "status": "npm run build && node ./dist/cli.js status",
+    "conversations": "npm run build && node ./dist/cli.js conversations",
+    "conversations:all": "npm run build && node ./dist/cli.js conversations --all",
     "clean": "rm -rf dist coverage",
     "typecheck": "tsc --noEmit",
     "lint": "tsc --noEmit --strict",

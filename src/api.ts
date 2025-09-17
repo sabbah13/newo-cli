@@ -10,7 +10,13 @@ import type {
   AkbImportArticle,
   CustomerProfile,
   CustomerAttribute,
-  CustomerAttributesResponse
+  CustomerAttributesResponse,
+  UserPersonaResponse,
+  UserPersona,
+  ConversationActsResponse,
+  ConversationActsParams,
+  ChatHistoryParams,
+  ChatHistoryResponse
 } from './types.js';
 
 // Per-request retry tracking to avoid shared state issues
@@ -152,4 +158,60 @@ export async function updateCustomerAttribute(client: AxiosInstance, attribute: 
     possible_values: attribute.possible_values,
     value_type: attribute.value_type
   });
+}
+
+// Conversation API Functions
+
+export async function listUserPersonas(client: AxiosInstance, page: number = 1, per: number = 50): Promise<UserPersonaResponse> {
+  const response = await client.get<UserPersonaResponse>('/api/v1/bff/conversations/user-personas', {
+    params: { page, per }
+  });
+  return response.data;
+}
+
+export async function getUserPersona(client: AxiosInstance, personaId: string): Promise<UserPersona> {
+  const response = await client.get<UserPersona>(`/api/v1/bff/conversations/user-personas/${personaId}`);
+  return response.data;
+}
+
+export async function getAccount(client: AxiosInstance): Promise<{ id: string; [key: string]: any }> {
+  const response = await client.get<{ id: string; [key: string]: any }>('/api/v1/account');
+  return response.data;
+}
+
+export async function getConversationActs(client: AxiosInstance, params: ConversationActsParams): Promise<ConversationActsResponse> {
+  const queryParams: Record<string, any> = {
+    user_persona_id: params.user_persona_id,
+    page: params.page || 1,
+    per: params.per || 50
+  };
+
+  // Only add optional parameters if explicitly provided
+  if (params.turn_type) queryParams.turn_type = params.turn_type;
+  if (params.connectors) queryParams.connectors = params.connectors;
+  if (params.from_date) queryParams.from_date = params.from_date;
+  if (params.to_date) queryParams.to_date = params.to_date;
+
+  const response = await client.get<ConversationActsResponse>('/api/v1/bff/conversations/acts', {
+    params: queryParams
+  });
+  return response.data;
+}
+
+export async function getChatHistory(client: AxiosInstance, params: ChatHistoryParams): Promise<ChatHistoryResponse> {
+  const queryParams: Record<string, any> = {
+    user_actor_id: params.user_actor_id,
+    page: params.page || 1,
+    per: params.per || 50
+  };
+
+  // Only add agent_actor_id if provided
+  if (params.agent_actor_id) {
+    queryParams.agent_actor_id = params.agent_actor_id;
+  }
+
+  const response = await client.get<ChatHistoryResponse>('/api/v1/chat/history', {
+    params: queryParams
+  });
+  return response.data;
 }
