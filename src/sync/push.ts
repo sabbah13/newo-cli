@@ -4,11 +4,13 @@
 import { updateSkill } from '../api.js';
 import {
   ensureState,
-  skillPath,
-  skillScriptPath,
   mapPath,
   skillMetadataPath
 } from '../fsutil.js';
+import {
+  validateSkillFolder,
+  getSingleSkillFile
+} from './skill-files.js';
 import fs from 'fs-extra';
 import { sha256, loadHashes, saveHashes } from '../hash.js';
 import yaml from 'js-yaml';
@@ -57,36 +59,42 @@ export async function pushChanged(client: AxiosInstance, customer: CustomerConfi
         for (const [skillIdn, skillMeta] of Object.entries(flowObj.skills)) {
           scanned++;
 
-          // Try new folder structure first
-          const newPath = projectIdn ?
-            skillScriptPath(customer.idn, projectIdn, agentIdn, flowIdn, skillIdn, skillMeta.runner_type) :
-            skillScriptPath(customer.idn, '', agentIdn, flowIdn, skillIdn, skillMeta.runner_type);
+          // Validate skill folder has exactly one script file
+          const validation = await validateSkillFolder(customer.idn, projectIdn, agentIdn, flowIdn, skillIdn);
 
-          // Fallback to legacy structure
-          const legacyPath = projectIdn ?
-            skillPath(customer.idn, projectIdn, agentIdn, flowIdn, skillIdn, skillMeta.runner_type) :
-            skillPath(customer.idn, '', agentIdn, flowIdn, skillIdn, skillMeta.runner_type);
+          if (!validation.isValid) {
+            // Show warnings and errors
+            validation.errors.forEach(error => {
+              console.error(`❌ ${error}`);
+            });
+            validation.warnings.forEach(warning => {
+              console.warn(`⚠️  ${warning}`);
+            });
 
-          let currentPath = newPath;
-          let exists = await fs.pathExists(newPath);
-
-          // If new structure doesn't exist, try legacy structure
-          if (!exists) {
-            exists = await fs.pathExists(legacyPath);
-            currentPath = legacyPath;
-          }
-
-          if (!exists) {
-            if (verbose) console.log(`      ❌ Script not found, skipping: ${currentPath}`);
+            if (validation.files.length > 1) {
+              console.warn(`⚠️  Skipping push for skill ${skillIdn} - multiple script files found:`);
+              validation.files.forEach(file => {
+                console.warn(`   • ${file.fileName}`);
+              });
+              console.warn(`   Please keep only one script file and try again.`);
+            }
             continue;
           }
 
-          const content = await fs.readFile(currentPath, 'utf8');
+          // Get the single valid script file
+          const skillFile = await getSingleSkillFile(customer.idn, projectIdn, agentIdn, flowIdn, skillIdn);
+          if (!skillFile) {
+            if (verbose) console.log(`      ❌ No valid script file found for: ${skillIdn}`);
+            continue;
+          }
+
+          const content = skillFile.content;
+          const currentPath = skillFile.filePath;
           const h = sha256(content);
           const oldHash = hashes[currentPath];
 
           if (oldHash !== h) {
-            if (verbose) console.log(`🔄 Script changed, updating: ${skillIdn}`);
+            if (verbose) console.log(`🔄 Script changed, updating: ${skillIdn} (${skillFile.fileName})`);
 
             try {
               // Create skill object for update
@@ -102,7 +110,7 @@ export async function pushChanged(client: AxiosInstance, customer: CustomerConfi
               };
 
               await updateSkill(client, skillObject);
-              console.log(`↑ Pushed: ${skillIdn} (${skillMeta.title})`);
+              console.log(`↑ Pushed: ${skillIdn} (${skillMeta.title}) from ${skillFile.fileName}`);
 
               newHashes[currentPath] = h;
               pushed++;
@@ -110,12 +118,12 @@ export async function pushChanged(client: AxiosInstance, customer: CustomerConfi
               console.error(`❌ Failed to push ${skillIdn}: ${error instanceof Error ? error.message : String(error)}`);
             }
           } else if (verbose) {
-            console.log(`      ✓ No changes: ${skillIdn}`);
+            console.log(`      ✓ No changes: ${skillIdn} (${skillFile.fileName})`);
           }
         }
 
         // Check for metadata-only changes and push them separately
-        for (const [skillIdn, skillMeta] of Object.entries(flowObj.skills)) {
+        for (const [skillIdn] of Object.entries(flowObj.skills)) {
           const metadataPath = projectIdn ?
             skillMetadataPath(customer.idn, projectIdn, agentIdn, flowIdn, skillIdn) :
             skillMetadataPath(customer.idn, '', agentIdn, flowIdn, skillIdn);
@@ -132,14 +140,15 @@ export async function pushChanged(client: AxiosInstance, customer: CustomerConfi
                 // Load updated metadata
                 const updatedMetadata = yaml.load(metadataContent) as SkillMetadata;
 
-                // Get current script content
-                const scriptPath = projectIdn ?
-                  skillScriptPath(customer.idn, projectIdn, agentIdn, flowIdn, skillIdn, skillMeta.runner_type) :
-                  skillScriptPath(customer.idn, '', agentIdn, flowIdn, skillIdn, skillMeta.runner_type);
-
+                // Get current script content using file validation
+                const skillFile = await getSingleSkillFile(customer.idn, projectIdn, agentIdn, flowIdn, skillIdn);
                 let scriptContent = '';
-                if (await fs.pathExists(scriptPath)) {
-                  scriptContent = await fs.readFile(scriptPath, 'utf8');
+
+                if (skillFile) {
+                  scriptContent = skillFile.content;
+                } else {
+                  console.warn(`⚠️  No valid script file found for metadata update: ${skillIdn}`);
+                  continue;
                 }
 
                 // Create skill object with updated metadata

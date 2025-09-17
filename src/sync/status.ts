@@ -7,13 +7,15 @@ import { sha256, loadHashes } from '../hash.js';
 import {
   ensureState,
   mapPath,
-  skillScriptPath,
-  skillPath,
   skillMetadataPath,
   customerAttributesPath,
   customerAttributesBackupPath,
   flowsYamlPath
 } from '../fsutil.js';
+import {
+  validateSkillFolder,
+  getSingleSkillFile
+} from './skill-files.js';
 import type {
   CustomerConfig,
   ProjectMap,
@@ -59,34 +61,43 @@ export async function status(customer: CustomerConfig, verbose: boolean = false)
       if (verbose) console.log(`  📁 Checking agent: ${agentIdn}`);
       for (const [flowIdn, flowObj] of Object.entries(agentObj.flows)) {
         if (verbose) console.log(`    📁 Checking flow: ${flowIdn}`);
-        for (const [skillIdn, skillMeta] of Object.entries(flowObj.skills)) {
-          // Try new folder structure first
-          const newPath = projectIdn ?
-            skillScriptPath(customer.idn, projectIdn, agentIdn, flowIdn, skillIdn, skillMeta.runner_type) :
-            skillScriptPath(customer.idn, '', agentIdn, flowIdn, skillIdn, skillMeta.runner_type);
+        for (const [skillIdn] of Object.entries(flowObj.skills)) {
+          // Validate skill folder and show warnings
+          const validation = await validateSkillFolder(customer.idn, projectIdn, agentIdn, flowIdn, skillIdn);
 
-          // Fallback to legacy structure
-          const legacyPath = projectIdn ?
-            skillPath(customer.idn, projectIdn, agentIdn, flowIdn, skillIdn, skillMeta.runner_type) :
-            skillPath(customer.idn, '', agentIdn, flowIdn, skillIdn, skillMeta.runner_type);
+          if (!validation.isValid) {
+            // Show warnings and errors
+            validation.errors.forEach(error => {
+              console.error(`❌ ${error}`);
+            });
+            validation.warnings.forEach(warning => {
+              console.warn(`⚠️  ${warning}`);
+            });
 
-          let currentPath = newPath;
-          let exists = await fs.pathExists(newPath);
-
-          // If new structure doesn't exist, try legacy structure
-          if (!exists) {
-            exists = await fs.pathExists(legacyPath);
-            currentPath = legacyPath;
-          }
-
-          if (!exists) {
-            console.log(`D  ${currentPath}`);
-            dirty++;
-            if (verbose) console.log(`      ❌ Deleted: ${currentPath}`);
+            if (validation.files.length > 1) {
+              console.warn(`⚠️  Multiple script files in skill ${skillIdn}:`);
+              validation.files.forEach(file => {
+                console.warn(`   • ${file.fileName}`);
+              });
+              console.warn(`   Status check skipped - please keep only one script file.`);
+            } else if (validation.files.length === 0) {
+              console.log(`D  ${skillIdn}/ (no script files)`);
+              dirty++;
+            }
             continue;
           }
 
-          const content = await fs.readFile(currentPath, 'utf8');
+          // Get the single valid script file
+          const skillFile = await getSingleSkillFile(customer.idn, projectIdn, agentIdn, flowIdn, skillIdn);
+          if (!skillFile) {
+            console.log(`D  ${skillIdn}/ (no valid script file)`);
+            dirty++;
+            if (verbose) console.log(`      ❌ No valid script file found: ${skillIdn}`);
+            continue;
+          }
+
+          const content = skillFile.content;
+          const currentPath = skillFile.filePath;
           const h = sha256(content);
           const oldHash = hashes[currentPath];
 
@@ -99,9 +110,9 @@ export async function status(customer: CustomerConfig, verbose: boolean = false)
           if (oldHash !== h) {
             console.log(`M  ${currentPath}`);
             dirty++;
-            if (verbose) console.log(`      🔄 Modified: ${currentPath}`);
+            if (verbose) console.log(`      🔄 Modified: ${skillFile.fileName}`);
           } else if (verbose) {
-            console.log(`      ✓ Unchanged: ${currentPath}`);
+            console.log(`      ✓ Unchanged: ${skillFile.fileName}`);
           }
         }
 

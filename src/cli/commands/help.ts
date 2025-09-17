@@ -16,6 +16,7 @@ Usage:
 Flags:
   --customer <idn>             # specify customer (if not set, uses default or interactive selection)
   --all                        # include all available data (for conversations: all personas and acts)
+  --force, -f                  # force overwrite without prompting (for pull command)
   --verbose, -v                # enable detailed logging
 
 Environment Variables:

@@ -16,8 +16,15 @@ import {
   agentMetadataPath,
   flowMetadataPath,
   skillMetadataPath,
-  skillScriptPath
+  skillScriptPath,
+  skillFolderPath
 } from '../fsutil.js';
+import {
+  findSkillScriptFiles,
+  isContentDifferent,
+  askForOverwrite,
+  getExtensionForRunner
+} from './skill-files.js';
 import fs from 'fs-extra';
 import { sha256, saveHashes } from '../hash.js';
 import yaml from 'js-yaml';
@@ -51,7 +58,8 @@ export async function pullSingleProject(
   client: AxiosInstance,
   customer: CustomerConfig,
   projectId: string | null,
-  verbose: boolean = false
+  verbose: boolean = false,
+  silentOverwrite: boolean = false
 ): Promise<void> {
   if (verbose) console.log(`📋 Loading project list for customer ${customer.idn}...`);
 
@@ -195,11 +203,62 @@ export async function pullSingleProject(
           await writeFileSafe(skillMetaPath, skillMetaYaml);
           newHashes[skillMetaPath] = sha256(skillMetaYaml);
 
-          // Save skill script
-          const scriptPath = skillScriptPath(customer.idn, project.idn, agent.idn, flow.idn, skill.idn, skill.runner_type);
+          // Handle skill script with overwrite detection
           const scriptContent = skill.prompt_script || '';
-          await writeFileSafe(scriptPath, scriptContent);
-          newHashes[scriptPath] = sha256(scriptContent);
+          const scriptPath = skillScriptPath(customer.idn, project.idn, agent.idn, flow.idn, skill.idn, skill.runner_type);
+          const folderPath = skillFolderPath(customer.idn, project.idn, agent.idn, flow.idn, skill.idn);
+
+          // Check for existing script files in the skill folder
+          const existingFiles = await findSkillScriptFiles(folderPath);
+          let shouldWrite = true;
+
+          if (existingFiles.length > 0) {
+            // Check if any existing file has the same content
+            const contentMatches = existingFiles.some(file => !isContentDifferent(file.content, scriptContent));
+
+            if (contentMatches) {
+              // Content is the same, no need to ask for overwrite
+              if (verbose) console.log(`        ✓ Content unchanged for ${skill.idn}, skipping overwrite`);
+              shouldWrite = false;
+
+              // Find the matching file and use its path for hashing
+              const matchingFile = existingFiles.find(file => !isContentDifferent(file.content, scriptContent));
+              if (matchingFile) {
+                newHashes[matchingFile.filePath] = sha256(scriptContent);
+              }
+            } else if (!silentOverwrite) {
+              // Content is different, ask for overwrite
+              const existingFile = existingFiles[0]!;
+              const shouldOverwrite = await askForOverwrite(
+                skill.idn,
+                existingFile.fileName,
+                `${skill.idn}.${getExtensionForRunner(skill.runner_type)}`
+              );
+
+              if (!shouldOverwrite) {
+                shouldWrite = false;
+                if (verbose) console.log(`        ⚠️  Skipped overwrite for ${skill.idn}`);
+              } else {
+                // Remove existing files before writing new one
+                for (const file of existingFiles) {
+                  await fs.remove(file.filePath);
+                  if (verbose) console.log(`        🗑️  Removed ${file.fileName}`);
+                }
+              }
+            } else {
+              // Silent overwrite mode - remove existing files
+              for (const file of existingFiles) {
+                await fs.remove(file.filePath);
+                if (verbose) console.log(`        🔄 Silent overwrite: removed ${file.fileName}`);
+              }
+            }
+          }
+
+          if (shouldWrite) {
+            await writeFileSafe(scriptPath, scriptContent);
+            newHashes[scriptPath] = sha256(scriptContent);
+            if (verbose) console.log(`        ✓ Saved ${skill.idn}.${getExtensionForRunner(skill.runner_type)}`);
+          }
 
           projectData.agents[agent.idn]!.flows[flow.idn]!.skills[skill.idn] = skillMeta;
         }
@@ -227,11 +286,12 @@ export async function pullAll(
   client: AxiosInstance,
   customer: CustomerConfig,
   projectId: string | null = null,
-  verbose: boolean = false
+  verbose: boolean = false,
+  silentOverwrite: boolean = false
 ): Promise<void> {
   if (verbose) console.log(`🔄 Starting pull operation for customer ${customer.idn}...`);
 
-  await pullSingleProject(client, customer, projectId, verbose);
+  await pullSingleProject(client, customer, projectId, verbose, silentOverwrite);
 
   if (verbose) console.log(`✅ Pull completed for customer ${customer.idn}`);
 }

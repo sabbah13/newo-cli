@@ -84,7 +84,7 @@ export function skillScriptPath(
   runnerType: RunnerType = 'guidance'
 ): string {
   const extension = runnerType === 'nsl' ? '.jinja' : '.guidance';
-  return path.posix.join(skillFolderPath(customerIdn, projectIdn, agentIdn, flowIdn, skillIdn), `skill${extension}`);
+  return path.posix.join(skillFolderPath(customerIdn, projectIdn, agentIdn, flowIdn, skillIdn), `${skillIdn}${extension}`);
 }
 
 // Metadata paths for hierarchical structure
