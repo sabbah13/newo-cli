@@ -145,21 +145,47 @@ export function isContentDifferent(existingContent: string, newContent: string):
 export type OverwriteChoice = 'yes' | 'no' | 'all' | 'quit';
 
 /**
- * Interactive overwrite confirmation
+ * Interactive overwrite confirmation with content diff
  */
-export async function askForOverwrite(skillIdn: string, existingFile: string, newFile: string): Promise<OverwriteChoice> {
+export async function askForOverwrite(skillIdn: string, existingContent: string, newContent: string, fileName: string): Promise<OverwriteChoice> {
   const readline = await import('readline');
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout
   });
 
-  console.log(`\n⚠️  File exists for skill ${skillIdn}:`);
-  console.log(`   Existing: ${existingFile}`);
-  console.log(`   New:      ${newFile}`);
+  console.log(`\n⚠️  Content differs for skill ${skillIdn} (${fileName}):`);
+
+  // ANSI color codes
+  const red = '\x1b[31m';
+  const green = '\x1b[32m';
+  const reset = '\x1b[0m';
+
+  // Show a GitHub-style colored diff
+  const existingLines = existingContent.trim().split('\n');
+  const newLines = newContent.trim().split('\n');
+
+  // Show first few different lines with colors
+  let diffShown = 0;
+  const maxDiffLines = 5;
+
+  for (let i = 0; i < Math.max(existingLines.length, newLines.length) && diffShown < maxDiffLines; i++) {
+    const existingLine = existingLines[i] || '';
+    const newLine = newLines[i] || '';
+
+    if (existingLine !== newLine) {
+      if (existingLine) console.log(`${red}-${existingLine}${reset}`);
+      if (newLine) console.log(`${green}+${newLine}${reset}`);
+      diffShown++;
+    }
+  }
+
+  if (diffShown === maxDiffLines) {
+    console.log('   ... (more differences)');
+  }
 
   const answer = await new Promise<string>((resolve) => {
-    rl.question('Overwrite? (y)es/(n)o/(a)ll/(q)uit: ', resolve);
+    rl.question(`\nReplace local with remote? (y)es/(n)o/(a)ll/(q)uit: `, resolve);
   });
   rl.close();
 

@@ -270,8 +270,9 @@ export async function pullSingleProject(
               const existingFile = existingFiles[0]!;
               const overwriteChoice: OverwriteChoice = await askForOverwrite(
                 skill.idn,
-                existingFile.fileName,
-                `${skill.idn}.${getExtensionForRunner(skill.runner_type)}`
+                existingFile.content,
+                scriptContent,
+                existingFile.fileName
               );
 
               if (overwriteChoice === 'quit') {
