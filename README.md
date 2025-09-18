@@ -5,16 +5,20 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org/)
 
-**NEWO CLI** - Sync NEWO AI Agent skills between the NEWO platform and your local development environment. Supports **multi-customer workspaces**, **Git-first workflows**, and **comprehensive project management**.
+**NEWO CLI** - Professional command-line tool for NEWO AI Agent development. Features **modular architecture**, **IDN-based file management**, and **comprehensive multi-customer support**.
 
-Mirror NEWO "Project → Agent → Flow → Skills" structure to local files with:
-- 🔄 **Two-way synchronization** - Pull from NEWO, push local changes back
-- 🏢 **Multi-customer support** - Work with multiple NEWO accounts simultaneously
-- 📁 **Multi-project workspaces** - Manage multiple projects in organized folder structure
+Sync NEWO "Project → Agent → Flow → Skills" structure to local files with:
+- 🔄 **Intelligent synchronization** - Pull projects, attributes, and conversations automatically
+- 🎯 **IDN-based naming** - Skills named as `{skillIdn}.jinja/.guidance` for better organization
+- 📊 **Real-time progress** - Live progress tracking during large operations (966+ skills)
+- 🏢 **Multi-customer workspaces** - Work with multiple NEWO accounts simultaneously
+- 📁 **Hierarchical structure** - Complete project metadata and organized file structure
 - 🔐 **Secure authentication** - API key-based auth with automatic token refresh
-- ⚡ **Change detection** - SHA256-based efficient sync of only modified files
+- ⚡ **Smart change detection** - SHA256-based efficient sync with hash consistency
+- 🛡️ **File validation** - Multiple file detection with clear warnings and safe handling
 - 🧠 **AI skill formats** - Support for `.guidance` (AI prompts) and `.jinja` (NSL templates)
 - 📊 **Knowledge base import** - Bulk import AKB articles from structured text files
+- 💬 **Conversation history** - Extract and sync user conversations and personas
 - 🔧 **CI/CD ready** - GitHub Actions integration for automated deployments
 
 ---
@@ -125,14 +129,15 @@ NEWO_REFRESH_URL=custom_refresh_endpoint   # Custom refresh endpoint
 
 ### Core Commands
 
-| Command | Description | Examples |
+| Command | Description | Features |
 |---------|-------------|----------|
-| `newo pull` | Download projects from NEWO | `newo pull` (all customers if no default)<br>`newo pull --customer=ACME`<br>`newo pull --project=uuid` |
-| `newo push` | Upload local changes to NEWO | `newo push`<br>`newo push --customer=BETA` |
-| `newo status` | Show modified files | `newo status`<br>`newo status --verbose` |
-| `newo list-customers` | List configured customers | `newo list-customers` |
-| `newo import-akb` | Import knowledge base articles | `newo import-akb file.txt persona_id` |
-| `newo meta` | Get project metadata | `newo meta --project=uuid` |
+| `newo pull` | Download projects + attributes + metadata | • Real-time progress tracking (966+ skills)<br>• IDN-based file naming<br>• Automatic attributes.yaml generation<br>• `--force` for silent overwrite |
+| `newo push` | Upload local changes to NEWO | • Smart file validation<br>• Multiple file detection<br>• Hash-based change detection<br>• Safe error handling |
+| `newo status` | Show modified files with details | • Multiple file warnings<br>• Detailed change analysis<br>• Clean state validation<br>• Per-customer status |
+| `newo conversations` | Pull conversation history | • User personas and chat history<br>• YAML format output<br>• Pagination support |
+| `newo list-customers` | List configured customers | • Shows default customer<br>• Multi-customer discovery |
+| `newo import-akb` | Import knowledge base articles | • Structured text parsing<br>• Bulk article import<br>• Validation and error reporting |
+| `newo meta` | Get project metadata (debug) | • Project structure analysis<br>• Metadata validation |
 
 ### Multi-Customer Commands
 
@@ -168,20 +173,33 @@ newo push    # Pushes to appropriate customers based on file origin
 ```
 newo_customers/                         # Root folder for all customers
 ├── NEWO_ABC123/                        # Customer folder (auto-detected IDN)
+│   ├── attributes.yaml                 # Customer attributes (auto-generated)
+│   ├── conversations.yaml              # Conversation history (optional)
 │   └── projects/                       # Customer's projects
-│       ├── flows.yaml                  # Customer's flows export
+│       ├── flows.yaml                  # Clean metadata export (no prompt_script)
 │       └── ProjectAlpha/               # Individual project folder
-│           ├── metadata.json           # Project metadata
+│           ├── metadata.yaml           # Project metadata
 │           ├── agent_support/          # Agent folder
+│           │   ├── metadata.yaml       # Agent metadata
 │           │   ├── flow_onboarding/    # Flow folder
-│           │   │   ├── skill_welcome.guidance  # AI prompt skill
-│           │   │   └── skill_setup.jinja       # NSL template skill
+│           │   │   ├── metadata.yaml   # Flow metadata
+│           │   │   ├── skill_welcome/  # Skill folder (IDN-based)
+│           │   │   │   ├── skill_welcome.guidance  # IDN-named script
+│           │   │   │   └── metadata.yaml           # Skill metadata
+│           │   │   └── skill_setup/    # Another skill folder
+│           │   │       ├── skill_setup.jinja      # IDN-named script
+│           │   │       └── metadata.yaml          # Skill metadata
 │           │   └── flow_help/
-│           │       └── skill_faq.guidance
+│           │       └── skill_faq/
+│           │           ├── skill_faq.guidance
+│           │           └── metadata.yaml
 │           └── agent_sales/
 │               └── flow_demo/
-│                   └── skill_pitch.jinja
+│                   └── skill_pitch/
+│                       ├── skill_pitch.jinja
+│                       └── metadata.yaml
 ├── NEWO_XYZ789/                        # Another customer
+│   ├── attributes.yaml
 │   └── projects/
 │       ├── flows.yaml
 │       └── ProjectBeta/
@@ -279,6 +297,36 @@ When errors occur, NEWO CLI provides:
 - 💡 **Solution suggestions** for common configuration issues
 - 📋 **Step-by-step guidance** for resolving authentication and network problems
 - 🔧 **Configuration validation** to ensure proper setup
+
+---
+
+## 🏗️ Modular Architecture (v2.0+)
+
+**Professional modular design** for maintainability and extensibility:
+
+### CLI Modules (`src/cli/`)
+- **`cli.ts`** - Main entry point with command routing (124 lines)
+- **`errors.ts`** - Centralized error handling with user-friendly messages
+- **`customer-selection.ts`** - Customer management and selection logic
+- **`commands/`** - Individual command handlers:
+  - `pull.ts`, `push.ts`, `status.ts`, `conversations.ts`
+  - `meta.ts`, `import-akb.ts`, `help.ts`, `list-customers.ts`
+
+### Sync Modules (`src/sync/`)
+- **`sync.ts`** - Unified exports and entry point (13 lines)
+- **`projects.ts`** - Project sync operations with progress tracking
+- **`push.ts`** - Push operations with file validation
+- **`status.ts`** - Status checking with multiple file warnings
+- **`attributes.ts`** - Customer attributes synchronization
+- **`conversations.ts`** - Conversation history management
+- **`metadata.ts`** - flows.yaml generation (clean, no prompt_script)
+- **`skill-files.ts`** - File validation and IDN-based naming utilities
+
+### Architecture Benefits
+- **Single Responsibility** - Each module handles one specific domain
+- **Enhanced Testability** - Independent modules with clear interfaces
+- **Better Maintainability** - Easy to locate and modify functionality
+- **Future-Proof** - Simple to add new commands and sync operations
 
 ---
 
