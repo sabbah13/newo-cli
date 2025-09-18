@@ -166,63 +166,67 @@ export async function askForOverwrite(skillIdn: string, existingContent: string,
   const localLines = existingContent.trim().split('\n');
   const remoteLines = newContent.trim().split('\n');
 
-  // Find differences and show with 2 lines context before/after
-  const diffs: Array<{localIndex: number, remoteIndex: number, type: 'change' | 'add' | 'remove'}> = [];
+  // Find the first differing section and show it with context
+  let diffStart = -1;
+  let diffEnd = -1;
 
-  // Simple diff algorithm to find changes
-  let localIdx = 0;
-  let remoteIdx = 0;
-
-  while (localIdx < localLines.length || remoteIdx < remoteLines.length) {
-    const localLine = localLines[localIdx];
-    const remoteLine = remoteLines[remoteIdx];
-
-    if (localLine !== remoteLine) {
-      if (localLine !== undefined && remoteLine !== undefined) {
-        diffs.push({localIndex: localIdx, remoteIndex: remoteIdx, type: 'change'});
-      } else if (localLine !== undefined) {
-        diffs.push({localIndex: localIdx, remoteIndex: -1, type: 'remove'});
-      } else if (remoteLine !== undefined) {
-        diffs.push({localIndex: -1, remoteIndex: remoteIdx, type: 'add'});
-      }
+  // Find first difference
+  for (let i = 0; i < Math.max(localLines.length, remoteLines.length); i++) {
+    if (localLines[i] !== remoteLines[i]) {
+      diffStart = i;
+      break;
     }
-
-    if (localLine !== undefined) localIdx++;
-    if (remoteLine !== undefined) remoteIdx++;
   }
 
-  // Show diffs with context (2 lines before/after each change)
-  let shown = 0;
-  const maxDiffGroups = 3;
-
-  for (const diff of diffs.slice(0, maxDiffGroups)) {
-    if (shown > 0) console.log(''); // Separator between diff groups
-
-    // Show context before
-    const contextStart = Math.max(0, diff.localIndex - 2);
-    for (let i = contextStart; i < diff.localIndex && i < localLines.length; i++) {
-      console.log(`    ${String(i + 1).padStart(3)}      ${localLines[i]}`);
-    }
-
-    // Show the actual diff
-    if (diff.type === 'change' || diff.type === 'remove') {
-      console.log(`${redBg} -  ${String(diff.localIndex + 1).padStart(3)}      ${localLines[diff.localIndex]} ${reset}`);
-    }
-    if (diff.type === 'change' || diff.type === 'add') {
-      console.log(`${greenBg} +  ${String(diff.remoteIndex + 1).padStart(3)}      ${remoteLines[diff.remoteIndex]} ${reset}`);
-    }
-
-    // Show context after
-    const contextEnd = Math.min(localLines.length, diff.localIndex + 3);
-    for (let i = diff.localIndex + 1; i < contextEnd; i++) {
-      console.log(`    ${String(i + 1).padStart(3)}      ${localLines[i]}`);
-    }
-
-    shown++;
+  if (diffStart === -1) {
+    // No differences found (shouldn't happen, but handle gracefully)
+    console.log(`${gray}   No differences found${reset}`);
+    return 'no';
   }
 
-  if (diffs.length > maxDiffGroups) {
-    console.log(`${gray}... (${diffs.length - maxDiffGroups} more diff groups)${reset}`);
+  // Find end of difference section
+  diffEnd = diffStart;
+  while (diffEnd < Math.max(localLines.length, remoteLines.length) &&
+         (localLines[diffEnd] !== remoteLines[diffEnd] ||
+          localLines[diffEnd] === undefined ||
+          remoteLines[diffEnd] === undefined)) {
+    diffEnd++;
+  }
+
+  // Show context before (2 lines)
+  const contextStart = Math.max(0, diffStart - 2);
+  for (let i = contextStart; i < diffStart; i++) {
+    if (localLines[i] !== undefined) {
+      console.log(`    ${String(i + 1).padStart(3)}      ${localLines[i]}`);
+    }
+  }
+
+  // Show the differences
+  const maxDiffLine = Math.min(diffEnd, Math.max(localLines.length, remoteLines.length));
+  for (let i = diffStart; i < maxDiffLine; i++) {
+    const localLine = localLines[i];
+    const remoteLine = remoteLines[i];
+
+    if (localLine !== undefined && (remoteLine === undefined || localLine !== remoteLine)) {
+      console.log(`${redBg} -  ${String(i + 1).padStart(3)}      ${localLine} ${reset}`);
+    }
+    if (remoteLine !== undefined && (localLine === undefined || localLine !== remoteLine)) {
+      console.log(`${greenBg} +  ${String(i + 1).padStart(3)}      ${remoteLine} ${reset}`);
+    }
+  }
+
+  // Show context after (2 lines)
+  const contextEnd = Math.min(localLines.length, diffEnd + 2);
+  for (let i = diffEnd; i < contextEnd; i++) {
+    if (localLines[i] !== undefined) {
+      console.log(`    ${String(i + 1).padStart(3)}      ${localLines[i]}`);
+    }
+  }
+
+  // Show if there are more differences
+  const totalDiffs = Math.abs(localLines.length - remoteLines.length) + (diffEnd - diffStart);
+  if (totalDiffs > (diffEnd - diffStart)) {
+    console.log(`${gray}... (${totalDiffs - (diffEnd - diffStart)} more differences)${reset}`);
   }
 
   const answer = await new Promise<string>((resolve) => {
