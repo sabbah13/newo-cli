@@ -162,71 +162,36 @@ export async function askForOverwrite(skillIdn: string, existingContent: string,
   const gray = '\x1b[90m';
   const reset = '\x1b[0m';
 
-  // Show a GitHub-style colored diff with line numbers and context
-  const localLines = existingContent.trim().split('\n');
-  const remoteLines = newContent.trim().split('\n');
+  // Generate proper diff using LCS algorithm
+  const { generateDiff, filterDiffWithContext } = await import('./diff-utils.js');
+  const fullDiff = generateDiff(existingContent, newContent);
+  const contextDiff = filterDiffWithContext(fullDiff, 2);
 
-  // Find the first differing section and show it with context
-  let diffStart = -1;
-  let diffEnd = -1;
-
-  // Find first difference
-  for (let i = 0; i < Math.max(localLines.length, remoteLines.length); i++) {
-    if (localLines[i] !== remoteLines[i]) {
-      diffStart = i;
-      break;
-    }
-  }
-
-  if (diffStart === -1) {
-    // No differences found (shouldn't happen, but handle gracefully)
+  if (contextDiff.length === 0) {
     console.log(`${gray}   No differences found${reset}`);
     return 'no';
   }
 
-  // Find end of difference section
-  diffEnd = diffStart;
-  while (diffEnd < Math.max(localLines.length, remoteLines.length) &&
-         (localLines[diffEnd] !== remoteLines[diffEnd] ||
-          localLines[diffEnd] === undefined ||
-          remoteLines[diffEnd] === undefined)) {
-    diffEnd++;
-  }
-
-  // Show context before (2 lines)
-  const contextStart = Math.max(0, diffStart - 2);
-  for (let i = contextStart; i < diffStart; i++) {
-    if (localLines[i] !== undefined) {
-      console.log(`    ${String(i + 1).padStart(3)}      ${localLines[i]}`);
+  // Display the diff with proper GitHub-style formatting
+  for (const line of contextDiff) {
+    if (line.type === 'context') {
+      // Show context lines in gray
+      const lineNum = line.localLineNum !== -1 ? line.localLineNum : line.remoteLineNum;
+      console.log(`    ${String(lineNum).padStart(3)}      ${line.content}`);
+    } else if (line.type === 'remove') {
+      // Show local content being removed (red background)
+      console.log(`${redBg} -  ${String(line.localLineNum).padStart(3)}      ${line.content} ${reset}`);
+    } else if (line.type === 'add') {
+      // Show remote content being added (green background)
+      console.log(`${greenBg} +  ${String(line.remoteLineNum).padStart(3)}      ${line.content} ${reset}`);
     }
   }
 
-  // Show the differences
-  const maxDiffLine = Math.min(diffEnd, Math.max(localLines.length, remoteLines.length));
-  for (let i = diffStart; i < maxDiffLine; i++) {
-    const localLine = localLines[i];
-    const remoteLine = remoteLines[i];
-
-    if (localLine !== undefined && (remoteLine === undefined || localLine !== remoteLine)) {
-      console.log(`${redBg} -  ${String(i + 1).padStart(3)}      ${localLine} ${reset}`);
-    }
-    if (remoteLine !== undefined && (localLine === undefined || localLine !== remoteLine)) {
-      console.log(`${greenBg} +  ${String(i + 1).padStart(3)}      ${remoteLine} ${reset}`);
-    }
-  }
-
-  // Show context after (2 lines)
-  const contextEnd = Math.min(localLines.length, diffEnd + 2);
-  for (let i = diffEnd; i < contextEnd; i++) {
-    if (localLines[i] !== undefined) {
-      console.log(`    ${String(i + 1).padStart(3)}      ${localLines[i]}`);
-    }
-  }
-
-  // Show if there are more differences
-  const totalDiffs = Math.abs(localLines.length - remoteLines.length) + (diffEnd - diffStart);
-  if (totalDiffs > (diffEnd - diffStart)) {
-    console.log(`${gray}... (${totalDiffs - (diffEnd - diffStart)} more differences)${reset}`);
+  // Show if there are more changes beyond what we're displaying
+  const totalChanges = fullDiff.filter(line => line.type !== 'context').length;
+  const displayedChanges = contextDiff.filter(line => line.type !== 'context').length;
+  if (totalChanges > displayedChanges) {
+    console.log(`${gray}... (${totalChanges - displayedChanges} more changes)${reset}`);
   }
 
   const answer = await new Promise<string>((resolve) => {
