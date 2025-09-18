@@ -27,6 +27,7 @@ import {
   askForOverwrite,
   getExtensionForRunner
 } from './skill-files.js';
+import type { OverwriteChoice } from './skill-files.js';
 import fs from 'fs-extra';
 import { sha256, saveHashes } from '../hash.js';
 import yaml from 'js-yaml';
@@ -96,9 +97,10 @@ export async function pullSingleProject(
 
   const newHashes: HashStore = {};
 
-  // Progress tracking
+  // Progress tracking and overwrite control
   let totalSkills = 0;
   let processedSkills = 0;
+  let globalOverwriteAll = silentOverwrite;
 
   // Count total skills for progress tracking
   for (const project of projects) {
@@ -249,7 +251,7 @@ export async function pullSingleProject(
             hasContentMatch = existingFiles.some(file => !isContentDifferent(file.content, scriptContent));
 
             if (hasContentMatch) {
-              // Content is the same - remove old files and write with correct IDN name
+              // Content is the same - handle file naming
               const matchingFile = existingFiles.find(file => !isContentDifferent(file.content, scriptContent));
               const correctName = `${skill.idn}.${getExtensionForRunner(skill.runner_type)}`;
 
@@ -258,29 +260,40 @@ export async function pullSingleProject(
                 await fs.remove(matchingFile.filePath);
                 if (verbose) console.log(`        🔄 Renamed ${matchingFile.fileName} → ${correctName}`);
               } else if (matchingFile && matchingFile.fileName === correctName) {
-                // Already has correct name and content
+                // Already has correct name and content - skip completely
                 shouldWrite = false;
                 newHashes[matchingFile.filePath] = sha256(scriptContent);
                 if (verbose) console.log(`        ✓ Content unchanged for ${skill.idn}, keeping existing file`);
               }
-            } else if (!silentOverwrite) {
-              // Content is different, ask for overwrite
+            } else if (!globalOverwriteAll) {
+              // Content is different, ask for overwrite unless global override is set
               const existingFile = existingFiles[0]!;
-              const shouldOverwrite = await askForOverwrite(
+              const overwriteChoice: OverwriteChoice = await askForOverwrite(
                 skill.idn,
                 existingFile.fileName,
                 `${skill.idn}.${getExtensionForRunner(skill.runner_type)}`
               );
 
-              if (!shouldOverwrite) {
-                shouldWrite = false;
-                if (verbose) console.log(`        ⚠️  Skipped overwrite for ${skill.idn}`);
-              } else {
-                // Remove existing files before writing new one
+              if (overwriteChoice === 'quit') {
+                console.log('❌ Pull operation cancelled by user');
+                process.exit(0);
+              } else if (overwriteChoice === 'all') {
+                globalOverwriteAll = true;
+                // Continue with overwrite
                 for (const file of existingFiles) {
                   await fs.remove(file.filePath);
                   if (verbose) console.log(`        🗑️  Removed ${file.fileName}`);
                 }
+              } else if (overwriteChoice === 'yes') {
+                // Single overwrite
+                for (const file of existingFiles) {
+                  await fs.remove(file.filePath);
+                  if (verbose) console.log(`        🗑️  Removed ${file.fileName}`);
+                }
+              } else {
+                // User said no
+                shouldWrite = false;
+                if (verbose) console.log(`        ⚠️  Skipped overwrite for ${skill.idn}`);
               }
             } else {
               // Silent overwrite mode - remove existing files

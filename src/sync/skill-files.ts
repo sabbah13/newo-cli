@@ -142,10 +142,12 @@ export function isContentDifferent(existingContent: string, newContent: string):
   return sha256(existingContent.trim()) !== sha256(newContent.trim());
 }
 
+export type OverwriteChoice = 'yes' | 'no' | 'all' | 'quit';
+
 /**
  * Interactive overwrite confirmation
  */
-export async function askForOverwrite(skillIdn: string, existingFile: string, newFile: string): Promise<boolean> {
+export async function askForOverwrite(skillIdn: string, existingFile: string, newFile: string): Promise<OverwriteChoice> {
   const readline = await import('readline');
   const rl = readline.createInterface({
     input: process.stdin,
@@ -164,13 +166,16 @@ export async function askForOverwrite(skillIdn: string, existingFile: string, ne
   const choice = answer.toLowerCase().trim();
 
   if (choice === 'q' || choice === 'quit') {
-    console.log('❌ Pull operation cancelled by user');
-    process.exit(0);
+    return 'quit';
   }
 
   if (choice === 'a' || choice === 'all') {
-    return true; // This should be handled by caller to set global overwrite mode
+    return 'all';
   }
 
-  return choice === 'y' || choice === 'yes';
+  if (choice === 'y' || choice === 'yes') {
+    return 'yes';
+  }
+
+  return 'no';
 }
