@@ -154,34 +154,49 @@ export async function askForOverwrite(skillIdn: string, existingContent: string,
     output: process.stdout
   });
 
-  console.log(`\n⚠️  Content differs for skill ${skillIdn} (${fileName}):`);
+  console.log(`\n⚠️  Local changes will be replaced by remote content for skill ${skillIdn} (${fileName}):`);
 
   // ANSI color codes
   const red = '\x1b[31m';
   const green = '\x1b[32m';
+  const gray = '\x1b[90m';
   const reset = '\x1b[0m';
 
-  // Show a GitHub-style colored diff
-  const existingLines = existingContent.trim().split('\n');
-  const newLines = newContent.trim().split('\n');
+  // Show a GitHub-style colored diff with line numbers
+  const localLines = existingContent.trim().split('\n');
+  const remoteLines = newContent.trim().split('\n');
 
-  // Show first few different lines with colors
+  // Show first few different lines with colors and line numbers
   let diffShown = 0;
-  const maxDiffLines = 5;
+  const maxDiffLines = 8;
+  let localLineNum = 1;
+  let remoteLineNum = 1;
 
-  for (let i = 0; i < Math.max(existingLines.length, newLines.length) && diffShown < maxDiffLines; i++) {
-    const existingLine = existingLines[i] || '';
-    const newLine = newLines[i] || '';
+  console.log(`${gray}   Local (-) vs Remote (+):${reset}`);
 
-    if (existingLine !== newLine) {
-      if (existingLine) console.log(`${red}-${existingLine}${reset}`);
-      if (newLine) console.log(`${green}+${newLine}${reset}`);
+  for (let i = 0; i < Math.max(localLines.length, remoteLines.length) && diffShown < maxDiffLines; i++) {
+    const localLine = localLines[i] || '';
+    const remoteLine = remoteLines[i] || '';
+
+    if (localLine !== remoteLine) {
+      if (localLine && localLines[i] !== undefined) {
+        console.log(`${red}-${String(localLineNum).padStart(3)}: ${localLine}${reset}`);
+        localLineNum++;
+      }
+      if (remoteLine && remoteLines[i] !== undefined) {
+        console.log(`${green}+${String(remoteLineNum).padStart(3)}: ${remoteLine}${reset}`);
+        remoteLineNum++;
+      }
       diffShown++;
+    } else {
+      // Lines are the same, advance both counters
+      if (localLines[i] !== undefined) localLineNum++;
+      if (remoteLines[i] !== undefined) remoteLineNum++;
     }
   }
 
   if (diffShown === maxDiffLines) {
-    console.log('   ... (more differences)');
+    console.log(`${gray}   ... (${Math.abs(localLines.length - remoteLines.length)} more line differences)${reset}`);
   }
 
   const answer = await new Promise<string>((resolve) => {
