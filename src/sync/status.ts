@@ -10,7 +10,10 @@ import {
   skillMetadataPath,
   customerAttributesPath,
   customerAttributesBackupPath,
-  flowsYamlPath
+  flowsYamlPath,
+  projectDir,
+  agentMetadataPath,
+  flowMetadataPath
 } from '../fsutil.js';
 import {
   validateSkillFolder,
@@ -30,6 +33,122 @@ function isProjectMap(x: unknown): x is ProjectMap {
 
 function isLegacyProjectMap(x: unknown): x is LegacyProjectMap {
   return typeof x === 'object' && x !== null && 'projectId' in x && 'agents' in x;
+}
+
+/**
+ * Scan filesystem for local-only entities not in the project map yet
+ */
+async function scanForLocalOnlyEntities(customer: CustomerConfig, projects: Record<string, ProjectData>, verbose: boolean = false): Promise<{ agentCount: number; flowCount: number; skillCount: number; entities: Array<{ type: 'agent' | 'flow' | 'skill'; path: string; idn: string; projectIdn: string; agentIdn?: string; flowIdn?: string }> }> {
+  const localEntities: Array<{ type: 'agent' | 'flow' | 'skill'; path: string; idn: string; projectIdn: string; agentIdn?: string; flowIdn?: string }> = [];
+  let agentCount = 0;
+  let flowCount = 0;
+  let skillCount = 0;
+
+  // Scan each project directory
+  for (const [projectIdn] of Object.entries(projects)) {
+    const projDir = projectDir(customer.idn, projectIdn);
+    if (!(await fs.pathExists(projDir))) continue;
+
+    if (verbose) console.log(`🔍 Scanning project directory: ${projDir}`);
+
+    // Get all subdirectories in the project (these should be agents)
+    const agentDirs = await fs.readdir(projDir);
+
+    for (const agentIdn of agentDirs) {
+      const agentPath = `${projDir}/${agentIdn}`;
+      const agentStat = await fs.stat(agentPath);
+
+      // Skip files, only process directories
+      if (!agentStat.isDirectory()) continue;
+
+      // Skip if it's not really an agent directory (no metadata.yaml)
+      const agentMetaPath = agentMetadataPath(customer.idn, projectIdn, agentIdn);
+      if (!(await fs.pathExists(agentMetaPath))) continue;
+
+      // Check if this agent is already in the project map
+      const projectData = projects[projectIdn];
+      if (!projectData?.agents[agentIdn]) {
+        // This is a local-only agent!
+        localEntities.push({
+          type: 'agent',
+          path: agentMetaPath,
+          idn: agentIdn,
+          projectIdn
+        });
+        agentCount++;
+        if (verbose) console.log(`  🆕 Found local-only agent: ${agentIdn}`);
+      }
+
+      // Now scan for flows within this agent (regardless of whether agent is local-only or not)
+      try {
+        const flowDirs = await fs.readdir(agentPath);
+        for (const flowIdn of flowDirs) {
+          const flowPath = `${agentPath}/${flowIdn}`;
+          const flowStat = await fs.stat(flowPath);
+
+          // Skip files, only process directories
+          if (!flowStat.isDirectory()) continue;
+
+          // Skip if it's not really a flow directory (no metadata.yaml)
+          const flowMetaPath = flowMetadataPath(customer.idn, projectIdn, agentIdn, flowIdn);
+          if (!(await fs.pathExists(flowMetaPath))) continue;
+
+          // Check if this flow exists in the project map
+          const agentData = projectData?.agents[agentIdn];
+          if (!agentData?.flows[flowIdn]) {
+            // This is a local-only flow!
+            localEntities.push({
+              type: 'flow',
+              path: flowMetaPath,
+              idn: flowIdn,
+              projectIdn,
+              agentIdn
+            });
+            flowCount++;
+            if (verbose) console.log(`    🆕 Found local-only flow: ${agentIdn}/${flowIdn}`);
+          }
+
+          // Now scan for skills within this flow (regardless of whether flow is local-only or not)
+          try {
+            const skillDirs = await fs.readdir(flowPath);
+            for (const skillIdn of skillDirs) {
+              const skillPath = `${flowPath}/${skillIdn}`;
+              const skillStat = await fs.stat(skillPath);
+
+              // Skip files, only process directories
+              if (!skillStat.isDirectory()) continue;
+
+              // Skip if it's not really a skill directory (no metadata.yaml)
+              const skillMetaPath = skillMetadataPath(customer.idn, projectIdn, agentIdn, flowIdn, skillIdn);
+              if (!(await fs.pathExists(skillMetaPath))) continue;
+
+              // Check if this skill exists in the project map
+              const flowData = agentData?.flows[flowIdn];
+              if (!flowData?.skills[skillIdn]) {
+                // This is a local-only skill!
+                localEntities.push({
+                  type: 'skill',
+                  path: skillMetaPath,
+                  idn: skillIdn,
+                  projectIdn,
+                  agentIdn,
+                  flowIdn
+                });
+                skillCount++;
+                if (verbose) console.log(`      🆕 Found local-only skill: ${agentIdn}/${flowIdn}/${skillIdn}`);
+              }
+            }
+          } catch (error) {
+            // Ignore errors reading flow directory
+          }
+        }
+      } catch (error) {
+        // Ignore errors reading agent directory
+      }
+    }
+  }
+
+  return { agentCount, flowCount, skillCount, entities: localEntities };
 }
 
 /**
@@ -53,6 +172,69 @@ export async function status(customer: CustomerConfig, verbose: boolean = false)
     : isLegacyProjectMap(idMapData)
     ? { '': idMapData as ProjectData }
     : (() => { throw new Error('Invalid project map format'); })();
+
+  // First, scan for any local-only entities (created locally but not yet pushed)
+  const localScan = await scanForLocalOnlyEntities(customer, projects, verbose);
+  const totalLocalEntities = localScan.agentCount + localScan.flowCount + localScan.skillCount;
+
+  if (totalLocalEntities > 0) {
+    dirty += totalLocalEntities;
+
+    for (const entity of localScan.entities) {
+      if (entity.type === 'agent') {
+        console.log(`A  ${entity.projectIdn}/${entity.idn}/metadata.yaml (new agent)`);
+        if (verbose) {
+          try {
+            const metadataContent = await fs.readFile(entity.path, 'utf8');
+            const metadata = yaml.load(metadataContent) as any;
+            console.log(`    📊 New Agent: ${entity.idn}`);
+            if (metadata?.title && metadata.title !== entity.idn) {
+              console.log(`      • Title: ${metadata.title}`);
+            }
+            if (metadata?.description) {
+              console.log(`      • Description: ${metadata.description}`);
+            }
+          } catch (e) {
+            // Ignore parsing errors
+          }
+        }
+      } else if (entity.type === 'flow') {
+        console.log(`A  ${entity.projectIdn}/${entity.agentIdn}/${entity.idn}/metadata.yaml (new flow)`);
+        if (verbose) {
+          try {
+            const metadataContent = await fs.readFile(entity.path, 'utf8');
+            const metadata = yaml.load(metadataContent) as any;
+            console.log(`    📊 New Flow: ${entity.idn}`);
+            if (metadata?.title && metadata.title !== entity.idn) {
+              console.log(`      • Title: ${metadata.title}`);
+            }
+            if (metadata?.default_runner_type) {
+              console.log(`      • Runner: ${metadata.default_runner_type}`);
+            }
+          } catch (e) {
+            // Ignore parsing errors
+          }
+        }
+      } else if (entity.type === 'skill') {
+        console.log(`A  ${entity.projectIdn}/${entity.agentIdn}/${entity.flowIdn}/${entity.idn}/metadata.yaml (new skill)`);
+        if (verbose) {
+          try {
+            const metadataContent = await fs.readFile(entity.path, 'utf8');
+            const metadata = yaml.load(metadataContent) as any;
+            console.log(`    📊 New Skill: ${entity.idn}`);
+            if (metadata?.title && metadata.title !== entity.idn) {
+              console.log(`      • Title: ${metadata.title}`);
+            }
+            if (metadata?.runner_type) {
+              console.log(`      • Runner: ${metadata.runner_type}`);
+            }
+          } catch (e) {
+            // Ignore parsing errors
+          }
+        }
+      }
+    }
+  }
 
   for (const [projectIdn, projectData] of Object.entries(projects)) {
     if (verbose && projectIdn) console.log(`📁 Checking project: ${projectIdn}`);

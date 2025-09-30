@@ -14,7 +14,27 @@ import type {
   UserPersonaResponse,
   UserPersona,
   ChatHistoryParams,
-  ChatHistoryResponse
+  ChatHistoryResponse,
+  CreateAgentRequest,
+  CreateAgentResponse,
+  CreateFlowRequest,
+  CreateFlowResponse,
+  CreateSkillRequest,
+  CreateSkillResponse,
+  CreateFlowEventRequest,
+  CreateFlowEventResponse,
+  CreateFlowStateRequest,
+  CreateFlowStateResponse,
+  CreateSkillParameterRequest,
+  CreateSkillParameterResponse,
+  CreateCustomerAttributeRequest,
+  CreateCustomerAttributeResponse,
+  CreatePersonaRequest,
+  CreatePersonaResponse,
+  CreateProjectRequest,
+  CreateProjectResponse,
+  PublishFlowRequest,
+  PublishFlowResponse
 } from './types.js';
 
 // Per-request retry tracking to avoid shared state issues
@@ -193,5 +213,102 @@ export async function getChatHistory(client: AxiosInstance, params: ChatHistoryP
   const response = await client.get<ChatHistoryResponse>('/api/v1/chat/history', {
     params: queryParams
   });
+  return response.data;
+}
+
+// Entity Creation/Deletion API Functions
+
+export async function createAgent(client: AxiosInstance, projectId: string, agentData: CreateAgentRequest): Promise<CreateAgentResponse> {
+  // Use project-specific v2 endpoint for proper project association
+  const response = await client.post<CreateAgentResponse>(`/api/v2/designer/${projectId}/agents`, agentData);
+  return response.data;
+}
+
+export async function deleteAgent(client: AxiosInstance, agentId: string): Promise<void> {
+  await client.delete(`/api/v1/designer/agents/${agentId}`);
+}
+
+export async function createFlow(client: AxiosInstance, agentId: string, flowData: CreateFlowRequest): Promise<CreateFlowResponse> {
+  // Use the correct NEWO endpoint pattern for flow creation
+  const response = await client.post(`/api/v1/designer/${agentId}/flows/empty`, flowData);
+
+  // The NEWO flow creation API returns empty response body with 201 status
+  // The flow is created successfully, but we need to get the ID through agent listing
+  if (response.status === 201) {
+    // Flow created successfully, but ID will be retrieved during pull operation
+    return { id: 'pending-sync' };
+  }
+
+  throw new Error(`Flow creation failed with status: ${response.status}`);
+}
+
+export async function deleteFlow(client: AxiosInstance, flowId: string): Promise<void> {
+  await client.delete(`/api/v1/designer/flows/${flowId}`);
+}
+
+export async function createSkill(client: AxiosInstance, flowId: string, skillData: CreateSkillRequest): Promise<CreateSkillResponse> {
+  const response = await client.post<CreateSkillResponse>(`/api/v1/designer/flows/${flowId}/skills`, skillData);
+  return response.data;
+}
+
+export async function deleteSkill(client: AxiosInstance, skillId: string): Promise<void> {
+  await client.delete(`/api/v1/designer/flows/skills/${skillId}`);
+}
+
+export async function deleteSkillById(client: AxiosInstance, skillId: string): Promise<void> {
+  console.log(`🗑️ Deleting skill from platform: ${skillId}`);
+  await client.delete(`/api/v1/designer/flows/skills/${skillId}`);
+  console.log(`✅ Skill deleted from platform: ${skillId}`);
+}
+
+export async function createFlowEvent(client: AxiosInstance, flowId: string, eventData: CreateFlowEventRequest): Promise<CreateFlowEventResponse> {
+  const response = await client.post<CreateFlowEventResponse>(`/api/v1/designer/flows/${flowId}/events`, eventData);
+  return response.data;
+}
+
+export async function deleteFlowEvent(client: AxiosInstance, eventId: string): Promise<void> {
+  await client.delete(`/api/v1/designer/flows/events/${eventId}`);
+}
+
+export async function createFlowState(client: AxiosInstance, flowId: string, stateData: CreateFlowStateRequest): Promise<CreateFlowStateResponse> {
+  const response = await client.post<CreateFlowStateResponse>(`/api/v1/designer/flows/${flowId}/states`, stateData);
+  return response.data;
+}
+
+export async function createSkillParameter(client: AxiosInstance, skillId: string, paramData: CreateSkillParameterRequest): Promise<CreateSkillParameterResponse> {
+  // Debug the parameter creation request
+  console.log('Creating parameter for skill:', skillId);
+  console.log('Parameter data:', JSON.stringify(paramData, null, 2));
+
+  try {
+    const response = await client.post<CreateSkillParameterResponse>(`/api/v1/designer/flows/skills/${skillId}/parameters`, paramData);
+    return response.data;
+  } catch (error: any) {
+    console.error('Parameter creation error details:', error.response?.data);
+    throw error;
+  }
+}
+
+export async function createCustomerAttribute(client: AxiosInstance, attributeData: CreateCustomerAttributeRequest): Promise<CreateCustomerAttributeResponse> {
+  const response = await client.post<CreateCustomerAttributeResponse>('/api/v1/customer/attributes', attributeData);
+  return response.data;
+}
+
+export async function createProject(client: AxiosInstance, projectData: CreateProjectRequest): Promise<CreateProjectResponse> {
+  const response = await client.post<CreateProjectResponse>('/api/v1/designer/projects', projectData);
+  return response.data;
+}
+
+export async function deleteProject(client: AxiosInstance, projectId: string): Promise<void> {
+  await client.delete(`/api/v1/designer/projects/${projectId}`);
+}
+
+export async function createPersona(client: AxiosInstance, personaData: CreatePersonaRequest): Promise<CreatePersonaResponse> {
+  const response = await client.post<CreatePersonaResponse>('/api/v1/customer/personas', personaData);
+  return response.data;
+}
+
+export async function publishFlow(client: AxiosInstance, flowId: string, publishData: PublishFlowRequest): Promise<PublishFlowResponse> {
+  const response = await client.post<PublishFlowResponse>(`/api/v1/designer/flows/${flowId}/publish`, publishData);
   return response.data;
 }

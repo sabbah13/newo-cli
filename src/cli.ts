@@ -16,6 +16,18 @@ import { handlePullAttributesCommand } from './cli/commands/pull-attributes.js';
 import { handleImportAkbCommand } from './cli/commands/import-akb.js';
 import { handleHelpCommand } from './cli/commands/help.js';
 import { handleListCustomersCommand } from './cli/commands/list-customers.js';
+import { handleCreateAgentCommand } from './cli/commands/create-agent.js';
+import { handleDeleteAgentCommand } from './cli/commands/delete-agent.js';
+import { handleCreateFlowCommand } from './cli/commands/create-flow.js';
+import { handleDeleteFlowCommand } from './cli/commands/delete-flow.js';
+import { handleCreateSkillCommand } from './cli/commands/create-skill.js';
+import { handleDeleteSkillCommand } from './cli/commands/delete-skill.js';
+import { handleCreateProjectCommand } from './cli/commands/create-project.js';
+import { handleCreateEventCommand } from './cli/commands/create-event.js';
+import { handleCreateStateCommand } from './cli/commands/create-state.js';
+import { handleCreateParameterCommand } from './cli/commands/create-parameter.js';
+import { handleCreatePersonaCommand } from './cli/commands/create-persona.js';
+import { handleCreateAttributeCommand } from './cli/commands/create-attribute.js';
 import type { CliArgs, NewoApiError } from './types.js';
 
 dotenv.config();
@@ -85,6 +97,54 @@ async function main(): Promise<void> {
 
       case 'import-akb':
         await handleImportAkbCommand(customerConfig, args, verbose);
+        break;
+
+      case 'create-agent':
+        await handleCreateAgentCommand(customerConfig, args, verbose);
+        break;
+
+      case 'delete-agent':
+        await handleDeleteAgentCommand(customerConfig, args, verbose);
+        break;
+
+      case 'create-flow':
+        await handleCreateFlowCommand(customerConfig, args, verbose);
+        break;
+
+      case 'delete-flow':
+        await handleDeleteFlowCommand(customerConfig, args, verbose);
+        break;
+
+      case 'create-skill':
+        await handleCreateSkillCommand(customerConfig, args, verbose);
+        break;
+
+      case 'delete-skill':
+        await handleDeleteSkillCommand(customerConfig, args, verbose);
+        break;
+
+      case 'create-project':
+        await handleCreateProjectCommand(customerConfig, args, verbose);
+        break;
+
+      case 'create-event':
+        await handleCreateEventCommand(customerConfig, args, verbose);
+        break;
+
+      case 'create-state':
+        await handleCreateStateCommand(customerConfig, args, verbose);
+        break;
+
+      case 'create-parameter':
+        await handleCreateParameterCommand(customerConfig, args, verbose);
+        break;
+
+      case 'create-persona':
+        await handleCreatePersonaCommand(customerConfig, args, verbose);
+        break;
+
+      case 'create-attribute':
+        await handleCreateAttributeCommand(customerConfig, args, verbose);
         break;
 
       default:

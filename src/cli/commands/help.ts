@@ -4,47 +4,129 @@
 
 export function handleHelpCommand(): void {
   console.log(`NEWO CLI - Multi-Customer Support
-Usage:
-  newo pull [--customer <idn>]                  # download projects -> ./newo_customers/<idn>/projects/
-  newo push [--customer <idn>]                  # upload modified *.guidance/*.jinja back to NEWO
-  newo status [--customer <idn>]                # show modified files
+A professional command-line tool for NEWO AI Agent development with modular architecture and comprehensive multi-customer support.
+
+Core Commands:
+  newo pull [--customer <idn>]                  # download projects + attributes -> ./newo_customers/<idn>/
+  newo push [--customer <idn>] [--no-publish]    # upload modified *.guidance/*.jinja + attributes back to NEWO, publish flows by default
+  newo status [--customer <idn>]                # show modified files that would be pushed
   newo conversations [--customer <idn>] [--all] # download user conversations -> ./newo_customers/<idn>/conversations.yaml
-  newo list-customers                           # list available customers
-  newo meta [--customer <idn>]                  # get project metadata (debug)
-  newo import-akb <file> <persona_id> [--customer <idn>]  # import AKB articles from file
+  newo pull-attributes [--customer <idn>]       # download customer attributes -> ./newo_customers/<idn>/attributes.yaml
+  newo list-customers                           # list available customers and their configuration
+  newo meta [--customer <idn>]                  # get project metadata (debug command)
+  newo import-akb <file> <persona_id> [--customer <idn>]  # import AKB articles from structured text file
+
+Project Management:
+  newo create-project <idn> [--title <title>] [--description <desc>] [--version <version>] [--auto-update]  # create project on platform ✅
+
+Entity Management (Full Lifecycle Support):
+  newo create-agent <idn> --project <project-idn> [--title <title>] [--description <desc>]    # create agent → push to platform ✅
+  newo delete-agent <agent-idn> --project <project-idn> [--confirm]    # delete agent locally (requires --confirm)
+  newo create-flow <idn> --agent <agent-idn> --project <project-idn> [--title <title>] [--description <desc>] [--runner <guidance|nsl>]  # create flow → push to platform ✅
+  newo delete-flow <flow-idn> --agent <agent-idn> --project <project-idn> [--confirm]  # delete flow locally (requires --confirm)
+  newo create-skill <idn> --flow <flow-idn> --agent <agent-idn> --project <project-idn> [--title <title>] [--script <content>] [--runner <guidance|nsl>]  # create skill → push to platform ✅
+  newo delete-skill <skill-idn> --flow <flow-idn> --agent <agent-idn> --project <project-idn> [--confirm]  # delete skill locally (requires --confirm)
+
+Identity & Configuration:
+  newo create-persona <name> [--title <title>] [--description <desc>]  # create agent persona ✅
+  newo create-attribute <idn> --value <value> [--title <title>] [--group <group>] [--value-type <string>]  # create customer attribute ✅
+
+Advanced Components (NSL Focus):
+  newo create-event <idn> --flow <flow-id> --skill <skill-idn> [--description <desc>] [--integration <api|system>] [--connector <webhook|system>]  # create flow event ✅
+  newo create-state <idn> --flow <flow-id> [--title <title>] [--default-value <value>] [--scope <user|flow|global>]  # create flow state ✅
+  newo create-parameter <name> --skill <skill-id> [--default-value <value>]  # create skill parameter (API limitations)
+
+Enterprise Features:
+  newo conversations [--customer <idn>] [--all]             # download conversation history
+  newo pull-attributes [--customer <idn>]                   # sync customer attributes
+  newo import-akb <file> <persona_id>                       # import knowledge base articles
 
 Flags:
   --customer <idn>             # specify customer (if not set, uses default or interactive selection)
   --all                        # include all available data (for conversations: all personas and acts)
   --force, -f                  # force overwrite without prompting (for pull command)
-  --verbose, -v                # enable detailed logging
+  --verbose, -v                # enable detailed logging and progress information
+  --confirm                    # confirm destructive operations without prompting
+  --no-publish                 # skip automatic flow publishing during push operations
 
 Environment Variables:
   NEWO_BASE_URL                                 # NEWO API base URL (default: https://app.newo.ai)
-  NEWO_CUSTOMER_<IDN>_API_KEY                   # API key for customer <IDN>
+
+Single Customer:
+  NEWO_API_KEY                                  # API key for single customer setup
+  NEWO_PROJECT_ID                               # Optional: specific project ID
+
+Multi-Customer:
+  NEWO_API_KEYS                                 # JSON array of API keys or key+project objects
+  NEWO_CUSTOMER_<IDN>_API_KEY                   # API key for specific customer <IDN>
   NEWO_CUSTOMER_<IDN>_PROJECT_ID               # Optional: specific project ID for customer
   NEWO_DEFAULT_CUSTOMER                        # Optional: default customer to use
 
-Multi-Customer Examples:
-  # Configure customers in .env:
-  NEWO_CUSTOMER_acme_API_KEY=your_acme_api_key
-  NEWO_CUSTOMER_globex_API_KEY=your_globex_api_key
+Configuration Examples:
+  # Single customer setup:
+  NEWO_API_KEY=your_api_key_here
+
+  # Multi-customer JSON array:
+  NEWO_API_KEYS=["key1", "key2", "key3"]
+
+  # Multi-customer with project IDs:
+  NEWO_API_KEYS=[{"key":"key1","project_id":"uuid1"}, {"key":"key2"}]
+
+  # Multi-customer individual variables:
+  NEWO_CUSTOMER_acme_API_KEY=acme_api_key_here
+  NEWO_CUSTOMER_globex_API_KEY=globex_api_key_here
   NEWO_DEFAULT_CUSTOMER=acme
 
-  # Commands:
-  newo pull                                    # Pull from all customers (if no default set)
+Usage Examples:
+  # Basic workflow:
+  newo pull                                    # Download all projects and attributes
+  newo status                                  # Check for local modifications
+  newo push                                    # Upload changes back to NEWO
+
+  # Multi-customer operations:
   newo pull --customer acme                    # Pull projects for Acme only
-  newo status                                  # Status for all customers (if no default set)
-  newo push                                    # Interactive selection for multiple customers
   newo push --customer globex                  # Push changes for Globex only
+  newo conversations --all                     # Download all conversations with full history
+
+  # Complete weather system workflow (FULLY WORKING - NSL Focus):
+  newo create-project weather_system --title "Weather System" --description "Comprehensive weather service"
+  newo create-persona weather_persona --title "Weather Persona" --description "Professional weather assistant"
+  newo create-attribute weather_api_key --value "your_api_key" --group "Weather Config"
+  newo pull                                    # Sync new project locally
+
+  newo create-agent WeatherBot --project weather_system --title "Weather Bot" --persona-id <persona-id>
+  newo create-flow MainFlow --agent WeatherBot --project weather_system --title "Main Flow" --runner nsl
+  newo push && newo pull                       # Creates agent + flow, syncs IDs
+
+  newo create-skill WeatherSkill --flow MainFlow --agent WeatherBot --project weather_system --title "Weather NSL Skill" --runner nsl
+  newo create-event user_message --flow <flow-id> --skill WeatherSkill --integration api --connector webhook
+  newo create-state user_location --flow <flow-id> --title "User Location" --scope user
+  newo create-state request_count --flow <flow-id> --title "Request Count" --scope flow
+  newo push                                    # Creates complete system
+  newo status                                  # Should show: Clean
+
+  # Import AKB articles:
+  newo import-akb articles.txt da4550db-2b95-4500-91ff-fb4b60fe7be9
 
 File Structure:
   newo_customers/
-  ├── acme/
+  ├── <customer-idn>/
+  │   ├── attributes.yaml                      # Customer attributes (pull-attributes)
+  │   ├── conversations.yaml                   # User conversations and personas
   │   └── projects/
-  │       └── project1/
-  └── globex/
-      └── projects/
-          └── project2/
+  │       └── <project-idn>/
+  │           ├── flows.yaml                   # Auto-generated project structure
+  │           ├── metadata.yaml                # Project metadata
+  │           └── <agent-idn>/
+  │               ├── metadata.yaml            # Agent metadata
+  │               └── <flow-idn>/
+  │                   ├── metadata.yaml        # Flow metadata
+  │                   └── <skill-idn>/
+  │                       ├── skill.guidance   # AI guidance scripts
+  │                       ├── skill.jinja      # NSL/Jinja template scripts
+  │                       └── metadata.yaml    # Skill metadata
+  └── .newo/                                   # CLI state and mappings (auto-generated)
+
+For more information, visit: https://github.com/sabbah13/newo-cli
 `);
 }

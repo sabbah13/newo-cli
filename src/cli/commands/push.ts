@@ -17,11 +17,13 @@ export async function handlePushCommand(
     args.customer as string | undefined
   );
 
+  const shouldPublish = !args['no-publish'];
+
   if (selectedCustomer) {
     // Single customer push
     const accessToken = await getValidAccessToken(selectedCustomer);
     const client = await makeClient(verbose, accessToken);
-    await pushChanged(client, selectedCustomer, verbose);
+    await pushChanged(client, selectedCustomer, verbose, shouldPublish);
   } else if (isMultiCustomer) {
     // Multiple customers exist with no default, ask user
     const customersToProcess = await interactiveCustomerSelection(allCustomers);
@@ -31,7 +33,7 @@ export async function handlePushCommand(
       const customer = customersToProcess[0]!;
       const accessToken = await getValidAccessToken(customer);
       const client = await makeClient(verbose, accessToken);
-      await pushChanged(client, customer, verbose);
+      await pushChanged(client, customer, verbose, shouldPublish);
     } else {
       // Multi-customer push (user selected "All customers")
       console.log(`🔄 Pushing to ${customersToProcess.length} customers...`);
@@ -39,7 +41,7 @@ export async function handlePushCommand(
         console.log(`\n📤 Pushing for customer: ${customer.idn}`);
         const accessToken = await getValidAccessToken(customer);
         const client = await makeClient(verbose, accessToken);
-        await pushChanged(client, customer, verbose);
+        await pushChanged(client, customer, verbose, shouldPublish);
       }
       console.log(`\n✅ Push completed for all ${customersToProcess.length} customers`);
     }

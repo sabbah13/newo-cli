@@ -8,6 +8,7 @@
 **NEWO CLI** - Professional command-line tool for NEWO AI Agent development. Features **modular architecture**, **IDN-based file management**, and **comprehensive multi-customer support**.
 
 Sync NEWO "Project → Agent → Flow → Skills" structure to local files with:
+- 🏗️ **Complete entity management** - Create, edit, and delete agents, flows, skills, events, and states (NEW v2.0+)
 - 🔄 **Intelligent synchronization** - Pull projects, attributes, and conversations automatically
 - 🎯 **IDN-based naming** - Skills named as `{skillIdn}.jinja/.guidance` for better organization
 - 📊 **Real-time progress** - Live progress tracking during large operations (966+ skills)
@@ -57,6 +58,13 @@ npm install && npm run build
    newo pull    # Download all projects
    newo push    # Upload changes back
    newo status  # See what's modified
+   ```
+
+4. **Create entities** (NEW v2.0+):
+   ```bash
+   newo create-agent MyBot --project <project-idn>    # Create agent locally
+   newo create-flow MainFlow --agent MyBot --project <project-idn>  # Create flow
+   newo push && newo pull   # Sync to platform
    ```
 
 ---
@@ -138,6 +146,37 @@ NEWO_REFRESH_URL=custom_refresh_endpoint   # Custom refresh endpoint
 | `newo list-customers` | List configured customers | • Shows default customer<br>• Multi-customer discovery |
 | `newo import-akb` | Import knowledge base articles | • Structured text parsing<br>• Bulk article import<br>• Validation and error reporting |
 | `newo meta` | Get project metadata (debug) | • Project structure analysis<br>• Metadata validation |
+
+### Entity Management Commands
+
+**Complete lifecycle management for NEWO entities with local-first workflow:**
+
+| Command | Description | Features |
+|---------|-------------|----------|
+| **Project Management** |||
+| `newo create-project <idn>` | Create new project on platform | • Automatic project initialization<br>• Metadata configuration<br>• Version control support |
+| **Agent Management** |||
+| `newo create-agent <idn> --project <pid>` | Create agent locally | • Local folder structure<br>• Metadata generation<br>• Persona assignment support |
+| `newo delete-agent <aid> --project <pid> --confirm` | Delete agent locally | • Safety confirmation required<br>• Local-only deletion<br>• Push to sync platform |
+| **Flow Management** |||
+| `newo create-flow <idn> --agent <aid> --project <pid>` | Create flow locally | • Guidance/NSL runner selection<br>• Automatic metadata<br>• Push to platform |
+| `newo delete-flow <fid> --agent <aid> --project <pid> --confirm` | Delete flow locally | • Safety confirmation required<br>• Local-only deletion<br>• Push to sync platform |
+| **Skill Management** |||
+| `newo create-skill <idn> --flow <fid> --agent <aid> --project <pid>` | Create skill locally | • Script content initialization<br>• Runner type selection<br>• Parameter support |
+| `newo delete-skill <sid> --flow <fid> --agent <aid> --project <pid> --confirm` | Delete skill locally | • Safety confirmation required<br>• Local-only deletion<br>• Push to sync platform |
+| **Advanced Components (NSL)** |||
+| `newo create-event <idn> --flow <fid>` | Create flow event | • Integration point setup<br>• Skill selector config<br>• Interrupt mode control |
+| `newo create-state <idn> --flow <fid>` | Create flow state field | • User/flow/global scope<br>• Default value config<br>• State persistence |
+| `newo create-parameter <name> --skill <sid>` | Create skill parameter | • Default value support<br>• Type configuration<br>• Parameter metadata |
+| **Identity & Configuration** |||
+| `newo create-persona <name>` | Create agent persona | • Persona configuration<br>• Title and description<br>• Agent assignment |
+| `newo create-attribute <idn> --value <val>` | Create customer attribute | • Enum types support<br>• Group organization<br>• Hidden attributes |
+
+**Workflow:**
+1. **Create locally** → Entities created as folder structures with metadata.yaml
+2. **Edit content** → Modify scripts, metadata, and configuration files
+3. **Push to platform** → `newo push` automatically detects and creates entities on NEWO
+4. **Sync complete** → `newo pull` retrieves IDs and platform-generated data
 
 ### Multi-Customer Commands
 
@@ -245,6 +284,16 @@ newo_customers/                         # Root folder for all customers
 - **Selective sync** - Target specific projects or sync everything
 - **Project structure export** - `flows.yaml` for external tooling integration
 - **Cross-project operations** - Commands work across entire workspace
+
+### 🏗️ Complete Entity Management (NEW v2.0+)
+- **Local-first workflow** - Create entities locally, push to platform when ready
+- **Full lifecycle support** - Create, edit, delete agents, flows, skills, events, states
+- **Automatic detection** - Push command auto-detects local-only entities
+- **Safe deletion** - Confirmation flags prevent accidental deletions
+- **Hierarchical creation** - Maintains proper agent → flow → skill relationships
+- **NSL component support** - Create events, states, and parameters for NSL flows
+- **Identity management** - Persona and attribute creation and configuration
+- **Project scaffolding** - Complete project initialization from CLI
 
 ### 🔄 Intelligent Synchronization
 - **Two-way sync** - Pull from NEWO platform, push local changes back
@@ -500,6 +549,80 @@ newo import-akb articles.txt da4550db-2b95-4500-91ff-fb4b60fe7be9
 
 # With verbose output
 newo import-akb articles.txt persona_id --verbose
+```
+
+### Entity Creation Workflows
+
+**Complete Weather System Example (End-to-End):**
+
+```bash
+# Step 1: Create project infrastructure
+newo create-project weather_system --title "Weather System" --description "Comprehensive weather service"
+newo pull  # Sync new project locally
+
+# Step 2: Create persona and configuration
+newo create-persona weather_persona --title "Weather Assistant" --description "Professional weather guidance"
+newo create-attribute weather_api_key --value "your_api_key" --group "Weather Config"
+
+# Step 3: Create agent structure
+newo create-agent WeatherBot --project weather_system --title "Weather Bot" --persona-id <persona-id>
+newo push && newo pull  # Push to platform, sync IDs
+
+# Step 4: Create flow and skills
+newo create-flow MainFlow --agent WeatherBot --project weather_system --title "Main Flow" --runner nsl
+newo push && newo pull  # Sync flow ID
+
+newo create-skill WeatherSkill --flow MainFlow --agent WeatherBot --project weather_system \
+  --title "Weather NSL Skill" --runner nsl --script "Welcome to weather service!"
+
+# Step 5: Add NSL components
+newo create-event user_message --flow <flow-id> --skill WeatherSkill --integration api --connector webhook
+newo create-state user_location --flow <flow-id> --title "User Location" --scope user
+newo create-state request_count --flow <flow-id> --title "Request Count" --scope flow
+
+# Step 6: Final sync
+newo push  # Creates complete system
+newo status  # Should show: Clean
+```
+
+**Quick Agent Creation:**
+
+```bash
+# Create complete agent structure
+newo pull  # Ensure local projects are synced
+newo create-agent SupportBot --project my_project --title "Support Bot"
+newo create-flow HelpFlow --agent SupportBot --project my_project --title "Help Flow"
+newo push && newo pull  # Sync to platform
+
+newo create-skill Greeting --flow HelpFlow --agent SupportBot --project my_project \
+  --title "Greeting Skill" --runner guidance
+newo push  # Deploy to platform
+```
+
+**Local Development & Testing:**
+
+```bash
+# Create locally, test before pushing
+newo create-agent TestBot --project my_project
+newo create-flow TestFlow --agent TestBot --project my_project
+
+# Edit metadata and scripts locally in your IDE
+# newo_customers/CUSTOMER_IDN/projects/my_project/TestBot/TestFlow/
+
+newo status  # Check changes
+newo push  # Deploy when ready
+```
+
+**Entity Deletion:**
+
+```bash
+# Delete with safety confirmation
+newo delete-skill OldSkill --flow MainFlow --agent SupportBot --project my_project --confirm
+newo delete-flow OldFlow --agent SupportBot --project my_project --confirm
+newo delete-agent OldBot --project my_project --confirm
+
+# Push to sync deletions to platform
+newo push
 ```
 
 ---
@@ -950,6 +1073,29 @@ NEWO CLI integrates with these NEWO platform endpoints:
 - `PUT /api/v1/designer/flows/skills/{skillId}` - Update skill content
 - `GET /api/v1/designer/flows/{flowId}/events` - List flow events
 - `GET /api/v1/designer/flows/{flowId}/states` - List flow states
+
+### Entity Creation & Deletion (NEW v2.0+)
+- `POST /api/v2/designer/{projectId}/agents` - Create new agent
+- `DELETE /api/v1/designer/agents/{agentId}` - Delete agent
+- `POST /api/v1/designer/{agentId}/flows/empty` - Create new flow
+- `DELETE /api/v1/designer/flows/{flowId}` - Delete flow
+- `POST /api/v1/designer/flows/{flowId}/skills` - Create new skill
+- `DELETE /api/v1/designer/flows/skills/{skillId}` - Delete skill
+- `POST /api/v1/designer/flows/{flowId}/events` - Create flow event
+- `DELETE /api/v1/designer/flows/events/{eventId}` - Delete flow event
+- `POST /api/v1/designer/flows/{flowId}/states` - Create flow state
+- `POST /api/v1/designer/flows/skills/{skillId}/parameters` - Create skill parameter
+- `POST /api/v1/customer/attributes` - Create customer attribute
+- `POST /api/v1/designer/personas` - Create agent persona
+- `POST /api/v1/designer/projects` - Create project
+- `POST /api/v1/designer/flows/{flowId}/publish` - Publish flow
+
+### Conversations & Attributes
+- `GET /api/v1/bff/conversations/user-personas` - List user personas
+- `GET /api/v1/chat/history` - Get conversation history
+- `GET /api/v1/bff/conversations/acts` - Get conversation acts (fallback)
+- `GET /api/v1/bff/customer/attributes?include_hidden=true` - Get customer attributes
+- `PUT /api/v1/customer/attributes/{attributeId}` - Update customer attribute
 
 ### Knowledge Base
 - `POST /api/v1/akb/append-manual` - Import AKB articles to persona

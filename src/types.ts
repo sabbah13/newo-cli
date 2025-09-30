@@ -306,8 +306,7 @@ export interface AgentMetadata {
   idn: string;
   title?: string;
   description?: string;
-  // Additional agent settings from UI could be added here
-  persona?: string;
+  persona_id?: string | null;
   created_at?: string;
   updated_at?: string;
 }
@@ -449,4 +448,125 @@ export interface ConversationsData {
   readonly total_personas: number;
   readonly total_acts: number;
   readonly generated_at: string;
+}
+
+// Entity Creation/Deletion Types
+
+export interface CreateAgentRequest {
+  idn: string;
+  title: string;
+  description?: string | null;
+  persona_id?: string | null;
+}
+
+export interface CreateAgentResponse {
+  id: string;
+}
+
+export interface CreateFlowRequest {
+  idn: string;
+  title: string;
+}
+
+export interface CreateFlowResponse {
+  id: string;
+}
+
+export interface CreateSkillRequest {
+  idn: string;
+  title: string;
+  prompt_script?: string;
+  runner_type: RunnerType;
+  model: ModelConfig;
+  path?: string;
+  parameters?: SkillParameter[];
+}
+
+export interface CreateSkillResponse {
+  id: string;
+}
+
+export interface CreateFlowEventRequest {
+  idn: string;
+  description?: string;
+  skill_selector: string;
+  skill_idn?: string;
+  state_idn?: string | null;
+  interrupt_mode: string;
+  integration_idn: string;
+  connector_idn: string;
+}
+
+export interface CreateFlowEventResponse {
+  id: string;
+}
+
+export interface CreateFlowStateRequest {
+  title: string;
+  idn: string;
+  default_value?: string;
+  scope: string;
+}
+
+export interface CreateFlowStateResponse {
+  id: string;
+}
+
+export interface CreateSkillParameterRequest {
+  name: string;
+  default_value?: string;
+}
+
+export interface CreateSkillParameterResponse {
+  id: string;
+}
+
+export interface CreateCustomerAttributeRequest {
+  idn: string;
+  value: string;
+  title: string;
+  description?: string;
+  group: string;
+  is_hidden: boolean;
+  possible_values: string[];
+  value_type: string;
+}
+
+export interface CreateCustomerAttributeResponse {
+  id: string;
+}
+
+export interface CreatePersonaRequest {
+  name: string;
+  title: string;
+  description?: string;
+}
+
+export interface CreatePersonaResponse {
+  id: string;
+}
+
+export interface CreateProjectRequest {
+  idn: string;
+  title: string;
+  version?: string;
+  description?: string;
+  is_auto_update_enabled?: boolean;
+  registry_idn?: string;
+  registry_item_idn?: string | null;
+  registry_item_version?: string | null;
+}
+
+export interface CreateProjectResponse {
+  id: string;
+}
+
+export interface PublishFlowRequest {
+  version: string;
+  description: string;
+  type: string;
+}
+
+export interface PublishFlowResponse {
+  success: boolean;
 }
