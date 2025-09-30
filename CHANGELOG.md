@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [3.0.0] - 2025-01-30
+## [3.0.0] - 2025-09-29
 
 ### 🏗️ MAJOR FEATURE: Complete Entity Management System
 
@@ -128,6 +128,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Code Changes**: ~1,005 lines added across 7 modified files
 - **Documentation**: +146 lines in README.md
 - **Type Definitions**: 19 new interfaces and types
+
+## [2.0.6] - 2025-09-18
+
+### Enhanced
+- **Diff Algorithm**: Implement proper LCS-based diff algorithm for accurate change detection
+- **Visual Diff**: Clean, accurate differences with proper line matching
+- **Change Detection**: Improved algorithm eliminates false positives and shows precise modifications
+
+## [2.0.5] - 2025-09-18
+
+### Fixed
+- **Diff Display**: Correct diff algorithm to show clean, accurate differences
+- **Line Matching**: Improved change detection with proper context preservation
+
+## [2.0.4] - 2025-09-18
+
+### Enhanced
+- **Diff Format**: Implement exact GitHub diff format with proper context lines
+- **Visual Display**: GitHub-style diff with background colors and context
+- **User Experience**: Enhanced diff display with line numbers and clearer messaging
+
+## [2.0.3] - 2025-09-18
+
+### Enhanced
+- **Diff Visualization**: Improve diff display with line numbers and clearer messaging
+- **Colored Output**: Better visual distinction for changes
+
+## [2.0.2] - 2025-09-18
+
+### Added
+- **Visual Diff**: Add GitHub-style colored diff display for overwrite prompts
+- **User Experience**: Enhanced diff visualization with colors and formatting
+
+## [2.0.1] - 2025-09-18
+
+### Fixed
+- **Overwrite Handling**: Improve overwrite handling with proper 'all' option support
+- **User Experience**: Better handling of batch overwrite operations
 
 ## [1.9.3] - 2025-09-17
 
@@ -476,7 +514,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Professional Infrastructure**: Industry-standard publishing pipeline with version management
 - **Quality Gates**: Automated validation before publishing (TypeScript, linting, building, package validation)
 
-## [1.5.2] - 2025-01-15
+## [1.5.2] - 2025-09-04
 
 ### Enhanced
 - **Documentation Overhaul**: Complete README restructuring with professional presentation
@@ -506,7 +544,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Clear Navigation**: Improved documentation structure with proper sectioning and examples
 - **Enhanced Onboarding**: Comprehensive quick-start guide and configuration examples
 
-## [1.5.1] - 2025-01-14
+## [1.5.1] - 2025-09-03
 
 ### Added
 - **Comprehensive Test Coverage**: Added extensive test suites for all major modules
