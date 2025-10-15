@@ -20,6 +20,7 @@ Sync NEWO "Project → Agent → Flow → Skills" structure to local files with:
 - 🧠 **AI skill formats** - Support for `.guidance` (AI prompts) and `.jinja` (NSL templates)
 - 📊 **Knowledge base import** - Bulk import AKB articles from structured text files
 - 💬 **Conversation history** - Extract and sync user conversations and personas
+- 🧪 **Sandbox testing** - Interactive agent testing with conversation continuation (NEW v3.1.0)
 - 🔧 **CI/CD ready** - GitHub Actions integration for automated deployments
 
 ---
@@ -142,6 +143,7 @@ NEWO_REFRESH_URL=custom_refresh_endpoint   # Custom refresh endpoint
 | `newo pull` | Download projects + attributes + metadata | • Real-time progress tracking (966+ skills)<br>• IDN-based file naming<br>• Automatic attributes.yaml generation<br>• `--force` for silent overwrite |
 | `newo push` | Upload local changes to NEWO | • Smart file validation<br>• Multiple file detection<br>• Hash-based change detection<br>• Safe error handling |
 | `newo status` | Show modified files with details | • Multiple file warnings<br>• Detailed change analysis<br>• Clean state validation<br>• Per-customer status |
+| `newo sandbox` | Test agents in sandbox chat mode | • Single-command mode for automation<br>• Multi-turn conversation support<br>• Debug info for agent development<br>• Conversation continuation |
 | `newo conversations` | Pull conversation history | • User personas and chat history<br>• YAML format output<br>• Pagination support |
 | `newo list-customers` | List configured customers | • Shows default customer<br>• Multi-customer discovery |
 | `newo import-akb` | Import knowledge base articles | • Structured text parsing<br>• Bulk article import<br>• Validation and error reporting |
@@ -475,6 +477,107 @@ Add these secrets to your repository:
     node ./dist/cli.js pull
     node ./dist/cli.js push
 ```
+
+## Sandbox Testing (NEW v3.1.0)
+
+Test your NEWO agents in real-time with sandbox chat mode. Perfect for development, debugging, and automated testing workflows.
+
+### Features
+- **Single-command mode** - Send a message and get a response (ideal for automation)
+- **Multi-turn conversations** - Continue chats with conversation context preserved
+- **Debug information** - View flow execution, skill invocation, and session tracking
+- **Unique sessions** - Each test creates a fresh persona for isolation
+
+### Usage
+
+**Start a new conversation:**
+```bash
+newo sandbox "Hello, I want to order a pizza"
+```
+
+**Continue an existing conversation:**
+```bash
+newo sandbox --actor <chat-id> "I want 2 large pepperoni pizzas"
+```
+
+**With verbose debugging:**
+```bash
+newo sandbox "Test message" --verbose
+```
+
+### Example: Multi-Turn Conversation
+
+```bash
+# Turn 1: Start conversation
+$ newo sandbox "I want to order delivery"
+
+📋 Chat Session Created:
+   Chat ID (actor_id): abc123...
+   Persona ID: xyz789...
+   Connector: convo_agent_sandbox
+   External ID: 2f99f7
+
+📤 You: I want to order delivery
+
+🤖 Agent:
+   Awesome! We can definitely get a delivery order started for you! What's your zip code, please?
+
+📊 Debug Summary:
+   Flow: CAMainFlow
+   Skill: _userMessageFastReplySkill
+   Session: 816c769a-8e1c-43e7-b22d-766c7bf63c33
+   Acts Processed: 1 (1 agent, 0 system)
+
+💡 To continue this conversation:
+   npx newo sandbox --actor abc123... "your next message"
+
+
+# Turn 2: Continue conversation
+$ newo sandbox --actor abc123... "90210"
+
+📤 You: 90210
+
+🤖 Agent:
+   Perfect! Now, could you please provide your delivery address?
+
+📊 Debug Summary:
+   Flow: CAMainFlow
+   Skill: CollectAddressSkill
+   Session: 816c769a-8e1c-43e7-b22d-766c7bf63c33
+   Acts Processed: 1 (1 agent, 0 user)
+```
+
+### Debug Information
+
+**Standard Mode** shows:
+- Flow execution path
+- Skill invocation
+- Session ID
+- Act counts (agent vs. system messages)
+
+**Verbose Mode** (`--verbose`) shows:
+- All API requests and responses
+- Complete act structure with arguments
+- Runtime context IDs
+- Detailed polling progress
+
+### Automated Testing Integration
+
+Perfect for CI/CD workflows:
+
+```bash
+# Test agent responses
+RESPONSE=$(newo sandbox "test query" | grep "Agent:" | cut -d: -f2-)
+
+# Validate response contains expected content
+echo "$RESPONSE" | grep -q "expected text" && echo "✓ Test passed"
+
+# Multi-turn testing
+ACTOR_ID=$(newo sandbox "start conversation" | grep "Chat ID" | awk '{print $NF}')
+newo sandbox --actor "$ACTOR_ID" "follow up message"
+```
+
+---
 
 ## AKB Import
 
@@ -1096,6 +1199,14 @@ NEWO CLI integrates with these NEWO platform endpoints:
 - `GET /api/v1/bff/conversations/acts` - Get conversation acts (fallback)
 - `GET /api/v1/bff/customer/attributes?include_hidden=true` - Get customer attributes
 - `PUT /api/v1/customer/attributes/{attributeId}` - Update customer attribute
+
+### Sandbox Testing (NEW v3.1.0)
+- `GET /api/v1/integrations` - List available integrations
+- `GET /api/v1/integrations/{id}/connectors` - List integration connectors
+- `POST /api/v1/customer/personas` - Create user persona for chat
+- `POST /api/v1/customer/personas/{id}/actors` - Create actor (chat session)
+- `POST /api/v1/chat/user/{actorId}` - Send chat message
+- `GET /api/v1/chat/history` - Poll for agent responses
 
 ### Knowledge Base
 - `POST /api/v1/akb/append-manual` - Import AKB articles to persona

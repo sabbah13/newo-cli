@@ -7,6 +7,74 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.1.0] - 2025-10-15
+
+### Added
+
+- **Sandbox Chat Testing**: Real-time agent testing with interactive sandbox mode
+  - `newo sandbox "<message>"` - Single-command mode for automated testing workflows
+  - `newo sandbox --actor <id> "message"` - Multi-turn conversation continuation
+  - Automatic persona/actor creation with unique naming (`newo-cli-{guid}`)
+  - Chat History API polling with 1-second intervals, 60-second timeout
+  - Debug information extraction (flow_idn, skill_idn, session_id, runtime_context_id)
+  - Quiet mode (`--quiet`/`-q`) for script-friendly output with minimal logging
+  - Single newest message display to avoid overwhelming output
+- **Sandbox API Integration**: 6 new endpoints for sandbox chat functionality
+  - `GET /api/v1/integrations` - List available integrations
+  - `GET /api/v1/integrations/{id}/connectors` - List integration connectors
+  - `POST /api/v1/customer/personas` - Create user persona for sandbox testing
+  - `POST /api/v1/customer/personas/{id}/actors` - Create actor (chat session)
+  - `POST /api/v1/chat/user/{actorId}` - Send chat message
+  - Reused `GET /api/v1/chat/history` - Poll for agent responses with timestamp filtering
+- **Sandbox Utilities Module** (`src/sandbox/chat.ts`):
+  - `findSandboxConnector()` - Locate running sandbox connectors
+  - `createChatSession()` - Initialize new chat sessions with unique personas
+  - `sendMessage()` - Send messages with timestamp tracking for response filtering
+  - `pollForResponse()` - Intelligent polling with timestamp-based message filtering
+  - `extractAgentMessages()` - Filter and extract agent responses from chat history
+  - `formatDebugInfo()` - Format debug information for developer inspection
+- **TypeScript Types**: Comprehensive type definitions for sandbox functionality
+  - `Integration`, `Connector` - Integration and connector management
+  - `SandboxChatSession` - Session state tracking with persona/actor IDs
+  - `ChatDebugInfo` - Debug information structure for agent development
+  - `CreateSandboxPersonaRequest/Response` - Persona creation types
+  - `CreateActorRequest/Response` - Actor creation types
+  - `SendChatMessageRequest` - Chat message sending types
+- **Enhanced Authentication**: Quiet mode support to suppress logging during automated testing
+- **Documentation**: Comprehensive sandbox testing section with usage examples and automation patterns
+
+### Changed
+
+- **CLI Architecture**: Added sandbox command routing in main CLI module
+- **API Module**: Extended with sandbox-specific endpoint integrations
+- **Help Command**: Updated with sandbox command reference
+- **README**: Added extensive sandbox testing documentation with multi-turn examples (+101 lines)
+
+### Technical Details
+
+- **Message Filtering**: Timestamp-based filtering ensures only new messages shown after user sends message
+- **Session Isolation**: Each sandbox test creates unique persona with GUID to prevent state interference
+- **Polling Strategy**: 1-second intervals with 60-second max wait for agent responses
+- **Error Handling**: Graceful degradation with timeout messages and continuation guidance
+- **Debug Modes**: Standard (condensed) and verbose (detailed) debug information display
+- **Quiet Mode**: Minimal output perfect for shell scripts and CI/CD integration
+
+### Example Usage
+
+```bash
+# Start new conversation
+newo sandbox "Hello, I want to order pizza"
+
+# Continue conversation with actor ID from previous response
+newo sandbox --actor abc123... "I want 2 large pepperoni pizzas"
+
+# Verbose mode for debugging
+newo sandbox "Test message" --verbose
+
+# Quiet mode for automation
+newo sandbox "Test query" --quiet
+```
+
 ## [3.0.0] - 2025-09-29
 
 ### Added
@@ -630,7 +698,8 @@ Another Item: $Price [Modifiers: modifier3]
 - GitHub Actions CI/CD integration
 - Robust authentication with token refresh
 
-[Unreleased]: https://github.com/sabbah13/newo-cli/compare/v3.0.0...HEAD
+[Unreleased]: https://github.com/sabbah13/newo-cli/compare/v3.1.0...HEAD
+[3.1.0]: https://github.com/sabbah13/newo-cli/compare/v3.0.0...v3.1.0
 [3.0.0]: https://github.com/sabbah13/newo-cli/compare/v2.0.6...v3.0.0
 [2.0.6]: https://github.com/sabbah13/newo-cli/compare/v2.0.5...v2.0.6
 [2.0.5]: https://github.com/sabbah13/newo-cli/compare/v2.0.4...v2.0.5

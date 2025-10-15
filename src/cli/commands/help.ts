@@ -11,6 +11,8 @@ Core Commands:
   newo push [--customer <idn>] [--no-publish]    # upload modified *.guidance/*.jinja + attributes back to NEWO, publish flows by default
   newo status [--customer <idn>]                # show modified files that would be pushed
   newo conversations [--customer <idn>] [--all] # download user conversations -> ./newo_customers/<idn>/conversations.yaml
+  newo sandbox "<message>" [--customer <idn>]   # test agent in sandbox - single message mode (NEW v3.1.0)
+  newo sandbox --actor <id> "message"           # continue existing sandbox conversation with chat ID
   newo pull-attributes [--customer <idn>]       # download customer attributes -> ./newo_customers/<idn>/attributes.yaml
   newo list-customers                           # list available customers and their configuration
   newo meta [--customer <idn>]                  # get project metadata (debug command)
@@ -46,6 +48,8 @@ Flags:
   --all                        # include all available data (for conversations: all personas and acts)
   --force, -f                  # force overwrite without prompting (for pull command)
   --verbose, -v                # enable detailed logging and progress information
+  --quiet, -q                  # minimal output for automation (sandbox only)
+  --actor <id>                 # continue existing sandbox chat with actor/chat ID
   --confirm                    # confirm destructive operations without prompting
   --no-publish                 # skip automatic flow publishing during push operations
 
@@ -107,6 +111,12 @@ Usage Examples:
 
   # Import AKB articles:
   newo import-akb articles.txt da4550db-2b95-4500-91ff-fb4b60fe7be9
+
+  # Sandbox testing (NEW v3.1.0):
+  newo sandbox "Hello, I want to order pizza"                    # Start new conversation
+  newo sandbox --actor abc123... "I want 2 large pizzas"         # Continue conversation
+  newo sandbox "Test query" --verbose                            # With debug info
+  newo sandbox "Test query" --quiet                              # For automation/scripts
 
 File Structure:
   newo_customers/

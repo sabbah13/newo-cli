@@ -54,6 +54,11 @@ function validateUrl(url: string, name: string): void {
 
 // Enhanced logging function
 function logAuthEvent(level: 'info' | 'warn' | 'error', message: string, meta?: Record<string, unknown>): void {
+  // Skip all logging if in quiet mode
+  if (process.env.NEWO_QUIET_MODE === 'true') {
+    return;
+  }
+
   const timestamp = new Date().toISOString();
   const logEntry = {
     timestamp,
@@ -62,7 +67,7 @@ function logAuthEvent(level: 'info' | 'warn' | 'error', message: string, meta?: 
     message,
     ...meta
   };
-  
+
   // Sanitize sensitive data
   const sanitized = JSON.parse(JSON.stringify(logEntry, (key, value) => {
     if (typeof key === 'string' && (key.toLowerCase().includes('key') || key.toLowerCase().includes('token') || key.toLowerCase().includes('secret'))) {
@@ -70,7 +75,7 @@ function logAuthEvent(level: 'info' | 'warn' | 'error', message: string, meta?: 
     }
     return value;
   }));
-  
+
   if (level === 'error') {
     console.error(JSON.stringify(sanitized));
   } else if (level === 'warn') {

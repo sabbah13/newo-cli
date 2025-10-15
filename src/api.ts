@@ -34,7 +34,16 @@ import type {
   CreateProjectRequest,
   CreateProjectResponse,
   PublishFlowRequest,
-  PublishFlowResponse
+  PublishFlowResponse,
+  Integration,
+  Connector,
+  CreateSandboxPersonaRequest,
+  CreateSandboxPersonaResponse,
+  CreateActorRequest,
+  CreateActorResponse,
+  SendChatMessageRequest,
+  ConversationActsParams,
+  ConversationActsResponse
 } from './types.js';
 
 // Per-request retry tracking to avoid shared state issues
@@ -310,5 +319,50 @@ export async function createPersona(client: AxiosInstance, personaData: CreatePe
 
 export async function publishFlow(client: AxiosInstance, flowId: string, publishData: PublishFlowRequest): Promise<PublishFlowResponse> {
   const response = await client.post<PublishFlowResponse>(`/api/v1/designer/flows/${flowId}/publish`, publishData);
+  return response.data;
+}
+
+// Sandbox Chat API Functions
+
+export async function listIntegrations(client: AxiosInstance): Promise<Integration[]> {
+  const response = await client.get<Integration[]>('/api/v1/integrations');
+  return response.data;
+}
+
+export async function listConnectors(client: AxiosInstance, integrationId: string): Promise<Connector[]> {
+  const response = await client.get<Connector[]>(`/api/v1/integrations/${integrationId}/connectors`);
+  return response.data;
+}
+
+export async function createSandboxPersona(client: AxiosInstance, personaData: CreateSandboxPersonaRequest): Promise<CreateSandboxPersonaResponse> {
+  const response = await client.post<CreateSandboxPersonaResponse>('/api/v1/customer/personas', personaData);
+  return response.data;
+}
+
+export async function createActor(client: AxiosInstance, personaId: string, actorData: CreateActorRequest): Promise<CreateActorResponse> {
+  const response = await client.post<CreateActorResponse>(`/api/v1/customer/personas/${personaId}/actors`, actorData);
+  return response.data;
+}
+
+export async function sendChatMessage(client: AxiosInstance, actorId: string, messageData: SendChatMessageRequest): Promise<void> {
+  await client.post(`/api/v1/chat/user/${actorId}`, messageData);
+}
+
+export async function getConversationActs(client: AxiosInstance, params: ConversationActsParams): Promise<ConversationActsResponse> {
+  const queryParams: Record<string, any> = {
+    user_persona_id: params.user_persona_id,
+    user_actor_id: params.user_actor_id,
+    per: params.per || 100,
+    page: params.page || 1
+  };
+
+  // Only add agent_persona_id if provided
+  if (params.agent_persona_id) {
+    queryParams.agent_persona_id = params.agent_persona_id;
+  }
+
+  const response = await client.get<ConversationActsResponse>('/api/v1/bff/conversations/acts', {
+    params: queryParams
+  });
   return response.data;
 }

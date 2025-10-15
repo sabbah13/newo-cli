@@ -570,3 +570,101 @@ export interface PublishFlowRequest {
 export interface PublishFlowResponse {
   success: boolean;
 }
+
+// Sandbox Chat Types
+
+export interface Integration {
+  readonly id: string;
+  readonly title: string;
+  readonly idn: string;
+  readonly description: string;
+  readonly is_disabled: boolean;
+  readonly channel: string;
+}
+
+export interface IntegrationSetting {
+  readonly title: string;
+  readonly idn: string;
+  readonly control_type: string;
+  readonly value_type: string;
+  readonly is_required: boolean;
+  readonly default_value?: string | null;
+}
+
+export interface Connector {
+  readonly id: string;
+  readonly title: string;
+  readonly connector_idn: string;
+  readonly integration_idn: string;
+  readonly status: string;
+  readonly api_key?: string;
+  readonly settings: readonly ConnectorSetting[];
+}
+
+export interface ConnectorSetting {
+  readonly idn: string;
+  readonly value: string;
+}
+
+export interface CreateSandboxPersonaRequest {
+  name: string;
+  title: string;
+}
+
+export interface CreateSandboxPersonaResponse {
+  id: string;
+}
+
+export interface CreateActorRequest {
+  name: string;
+  external_id: string;
+  integration_idn: string;
+  connector_idn: string;
+  time_zone_identifier?: string;
+}
+
+export interface CreateActorResponse {
+  id: string;
+}
+
+export interface SendChatMessageRequest {
+  text: string;
+  arguments?: readonly any[];
+}
+
+export interface ConversationActsParams {
+  user_persona_id: string;
+  user_actor_id: string;
+  agent_persona_id?: string; // Optional - can be omitted for first poll
+  per?: number;
+  page?: number;
+}
+
+export interface ConversationActsResponse {
+  readonly items: readonly ConversationAct[];
+  readonly metadata?: {
+    readonly page: number;
+    readonly per: number;
+    readonly total: number;
+  };
+}
+
+// Sandbox Chat Session State
+export interface SandboxChatSession {
+  user_persona_id: string;
+  user_actor_id: string; // This is the chat ID
+  agent_persona_id: string | null; // Retrieved from first response
+  connector_idn: string;
+  session_id: string | null;
+  external_id: string; // Random identifier for this chat
+}
+
+// Sandbox Chat Debug Info
+export interface ChatDebugInfo {
+  flow_idn: string | null;
+  skill_idn: string | null;
+  session_id: string;
+  runtime_context_id: string | null;
+  reference_idn: string;
+  arguments: readonly any[];
+}

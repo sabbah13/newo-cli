@@ -28,6 +28,7 @@ import { handleCreateStateCommand } from './cli/commands/create-state.js';
 import { handleCreateParameterCommand } from './cli/commands/create-parameter.js';
 import { handleCreatePersonaCommand } from './cli/commands/create-persona.js';
 import { handleCreateAttributeCommand } from './cli/commands/create-attribute.js';
+import { handleSandboxCommand } from './cli/commands/sandbox.js';
 import type { CliArgs, NewoApiError } from './types.js';
 
 dotenv.config();
@@ -44,6 +45,12 @@ async function main(): Promise<void> {
   const args = minimist(process.argv.slice(2)) as CliArgs;
   const cmd = args._[0];
   const verbose = Boolean(args.verbose || args.v);
+  const quiet = Boolean(args.quiet || args.q);
+
+  // Set quiet mode flag EARLY to suppress auth logging
+  if (quiet) {
+    process.env.NEWO_QUIET_MODE = 'true';
+  }
 
   if (verbose) console.log(`🔍 Command parsed: "${cmd}"`);
 
@@ -85,6 +92,10 @@ async function main(): Promise<void> {
 
       case 'conversations':
         await handleConversationsCommand(customerConfig, args, verbose);
+        break;
+
+      case 'sandbox':
+        await handleSandboxCommand(customerConfig, args, verbose);
         break;
 
       case 'meta':
