@@ -102,7 +102,7 @@ export async function validateSkillFolder(
   const errors: string[] = [];
 
   if (files.length === 0) {
-    errors.push(`No script files found in skill folder: ${skillIdn}`);
+    errors.push(`No script files found in skill folder: ${folderPath}`);
   } else if (files.length > 1) {
     errors.push(`Multiple script files found in skill ${skillIdn}: ${files.map(f => f.fileName).join(', ')}`);
     warnings.push(`Only one script file allowed per skill. Remove extra files and keep one.`);

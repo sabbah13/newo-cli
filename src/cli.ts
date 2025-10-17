@@ -29,6 +29,12 @@ import { handleCreateParameterCommand } from './cli/commands/create-parameter.js
 import { handleCreatePersonaCommand } from './cli/commands/create-persona.js';
 import { handleCreateAttributeCommand } from './cli/commands/create-attribute.js';
 import { handleSandboxCommand } from './cli/commands/sandbox.js';
+import { handlePullIntegrationsCommand } from './cli/commands/pull-integrations.js';
+import { handlePushIntegrationsCommand } from './cli/commands/push-integrations.js';
+import { handleListActionsCommand } from './cli/commands/list-actions.js';
+import { handleProfileCommand } from './cli/commands/profile.js';
+import { handlePullAkbCommand } from './cli/commands/pull-akb.js';
+import { handlePushAkbCommand } from './cli/commands/push-akb.js';
 import type { CliArgs, NewoApiError } from './types.js';
 
 dotenv.config();
@@ -156,6 +162,30 @@ async function main(): Promise<void> {
 
       case 'create-attribute':
         await handleCreateAttributeCommand(customerConfig, args, verbose);
+        break;
+
+      case 'pull-integrations':
+        await handlePullIntegrationsCommand(customerConfig, args, verbose);
+        break;
+
+      case 'push-integrations':
+        await handlePushIntegrationsCommand(customerConfig, args, verbose);
+        break;
+
+      case 'list-actions':
+        await handleListActionsCommand(customerConfig, args, verbose);
+        break;
+
+      case 'profile':
+        await handleProfileCommand(customerConfig, args, verbose);
+        break;
+
+      case 'pull-akb':
+        await handlePullAkbCommand(customerConfig, args, verbose);
+        break;
+
+      case 'push-akb':
+        await handlePushAkbCommand(customerConfig, args, verbose);
         break;
 
       default:

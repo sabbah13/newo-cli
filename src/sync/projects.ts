@@ -19,7 +19,9 @@ import {
   skillScriptPath,
   skillFolderPath,
   flowsYamlPath,
-  customerAttributesPath
+  customerAttributesPath,
+  customerProjectsDir,
+  projectDir
 } from '../fsutil.js';
 import {
   findSkillScriptFiles,
@@ -53,6 +55,207 @@ export function isProjectMap(x: unknown): x is ProjectMap {
 
 export function isLegacyProjectMap(x: unknown): x is LegacyProjectMap {
   return typeof x === 'object' && x !== null && 'projectId' in x && 'agents' in x;
+}
+
+/**
+ * Ask user for deletion confirmation
+ */
+async function askForDeletion(entityType: string, entityPath: string): Promise<'yes' | 'no' | 'all' | 'quit'> {
+  const readline = await import('readline');
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+  });
+
+  const answer = await new Promise<string>((resolve) => {
+    rl.question(`\n🗑️  Delete ${entityType}: ${entityPath}? (y)es/(n)o/(a)ll/(q)uit: `, resolve);
+  });
+  rl.close();
+
+  const choice = answer.toLowerCase().trim();
+
+  if (choice === 'q' || choice === 'quit') {
+    return 'quit';
+  }
+
+  if (choice === 'a' || choice === 'all') {
+    return 'all';
+  }
+
+  if (choice === 'y' || choice === 'yes') {
+    return 'yes';
+  }
+
+  return 'no';
+}
+
+/**
+ * Clean up deleted entities (projects, agents, flows, skills) that no longer exist remotely
+ */
+async function cleanupDeletedEntities(
+  customerIdn: string,
+  projectMap: ProjectMap,
+  verbose: boolean = false
+): Promise<void> {
+  const projectsDir = customerProjectsDir(customerIdn);
+
+  if (!(await fs.pathExists(projectsDir))) {
+    return;
+  }
+
+  const deletedEntities: Array<{ type: string; path: string; displayPath: string }> = [];
+
+  // Scan local filesystem for entities
+  const localProjects = await fs.readdir(projectsDir);
+
+  for (const projectIdn of localProjects) {
+    const projectPath = projectDir(customerIdn, projectIdn);
+    const projectStat = await fs.stat(projectPath).catch(() => null);
+
+    // Skip files
+    if (!projectStat || !projectStat.isDirectory()) continue;
+
+    // Skip flows.yaml
+    if (projectIdn === 'flows.yaml') continue;
+
+    // Check if project exists in map
+    const projectData = projectMap.projects[projectIdn];
+
+    if (!projectData) {
+      // Entire project was deleted remotely
+      deletedEntities.push({
+        type: 'project',
+        path: projectPath,
+        displayPath: projectIdn
+      });
+      continue;
+    }
+
+    // Scan for agents within this project
+    try {
+      const localAgents = await fs.readdir(projectPath);
+
+      for (const agentIdn of localAgents) {
+        const agentPath = `${projectPath}/${agentIdn}`;
+        const agentStat = await fs.stat(agentPath).catch(() => null);
+
+        // Skip files and metadata.yaml
+        if (!agentStat || !agentStat.isDirectory()) continue;
+
+        // Check if agent exists in map
+        const agentData = projectData.agents[agentIdn];
+
+        if (!agentData) {
+          // Agent was deleted remotely
+          deletedEntities.push({
+            type: 'agent',
+            path: agentPath,
+            displayPath: `${projectIdn}/${agentIdn}`
+          });
+          continue;
+        }
+
+        // Scan for flows within this agent
+        try {
+          const localFlows = await fs.readdir(agentPath);
+
+          for (const flowIdn of localFlows) {
+            const flowPath = `${agentPath}/${flowIdn}`;
+            const flowStat = await fs.stat(flowPath).catch(() => null);
+
+            // Skip files and metadata.yaml
+            if (!flowStat || !flowStat.isDirectory()) continue;
+
+            // Check if flow exists in map
+            const flowData = agentData.flows[flowIdn];
+
+            if (!flowData) {
+              // Flow was deleted remotely
+              deletedEntities.push({
+                type: 'flow',
+                path: flowPath,
+                displayPath: `${projectIdn}/${agentIdn}/${flowIdn}`
+              });
+              continue;
+            }
+
+            // Scan for skills within this flow
+            try {
+              const localSkills = await fs.readdir(flowPath);
+
+              for (const skillIdn of localSkills) {
+                const skillPath = `${flowPath}/${skillIdn}`;
+                const skillStat = await fs.stat(skillPath).catch(() => null);
+
+                // Skip files and metadata.yaml
+                if (!skillStat || !skillStat.isDirectory()) continue;
+
+                // Check if skill exists in map
+                const skillData = flowData.skills[skillIdn];
+
+                if (!skillData) {
+                  // Skill was deleted remotely
+                  deletedEntities.push({
+                    type: 'skill',
+                    path: skillPath,
+                    displayPath: `${projectIdn}/${agentIdn}/${flowIdn}/${skillIdn}`
+                  });
+                }
+              }
+            } catch (error) {
+              // Ignore errors reading flow directory
+            }
+          }
+        } catch (error) {
+          // Ignore errors reading agent directory
+        }
+      }
+    } catch (error) {
+      // Ignore errors reading project directory
+    }
+  }
+
+  if (deletedEntities.length === 0) {
+    if (verbose) console.log('✅ No deleted entities found');
+    return;
+  }
+
+  console.log(`\n🔍 Found ${deletedEntities.length} entity(ies) that no longer exist remotely:`);
+
+  for (const entity of deletedEntities) {
+    console.log(`   ${entity.type.padEnd(8)}: ${entity.displayPath}`);
+  }
+
+  console.log('\nThese entities will be deleted from your local filesystem.');
+
+  let globalDeleteAll = false;
+
+  for (const entity of deletedEntities) {
+    let shouldDelete = globalDeleteAll;
+
+    if (!globalDeleteAll) {
+      const choice = await askForDeletion(entity.type, entity.displayPath);
+
+      if (choice === 'quit') {
+        console.log('❌ Deletion cancelled by user');
+        return;
+      } else if (choice === 'all') {
+        globalDeleteAll = true;
+        shouldDelete = true;
+      } else if (choice === 'yes') {
+        shouldDelete = true;
+      }
+    }
+
+    if (shouldDelete) {
+      await fs.remove(entity.path);
+      console.log(`🗑️  Deleted: ${entity.displayPath}`);
+    } else {
+      console.log(`⏭️  Skipped: ${entity.displayPath}`);
+    }
+  }
+
+  console.log(`\n✅ Cleanup completed`);
 }
 
 /**
@@ -353,6 +556,9 @@ export async function pullSingleProject(
 
   // Save hashes (now including flows.yaml and attributes.yaml)
   await saveHashes(newHashes, customer.idn);
+
+  // Detect and clean up deleted entities
+  await cleanupDeletedEntities(customer.idn, existingMap, verbose);
 }
 
 /**

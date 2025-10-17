@@ -7,6 +7,143 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.2.0] - 2025-10-17
+
+### Added
+
+- **Integration Management**: Complete integration and connector management system
+  - `newo pull-integrations` - Download all integrations, connectors, and webhooks to local YAML files
+  - `newo push-integrations` - Upload connector changes with full CRUD support (Create, Update, Delete)
+  - Combined integration files: `{integration_idn}.yaml` contains metadata + settings in single file
+  - Nested connector structure: Each connector in own subdirectory `connectors/{connector_idn}/{connector_idn}.yaml`
+  - Automatic webhook synchronization (outgoing + incoming webhooks)
+  - 15 integrations discovered and managed (api, sandbox, twilio, magic_browser, newo_chat, etc.)
+  - Full connector lifecycle: Create via YAML + push → Modify → Delete via YAML removal + push
+- **AKB Knowledge Base Management**: Complete knowledge base synchronization
+  - `newo pull-akb` - Download AKB articles for all personas linked to agents
+  - `newo push-akb` - Upload AKB articles from local YAML files to platform
+  - YAML format matches backup structure exactly for compatibility
+  - Automatic persona-to-agent mapping via agent IDN
+  - Pagination support for large knowledge bases
+  - Articles stored in `akb/{agent_idn}.yaml` format
+- **Project Attributes**: Full project-level attribute management
+  - Enhanced `newo pull-attributes` to pull both customer AND project attributes
+  - Project attributes saved to `projects/{project_idn}/attributes.yaml`
+  - Push integrated into main `newo push` command
+  - Automatic ID mapping for push operations
+  - Same YAML format as customer attributes with !enum tags
+  - Change detection and update mechanism
+- **Developer Tools**: Reference and productivity features
+  - `newo list-actions` - List all 78 available NSL/Jinja script actions with categorization
+  - `newo profile` - Display customer profile information (organization, email, platform links)
+  - Action categorization into 12 groups (Gen, Get, Create, Delete, Update, etc.)
+  - Verbose mode shows complete parameter schemas for each action
+- **API Integrations**: 17 new API endpoints
+  - Integration endpoints: GET integrations, connectors, settings
+  - Connector CRUD: POST, PUT, DELETE for connectors
+  - Webhook endpoints: GET outgoing/incoming webhooks
+  - AKB endpoints: GET personas, topics; POST import
+  - Project attribute endpoints: GET, PUT for project attributes
+  - Script actions endpoint: GET all NSL actions
+  - Customer profile endpoint: GET profile information
+- **TypeScript Types**: 22 new interfaces for complete type safety
+  - Integration types: Integration, Connector, IntegrationSetting, CreateConnectorRequest, UpdateConnectorRequest
+  - Webhook types: OutgoingWebhook, IncomingWebhook
+  - AKB types: Persona, AkbTopic, AkbTopicItem, AkbYamlTopic
+  - Script action types: ScriptAction, ArgumentSchema
+  - Metadata types: IntegrationMetadata, ConnectorMetadata, IntegrationsYamlData
+
+### Changed
+
+- **File Structure**: Enhanced directory hierarchy with new integration and AKB folders
+  - `newo_customers/{customer}/integrations/` - Integration configurations
+  - `newo_customers/{customer}/akb/` - AKB knowledge base articles
+  - `newo_customers/{customer}/projects/{project}/attributes.yaml` - Project attributes
+- **Pull Attributes Command**: Now pulls both customer and project attributes in single command
+- **Push Command**: Enhanced to push project attribute changes alongside skill changes
+- **Help Documentation**: Comprehensive updates with all new commands and file structure
+- **Integration Structure**: Nested connector directories with webhook subdirectories
+  - `integrations/{integration}/{integration}.yaml` - Combined metadata + settings
+  - `integrations/{integration}/connectors/{connector}/{connector}.yaml` - Connector config
+  - `integrations/{integration}/connectors/{connector}/webhooks/` - Webhook files
+
+### Technical Details
+
+- **Modular Architecture**: 8 new modules created
+  - `src/sync/integrations.ts` (340+ lines) - Integration/connector/webhook sync
+  - `src/sync/akb.ts` (205 lines) - AKB knowledge base sync
+  - `src/cli/commands/pull-integrations.ts` - Integration pull handler
+  - `src/cli/commands/push-integrations.ts` - Integration push handler
+  - `src/cli/commands/pull-akb.ts` - AKB pull handler
+  - `src/cli/commands/push-akb.ts` - AKB push handler
+  - `src/cli/commands/list-actions.ts` - Script actions listing
+  - `src/cli/commands/profile.ts` - Profile viewer
+- **Enhanced Modules**: 6 existing modules updated
+  - `src/types.ts` (+160 lines) - New type definitions
+  - `src/api.ts` (+110 lines) - New API functions
+  - `src/sync/attributes.ts` (+126 lines) - Project attribute support
+  - `src/sync/push.ts` (+15 lines) - Project attribute push integration
+  - `src/cli.ts` (+12 lines) - New command routing
+  - `src/cli/commands/help.ts` (+30 lines) - Documentation updates
+- **Webhook Association**: Webhooks grouped by connector_idn and stored in connector subdirectories
+- **Change Detection**: Smart comparison for connectors (title, status, settings)
+- **Error Handling**: Graceful handling of missing settings endpoints (404 errors)
+- **ID Mapping**: Separate JSON files for attribute ID mappings to enable push operations
+- **YAML Parsing**: Custom !enum tag handling for AttributeValueTypes
+
+### Example Usage
+
+```bash
+# Integration management
+newo pull-integrations                    # Download all integrations + webhooks
+newo push-integrations                    # Upload connector changes
+
+# Knowledge base management
+newo pull-akb                             # Download AKB for personas with agents
+newo push-akb                             # Upload AKB articles
+
+# Enhanced attributes
+newo pull-attributes                      # Now pulls customer + project attributes
+newo push                                 # Now pushes project attributes too
+
+# Developer tools
+newo profile                              # View customer information
+newo list-actions                         # Browse 78 NSL actions
+newo list-actions --verbose               # With parameter details
+```
+
+### Files Created
+
+**Integration Structure:**
+```
+newo_customers/{customer}/integrations/
+├── integrations.yaml
+└── {integration_idn}/
+    ├── {integration_idn}.yaml           # Combined metadata + settings
+    └── connectors/
+        └── {connector_idn}/
+            ├── {connector_idn}.yaml
+            └── webhooks/
+                ├── outgoing.yaml
+                └── incoming.yaml
+```
+
+**AKB Structure:**
+```
+newo_customers/{customer}/akb/
+└── {agent_idn}.yaml                     # AKB articles per agent
+```
+
+**Project Attributes:**
+```
+newo_customers/{customer}/projects/{project}/
+└── attributes.yaml                      # Project-specific attributes
+```
+
+### Breaking Changes
+
+None. All changes are additive and backward compatible.
+
 ## [3.1.0] - 2025-10-15
 
 ### Added
@@ -698,7 +835,8 @@ Another Item: $Price [Modifiers: modifier3]
 - GitHub Actions CI/CD integration
 - Robust authentication with token refresh
 
-[Unreleased]: https://github.com/sabbah13/newo-cli/compare/v3.1.0...HEAD
+[Unreleased]: https://github.com/sabbah13/newo-cli/compare/v3.2.0...HEAD
+[3.2.0]: https://github.com/sabbah13/newo-cli/compare/v3.1.0...v3.2.0
 [3.1.0]: https://github.com/sabbah13/newo-cli/compare/v3.0.0...v3.1.0
 [3.0.0]: https://github.com/sabbah13/newo-cli/compare/v2.0.6...v3.0.0
 [2.0.6]: https://github.com/sabbah13/newo-cli/compare/v2.0.5...v2.0.6

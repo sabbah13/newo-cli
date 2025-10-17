@@ -263,7 +263,8 @@ export async function status(customer: CustomerConfig, verbose: boolean = false)
               });
               console.warn(`   Status check skipped - please keep only one script file.`);
             } else if (validation.files.length === 0) {
-              console.log(`D  ${skillIdn}/ (no script files)`);
+              const displayPath = projectIdn ? `${projectIdn}/${agentIdn}/${flowIdn}/${skillIdn}` : `${agentIdn}/${flowIdn}/${skillIdn}`;
+              console.log(`D  ${displayPath}/ (no script files)`);
               dirty++;
             }
             continue;
@@ -272,7 +273,8 @@ export async function status(customer: CustomerConfig, verbose: boolean = false)
           // Get the single valid script file
           const skillFile = await getSingleSkillFile(customer.idn, projectIdn, agentIdn, flowIdn, skillIdn);
           if (!skillFile) {
-            console.log(`D  ${skillIdn}/ (no valid script file)`);
+            const displayPath = projectIdn ? `${projectIdn}/${agentIdn}/${flowIdn}/${skillIdn}` : `${agentIdn}/${flowIdn}/${skillIdn}`;
+            console.log(`D  ${displayPath}/ (no valid script file)`);
             dirty++;
             if (verbose) console.log(`      ❌ No valid script file found: ${skillIdn}`);
             continue;

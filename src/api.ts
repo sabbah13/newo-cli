@@ -43,7 +43,16 @@ import type {
   CreateActorResponse,
   SendChatMessageRequest,
   ConversationActsParams,
-  ConversationActsResponse
+  ConversationActsResponse,
+  ScriptAction,
+  IntegrationSetting,
+  CreateConnectorRequest,
+  CreateConnectorResponse,
+  UpdateConnectorRequest,
+  OutgoingWebhook,
+  IncomingWebhook,
+  PersonaSearchResponse,
+  AkbTopicsResponse
 } from './types.js';
 
 // Per-request retry tracking to avoid shared state issues
@@ -185,6 +194,60 @@ export async function updateCustomerAttribute(client: AxiosInstance, attribute: 
     possible_values: attribute.possible_values,
     value_type: attribute.value_type
   });
+}
+
+export async function getProjectAttributes(
+  client: AxiosInstance,
+  projectId: string,
+  includeHidden: boolean = false
+): Promise<CustomerAttributesResponse> {
+  const response = await client.get<CustomerAttributesResponse>(`/api/v1/bff/projects/${projectId}/attributes`, {
+    params: {
+      query: '',
+      include_hidden: includeHidden
+    }
+  });
+  return response.data;
+}
+
+export async function updateProjectAttribute(
+  client: AxiosInstance,
+  projectId: string,
+  attribute: CustomerAttribute
+): Promise<void> {
+  if (!attribute.id) {
+    throw new Error(`Project attribute ${attribute.idn} is missing ID - cannot update`);
+  }
+  await client.put(`/api/v1/designer/projects/${projectId}/attributes/${attribute.id}`, {
+    idn: attribute.idn,
+    value: attribute.value,
+    title: attribute.title,
+    description: attribute.description,
+    group: attribute.group,
+    is_hidden: attribute.is_hidden,
+    possible_values: attribute.possible_values,
+    value_type: attribute.value_type
+  });
+}
+
+export async function createProjectAttribute(
+  client: AxiosInstance,
+  projectId: string,
+  attributeData: CreateCustomerAttributeRequest
+): Promise<CreateCustomerAttributeResponse> {
+  const response = await client.post<CreateCustomerAttributeResponse>(
+    `/api/v1/designer/projects/${projectId}/attributes`,
+    attributeData
+  );
+  return response.data;
+}
+
+export async function deleteProjectAttribute(
+  client: AxiosInstance,
+  projectId: string,
+  attributeId: string
+): Promise<void> {
+  await client.delete(`/api/v1/designer/projects/${projectId}/attributes/${attributeId}`);
 }
 
 // Conversation API Functions
@@ -363,6 +426,74 @@ export async function getConversationActs(client: AxiosInstance, params: Convers
 
   const response = await client.get<ConversationActsResponse>('/api/v1/bff/conversations/acts', {
     params: queryParams
+  });
+  return response.data;
+}
+
+// Script Actions API Functions
+
+export async function getScriptActions(client: AxiosInstance): Promise<ScriptAction[]> {
+  const response = await client.get<ScriptAction[]>('/api/v1/script/actions');
+  return response.data;
+}
+
+// Integration API Functions
+
+export async function getIntegrationSettings(client: AxiosInstance, integrationId: string): Promise<IntegrationSetting[]> {
+  const response = await client.get<IntegrationSetting[]>(`/api/v1/integrations/${integrationId}/settings`);
+  return response.data;
+}
+
+// Connector CRUD API Functions
+
+export async function createConnector(client: AxiosInstance, integrationId: string, connectorData: CreateConnectorRequest): Promise<CreateConnectorResponse> {
+  const response = await client.post<CreateConnectorResponse>(`/api/v1/integrations/${integrationId}/connectors`, connectorData);
+  return response.data;
+}
+
+export async function updateConnector(client: AxiosInstance, connectorId: string, updateData: UpdateConnectorRequest): Promise<void> {
+  await client.put(`/api/v1/integrations/connectors/${connectorId}`, updateData);
+}
+
+export async function deleteConnector(client: AxiosInstance, connectorId: string): Promise<void> {
+  await client.delete(`/api/v1/integrations/connectors/${connectorId}`);
+}
+
+// Webhook API Functions
+
+export async function listOutgoingWebhooks(client: AxiosInstance): Promise<OutgoingWebhook[]> {
+  const response = await client.get<OutgoingWebhook[]>('/api/v1/webhooks');
+  return response.data;
+}
+
+export async function listIncomingWebhooks(client: AxiosInstance): Promise<IncomingWebhook[]> {
+  const response = await client.get<IncomingWebhook[]>('/api/v1/webhooks/incoming');
+  return response.data;
+}
+
+// AKB (Knowledge Base) API Functions
+
+export async function searchPersonas(
+  client: AxiosInstance,
+  isLinkedToAgent: boolean = true,
+  page: number = 1,
+  per: number = 30
+): Promise<PersonaSearchResponse> {
+  const response = await client.get<PersonaSearchResponse>('/api/v1/bff/personas/search', {
+    params: { is_linked_to_agent: isLinkedToAgent, page, per }
+  });
+  return response.data;
+}
+
+export async function getAkbTopics(
+  client: AxiosInstance,
+  personaId: string,
+  page: number = 1,
+  per: number = 100,
+  orderBy: string = 'created_at'
+): Promise<AkbTopicsResponse> {
+  const response = await client.get<AkbTopicsResponse>('/api/v1/akb/topics', {
+    params: { persona_id: personaId, page, per, order_by: orderBy }
   });
   return response.data;
 }

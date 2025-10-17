@@ -20,6 +20,7 @@ import yaml from 'js-yaml';
 import { generateFlowsYaml } from './metadata.js';
 import { isProjectMap, isLegacyProjectMap } from './projects.js';
 import { flowsYamlPath } from '../fsutil.js';
+import { pushAllProjectAttributes } from './attributes.js';
 import type { AxiosInstance } from 'axios';
 import type {
   ProjectData,
@@ -506,6 +507,22 @@ export async function pushChanged(client: AxiosInstance, customer: CustomerConfi
   }
 
   if (verbose) console.log(`🔄 Scanned ${scanned} files, found ${pushed} changes`);
+
+  // Push project attributes for all projects
+  const projectsInfoMap: Record<string, { projectId: string; projectIdn: string }> = {};
+  for (const [projectIdn, projectData] of Object.entries(projects)) {
+    if (projectIdn && projectData.projectId) {
+      projectsInfoMap[projectIdn] = {
+        projectId: projectData.projectId,
+        projectIdn: projectData.projectIdn || projectIdn
+      };
+    }
+  }
+
+  const attributesUpdated = await pushAllProjectAttributes(client, customer, projectsInfoMap, verbose);
+  if (attributesUpdated > 0) {
+    pushed += attributesUpdated;
+  }
 
   // Regenerate flows.yaml if metadata was changed
   if (metadataChanged) {

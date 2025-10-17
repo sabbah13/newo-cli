@@ -668,3 +668,153 @@ export interface ChatDebugInfo {
   reference_idn: string;
   arguments: readonly any[];
 }
+
+// Script Actions Types
+export interface ScriptAction {
+  readonly title: string;
+  readonly idn?: string;
+  readonly arguments: Record<string, ArgumentSchema>;
+}
+
+export interface ArgumentSchema {
+  readonly title: string;
+  readonly type: string;
+  readonly default?: any;
+  readonly items?: any;
+  readonly anyOf?: readonly any[];
+  readonly enum?: readonly string[];
+  readonly format?: string;
+  readonly pattern?: string;
+  readonly minimum?: number;
+  readonly maximum?: number;
+  readonly contentMediaType?: string;
+  readonly contentSchema?: any;
+  [key: string]: any; // Allow additional JSON Schema properties
+}
+
+// Connector CRUD Types
+export interface CreateConnectorRequest {
+  title: string;
+  connector_idn: string;
+  integration_idn: string;
+  settings?: readonly ConnectorSetting[];
+}
+
+export interface CreateConnectorResponse {
+  id: string;
+}
+
+export interface UpdateConnectorRequest {
+  title?: string;
+  status?: string;
+  settings?: readonly ConnectorSetting[];
+}
+
+export interface IntegrationSettingsResponse {
+  settings: IntegrationSetting[];
+}
+
+// Integrations Data for File Storage
+export interface IntegrationsYamlData {
+  integrations: IntegrationMetadata[];
+}
+
+export interface IntegrationMetadata {
+  id: string;
+  idn: string;
+  title: string;
+  description: string;
+  channel: string;
+  is_disabled: boolean;
+}
+
+export interface ConnectorMetadata {
+  id: string;
+  connector_idn: string;
+  title: string;
+  status: string;
+  integration_idn: string;
+  settings: readonly ConnectorSetting[];
+}
+
+// Webhook Types
+export interface OutgoingWebhook {
+  readonly id: string;
+  readonly idn: string;
+  readonly description: string;
+  readonly connector_idn: string;
+  readonly url: string;
+  readonly command_idns: readonly string[];
+}
+
+export interface IncomingWebhook {
+  readonly id: string;
+  readonly idn: string;
+  readonly webhook_path_id: string;
+  readonly description: string;
+  readonly url: string;
+  readonly connector_idn: string;
+  readonly event_idns: readonly string[];
+  readonly allowed_ips: readonly string[];
+}
+
+// AKB (Knowledge Base) Types
+export interface Persona {
+  readonly id: string;
+  readonly name: string;
+  readonly title: string;
+  readonly description: string;
+  readonly agent: {
+    readonly id: string;
+    readonly idn: string;
+    readonly title: string | null;
+  };
+  readonly actors: readonly any[];
+}
+
+export interface PersonaSearchResponse {
+  readonly items: readonly Persona[];
+  readonly metadata: {
+    readonly page: number;
+    readonly per: number;
+    readonly total: number;
+  };
+}
+
+export interface AkbTopic {
+  readonly id: string;
+  readonly topic_name: string;
+  readonly topic_summary: string;
+  readonly topic_facts: readonly string[];
+  readonly confidence: number;
+  readonly source: string;
+  readonly labels: readonly string[];
+  readonly created_at: string;
+  readonly updated_at: string;
+  readonly persona_id: string;
+}
+
+export interface AkbTopicItem {
+  readonly topic: AkbTopic;
+  readonly fuzzy_search_fields_score: number | null;
+}
+
+export interface AkbTopicsResponse {
+  readonly items: readonly AkbTopicItem[];
+  readonly metadata: {
+    readonly page: number;
+    readonly per: number;
+    readonly total: number;
+  };
+}
+
+export interface AkbYamlTopic {
+  topic_name: string;
+  topic_facts: string[];
+  confidence: number;
+  source: string;
+  created_at: string;
+  updated_at: string;
+  labels: string[];
+  topic_summary: string;
+}

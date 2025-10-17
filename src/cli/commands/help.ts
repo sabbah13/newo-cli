@@ -13,7 +13,7 @@ Core Commands:
   newo conversations [--customer <idn>] [--all] # download user conversations -> ./newo_customers/<idn>/conversations.yaml
   newo sandbox "<message>" [--customer <idn>]   # test agent in sandbox - single message mode (NEW v3.1.0)
   newo sandbox --actor <id> "message"           # continue existing sandbox conversation with chat ID
-  newo pull-attributes [--customer <idn>]       # download customer attributes -> ./newo_customers/<idn>/attributes.yaml
+  newo pull-attributes [--customer <idn>]       # download customer + project attributes -> ./newo_customers/<idn>/attributes.yaml + projects/{project}/attributes.yaml
   newo list-customers                           # list available customers and their configuration
   newo meta [--customer <idn>]                  # get project metadata (debug command)
   newo import-akb <file> <persona_id> [--customer <idn>]  # import AKB articles from structured text file
@@ -42,6 +42,12 @@ Enterprise Features:
   newo conversations [--customer <idn>] [--all]             # download conversation history
   newo pull-attributes [--customer <idn>]                   # sync customer attributes
   newo import-akb <file> <persona_id>                       # import knowledge base articles
+  newo pull-integrations [--customer <idn>]                 # download integrations and connectors → ./newo_customers/<idn>/integrations/
+  newo push-integrations [--customer <idn>]                 # upload integration and connector changes to platform
+  newo list-actions [--customer <idn>]                      # list all available NSL/Jinja script actions with parameters
+  newo profile [--customer <idn>]                           # display customer profile information
+  newo pull-akb [--customer <idn>]                          # download AKB articles for all personas with agents → ./newo_customers/<idn>/akb/
+  newo push-akb [--customer <idn>]                          # upload AKB articles from local YAML files to platform
 
 Flags:
   --customer <idn>             # specify customer (if not set, uses default or interactive selection)
@@ -123,8 +129,21 @@ File Structure:
   ├── <customer-idn>/
   │   ├── attributes.yaml                      # Customer attributes (pull-attributes)
   │   ├── conversations.yaml                   # User conversations and personas
+  │   ├── akb/                                 # AKB knowledge base articles (pull-akb)
+  │   │   └── <agent-idn>.yaml                # AKB articles per agent persona
+  │   ├── integrations/                        # Integration configurations (pull-integrations)
+  │   │   ├── integrations.yaml               # Master integrations list
+  │   │   └── <integration-idn>/
+  │   │       ├── <integration-idn>.yaml      # Integration metadata + settings (combined)
+  │   │       └── connectors/
+  │   │           └── <connector-idn>/        # Each connector in own directory
+  │   │               ├── <connector-idn>.yaml  # Connector config
+  │   │               └── webhooks/           # Webhooks subdirectory (if any)
+  │   │                   ├── outgoing.yaml   # Outgoing webhooks
+  │   │                   └── incoming.yaml   # Incoming webhooks
   │   └── projects/
   │       └── <project-idn>/
+  │           ├── attributes.yaml              # Project attributes (pull-attributes)
   │           ├── flows.yaml                   # Auto-generated project structure
   │           ├── metadata.yaml                # Project metadata
   │           └── <agent-idn>/
