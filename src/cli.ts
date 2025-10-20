@@ -35,6 +35,9 @@ import { handleListActionsCommand } from './cli/commands/list-actions.js';
 import { handleProfileCommand } from './cli/commands/profile.js';
 import { handlePullAkbCommand } from './cli/commands/pull-akb.js';
 import { handlePushAkbCommand } from './cli/commands/push-akb.js';
+import { handleMigrateAccountCommand } from './cli/commands/migrate-account.js';
+import { handleVerifyMigrationCommand } from './cli/commands/verify-migration.js';
+import { handleCreateWebhooksCommand } from './cli/commands/create-webhooks.js';
 import type { CliArgs, NewoApiError } from './types.js';
 
 dotenv.config();
@@ -186,6 +189,19 @@ async function main(): Promise<void> {
 
       case 'push-akb':
         await handlePushAkbCommand(customerConfig, args, verbose);
+        break;
+
+      case 'migrate-account':
+        await handleMigrateAccountCommand(customerConfig, args, verbose);
+        break;
+
+      case 'verify':
+      case 'verify-migration':
+        await handleVerifyMigrationCommand(customerConfig, args, verbose);
+        break;
+
+      case 'create-webhooks':
+        await handleCreateWebhooksCommand(customerConfig, args, verbose);
         break;
 
       default:
