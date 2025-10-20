@@ -8,8 +8,8 @@
 **NEWO CLI** - Professional command-line tool for NEWO AI Agent development. Features **modular architecture**, **IDN-based file management**, and **comprehensive multi-customer support**.
 
 Sync NEWO "Project → Agent → Flow → Skills" structure to local files with:
-- 🚀 **Account migration** - Fully automated account copying with 100% accuracy in ~30 minutes (NEW v3.3.0)
-- 🏗️ **Complete entity management** - Create, edit, and delete agents, flows, skills, events, and states (NEW v2.0+)
+- 🚀 **Account migration** - Fully automated account copying with 100% accuracy
+- 🏗️ **Complete entity management** - Create, edit, and delete agents, flows, skills, events, and states
 - 🔄 **Intelligent synchronization** - Pull projects, attributes, and conversations automatically
 - 🎯 **IDN-based naming** - Skills named as `{skillIdn}.jinja/.guidance` for better organization
 - 📊 **Real-time progress** - Live progress tracking during large operations (1,000+ skills)
@@ -19,11 +19,11 @@ Sync NEWO "Project → Agent → Flow → Skills" structure to local files with:
 - ⚡ **Smart change detection** - SHA256-based efficient sync with hash consistency
 - 🛡️ **File validation** - Multiple file detection with clear warnings and safe handling
 - 🧠 **AI skill formats** - Support for `.guidance` (AI prompts) and `.jinja` (NSL templates)
-- 📡 **Webhook automation** - Automatic webhook creation from YAML configuration (NEW v3.3.0)
+- 📡 **Webhook automation** - Automatic webhook creation from YAML configuration
 - 📊 **Knowledge base import** - Bulk import AKB articles from structured text files
 - 💬 **Conversation history** - Extract and sync user conversations and personas
-- 🧪 **Sandbox testing** - Interactive agent testing with conversation continuation (NEW v3.1.0)
-- ✅ **Migration verification** - Automated validation of migration completeness (NEW v3.3.0)
+- 🧪 **Sandbox testing** - Interactive agent testing with conversation continuation
+- ✅ **Migration verification** - Automated validation of migration completeness
 - 🔧 **CI/CD ready** - GitHub Actions integration for automated deployments
 
 ---
@@ -152,7 +152,7 @@ NEWO_REFRESH_URL=custom_refresh_endpoint   # Custom refresh endpoint
 | `newo import-akb` | Import knowledge base articles | • Structured text parsing<br>• Bulk article import<br>• Validation and error reporting |
 | `newo meta` | Get project metadata (debug) | • Project structure analysis<br>• Metadata validation |
 
-### Account Migration Commands (NEW v3.3.0)
+### Account Migration Commands
 
 **Enterprise-grade account migration with 100% automation:**
 
@@ -179,7 +179,7 @@ newo push --customer DEST_IDN
 # 4. Verify success
 newo verify --source SOURCE_IDN --dest DEST_IDN
 
-# Complete! Account migrated in ~30 minutes
+# Complete! Account fully migrated
 ```
 
 **What Gets Migrated:**
@@ -191,7 +191,7 @@ newo verify --source SOURCE_IDN --dest DEST_IDN
 - ✅ All metadata and configuration
 
 **Benefits:**
-- **Time Savings**: ~30 minutes vs 8-10 hours manual
+- **Automation**: 100% automated with zero manual steps
 - **Accuracy**: 100% entity match verified
 - **Reliability**: Tested with 1,084-skill account
 - **Safety**: Source account read-only, never modified
