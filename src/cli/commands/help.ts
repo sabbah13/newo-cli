@@ -49,6 +49,11 @@ Enterprise Features:
   newo pull-akb [--customer <idn>]                          # download AKB articles for all personas with agents → ./newo_customers/<idn>/akb/
   newo push-akb [--customer <idn>]                          # upload AKB articles from local YAML files to platform
 
+Account Migration (NEW):
+  newo migrate-account --source <idn> --dest <idn> [--yes]  # migrate complete account from source to destination
+  newo verify --source <idn> --dest <idn>                    # verify migration by comparing entity counts
+  newo create-webhooks [--customer <idn>]                    # create webhooks from YAML files
+
 Flags:
   --customer <idn>             # specify customer (if not set, uses default or interactive selection)
   --all                        # include all available data (for conversations: all personas and acts)

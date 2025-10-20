@@ -79,6 +79,13 @@ export interface ProjectMeta {
   readonly idn: string;
   readonly title: string;
   readonly description?: string;
+  readonly version?: string | null;
+  readonly is_synchronized?: boolean;
+  readonly preferred_update_time?: string | null;
+  readonly is_auto_update_enabled?: boolean;
+  readonly registry_idn?: string;
+  readonly registry_item_idn?: string | null;
+  readonly registry_item_version?: string | null;
   readonly created_at?: string;
   readonly updated_at?: string;
 }
@@ -87,8 +94,15 @@ export interface Agent {
   readonly id: string;
   readonly idn: string;
   readonly title?: string;
-  readonly description?: string;
+  readonly description?: string | null;
   readonly flows?: readonly Flow[];
+  readonly persona?: {
+    readonly id: string;
+    readonly name: string;
+    readonly title: string;
+  } | null;
+  readonly created_at?: string;
+  readonly updated_at?: string;
 }
 
 export interface Flow {

@@ -497,3 +497,59 @@ export async function getAkbTopics(
   });
   return response.data;
 }
+
+// Project update
+export async function updateProject(
+  client: AxiosInstance,
+  projectId: string,
+  updateData: Partial<{
+    title: string;
+    description: string;
+    is_auto_update_enabled: boolean;
+    registry_idn: string;
+    registry_item_idn: string | null;
+    registry_item_version: string | null;
+  }>
+): Promise<void> {
+  await client.put(`/api/v1/designer/projects/${projectId}`, updateData);
+}
+
+// Agent update
+export async function updateAgent(
+  client: AxiosInstance,
+  agentId: string,
+  updateData: Partial<{
+    title: string;
+    description: string;
+    persona_id: string | null;
+  }>
+): Promise<void> {
+  await client.put(`/api/v1/designer/agents/${agentId}`, updateData);
+}
+
+// Webhook creation
+export async function createOutgoingWebhook(
+  client: AxiosInstance,
+  webhookData: {
+    connector_idn: string;
+    event_idn: string;
+    url: string;
+    method: string;
+    headers?: Record<string, string>;
+    body_template?: string;
+  }
+): Promise<{ id: string }> {
+  const response = await client.post('/api/v1/webhooks', webhookData);
+  return response.data;
+}
+
+export async function createIncomingWebhook(
+  client: AxiosInstance,
+  webhookData: {
+    connector_idn: string;
+    event_idn: string;
+  }
+): Promise<{ id: string; url: string }> {
+  const response = await client.post('/api/v1/webhooks/incoming', webhookData);
+  return response.data;
+}
