@@ -8,19 +8,22 @@
 **NEWO CLI** - Professional command-line tool for NEWO AI Agent development. Features **modular architecture**, **IDN-based file management**, and **comprehensive multi-customer support**.
 
 Sync NEWO "Project → Agent → Flow → Skills" structure to local files with:
+- 🚀 **Account migration** - Fully automated account copying with 100% accuracy in ~30 minutes (NEW v3.3.0)
 - 🏗️ **Complete entity management** - Create, edit, and delete agents, flows, skills, events, and states (NEW v2.0+)
 - 🔄 **Intelligent synchronization** - Pull projects, attributes, and conversations automatically
 - 🎯 **IDN-based naming** - Skills named as `{skillIdn}.jinja/.guidance` for better organization
-- 📊 **Real-time progress** - Live progress tracking during large operations (966+ skills)
+- 📊 **Real-time progress** - Live progress tracking during large operations (1,000+ skills)
 - 🏢 **Multi-customer workspaces** - Work with multiple NEWO accounts simultaneously
 - 📁 **Hierarchical structure** - Complete project metadata and organized file structure
 - 🔐 **Secure authentication** - API key-based auth with automatic token refresh
 - ⚡ **Smart change detection** - SHA256-based efficient sync with hash consistency
 - 🛡️ **File validation** - Multiple file detection with clear warnings and safe handling
 - 🧠 **AI skill formats** - Support for `.guidance` (AI prompts) and `.jinja` (NSL templates)
+- 📡 **Webhook automation** - Automatic webhook creation from YAML configuration (NEW v3.3.0)
 - 📊 **Knowledge base import** - Bulk import AKB articles from structured text files
 - 💬 **Conversation history** - Extract and sync user conversations and personas
 - 🧪 **Sandbox testing** - Interactive agent testing with conversation continuation (NEW v3.1.0)
+- ✅ **Migration verification** - Automated validation of migration completeness (NEW v3.3.0)
 - 🔧 **CI/CD ready** - GitHub Actions integration for automated deployments
 
 ---
