@@ -19,7 +19,10 @@ Core Commands:
   newo import-akb <file> <persona_id> [--customer <idn>]  # import AKB articles from structured text file
 
 Project Management:
-  newo create-project <idn> [--title <title>] [--description <desc>] [--version <version>] [--auto-update]  # create project on platform ✅
+  newo create-project <idn> [--title <title>] [--description <desc>] [--version <version>] [--auto-update]  # create empty project on platform
+  newo list-registries [--customer <idn>]                                   # list available project registries (production, staging, etc.)
+  newo list-registry-items <registry-idn> [--all]                           # list available project templates in a registry
+  newo add-project <idn> --item <template-idn> [--registry <registry>] [--version <v>] [--auto-update]  # install project from registry template
 
 Entity Management (Full Lifecycle Support):
   newo create-agent <idn> --project <project-idn> [--title <title>] [--description <desc>]    # create agent → push to platform ✅
@@ -122,6 +125,14 @@ Usage Examples:
 
   # Import AKB articles:
   newo import-akb articles.txt da4550db-2b95-4500-91ff-fb4b60fe7be9
+
+  # Project Registry - Install templates from registry (NEW):
+  newo list-registries                             # See available registries
+  newo list-registry-items production              # Browse production templates
+  newo list-registry-items production --all        # See all versions
+  newo add-project my_calcom --item cal_com_integration                        # Install latest version
+  newo add-project my_zoho --item zoho_integration --version 1.0.2            # Install specific version
+  newo add-project my_weather --item weather_integration --auto-update         # With auto-updates
 
   # Sandbox testing (NEW v3.1.0):
   newo sandbox "Hello, I want to order pizza"                    # Start new conversation

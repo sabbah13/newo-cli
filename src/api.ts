@@ -52,7 +52,10 @@ import type {
   OutgoingWebhook,
   IncomingWebhook,
   PersonaSearchResponse,
-  AkbTopicsResponse
+  AkbTopicsResponse,
+  Registry,
+  RegistryItem,
+  AddProjectFromRegistryRequest
 } from './types.js';
 
 // Per-request retry tracking to avoid shared state issues
@@ -551,5 +554,26 @@ export async function createIncomingWebhook(
   }
 ): Promise<{ id: string; url: string }> {
   const response = await client.post('/api/v1/webhooks/incoming', webhookData);
+  return response.data;
+}
+
+// Registry API Functions
+
+export async function listRegistries(client: AxiosInstance): Promise<Registry[]> {
+  const response = await client.get<Registry[]>('/api/v1/designer/registries');
+  return response.data;
+}
+
+export async function listRegistryItems(client: AxiosInstance, registryId: string): Promise<RegistryItem[]> {
+  const response = await client.get<RegistryItem[]>(`/api/v1/designer/registries/${registryId}/items`);
+  return response.data;
+}
+
+export async function addProjectFromRegistry(
+  client: AxiosInstance,
+  projectData: AddProjectFromRegistryRequest
+): Promise<CreateProjectResponse> {
+  // Uses the same endpoint as createProject, but with registry fields populated
+  const response = await client.post<CreateProjectResponse>('/api/v1/designer/projects', projectData);
   return response.data;
 }

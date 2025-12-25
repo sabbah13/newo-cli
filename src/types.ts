@@ -832,3 +832,46 @@ export interface AkbYamlTopic {
   labels: string[];
   topic_summary: string;
 }
+
+// Registry Types (for project marketplace/templates)
+export interface Registry {
+  readonly id: string;
+  readonly idn: string;
+  readonly account_id: string;
+  readonly is_public: boolean;
+}
+
+export interface RegistryItemProjectImage {
+  readonly id: string;
+  readonly idn: string;
+  readonly image_hash: string;
+  readonly storage_id: string;
+  readonly customer_idn: string;
+  readonly account_id: string;
+  readonly created_at: string;
+}
+
+export interface RegistryItem {
+  readonly id: string;
+  readonly idn: string;
+  readonly version: string;
+  readonly project_image: RegistryItemProjectImage;
+  readonly account_id: string;
+  readonly account_idn: string | null;
+  readonly account_email: string | null;
+  readonly is_public: boolean;
+  readonly active_project_count: number;
+  readonly created_at: string;
+  readonly published_at: string;
+}
+
+export interface AddProjectFromRegistryRequest {
+  idn: string;
+  title: string;
+  version?: string;
+  description?: string;
+  is_auto_update_enabled?: boolean;
+  registry_idn: string;
+  registry_item_idn: string;
+  registry_item_version: string | null;
+}

@@ -1,0 +1,83 @@
+# Security - Never commit sensitive files
+.env
+.env.local
+.env.*.local
+!.env.example
+.DS_Store
+
+# Local NEWO project data and state
+.newo/
+project/
+projects/
+newo_customers/
+flows.yaml
+
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm/
+.yarn/
+.pnp.*
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Log files
+logs/
+*.log
+lerna-debug.log*
+
+# Coverage and testing
+coverage/
+.nyc_output/
+.coverage/
+
+# Build outputs
+dist/
+build/
+out/
+
+# Temporary files
+tmp/
+temp/
+.tmp/
+.temp/
+
+# OS generated files
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Desktop.ini
+
+# Claude Code specific files
+.claude/
+CLAUDE.md
+
+# Project specific config files
+jinja-lsp.toml
+
+# Backup files
+backup/
+*.bak
+*.backup
+*.old
+*.orig
+
+# Package manager files
+.pnpm-debug.log
+.yarnrc
+
+# Development and test artifacts
+test-*.js
+*-refactored.js
+*.test.log
+temp
+newo-docs

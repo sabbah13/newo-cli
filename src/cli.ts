@@ -38,6 +38,9 @@ import { handlePushAkbCommand } from './cli/commands/push-akb.js';
 import { handleMigrateAccountCommand } from './cli/commands/migrate-account.js';
 import { handleVerifyMigrationCommand } from './cli/commands/verify-migration.js';
 import { handleCreateWebhooksCommand } from './cli/commands/create-webhooks.js';
+import { handleListRegistriesCommand } from './cli/commands/list-registries.js';
+import { handleListRegistryItemsCommand } from './cli/commands/list-registry-items.js';
+import { handleAddProjectCommand } from './cli/commands/add-project.js';
 import type { CliArgs, NewoApiError } from './types.js';
 
 dotenv.config();
@@ -202,6 +205,18 @@ async function main(): Promise<void> {
 
       case 'create-webhooks':
         await handleCreateWebhooksCommand(customerConfig, args, verbose);
+        break;
+
+      case 'list-registries':
+        await handleListRegistriesCommand(customerConfig, args, verbose);
+        break;
+
+      case 'list-registry-items':
+        await handleListRegistryItemsCommand(customerConfig, args, verbose);
+        break;
+
+      case 'add-project':
+        await handleAddProjectCommand(customerConfig, args, verbose);
         break;
 
       default:

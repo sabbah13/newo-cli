@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.4.0] - 2025-12-25
+
+### Added
+
+- **Project Registry**: Browse and install project templates from NEWO registries
+  - `newo list-registries` - List available registries (production, staging, development, etc.)
+  - `newo list-registry-items <registry-idn>` - Browse project templates in a registry with version info
+  - `newo add-project <idn> --item <template-idn>` - Install project from registry template
+  - Support for multiple registries: production, staging, development, testing, and custom registries
+  - Version selection with `--version` flag or automatic latest version detection
+  - Auto-update support with `--auto-update` flag for automatic updates when new versions are published
+  - Grouped display showing unique projects with version counts and active installations
+  - `--all` flag to show all versions of each project template
+
+- **Registry Types** (`src/types.ts`):
+  - `Registry` - Registry metadata (id, idn, account_id, is_public)
+  - `RegistryItem` - Project template with versioning (id, idn, version, project_image, active_project_count)
+  - `RegistryItemProjectImage` - Project image metadata for templates
+  - `AddProjectFromRegistryRequest` - Request type for registry-based project installation
+
+- **Registry API Functions** (`src/api.ts`):
+  - `listRegistries()` - Fetch available registries
+  - `listRegistryItems()` - Fetch project templates from a specific registry
+  - `addProjectFromRegistry()` - Create project from registry template
+
+- **Registry Command Handlers** (`src/cli/commands/`):
+  - `list-registries.ts` - Display registries in formatted table
+  - `list-registry-items.ts` - Display projects with version grouping and sorting
+  - `add-project.ts` - Install templates with validation and progress feedback
+
+### Enhanced
+
+- **Help Command**: Added registry commands documentation and examples
+- **CLAUDE.md**: Updated with registry feature documentation, API endpoints, and data flow
+
 ## [3.3.0] - 2025-10-20
 
 ### Added
