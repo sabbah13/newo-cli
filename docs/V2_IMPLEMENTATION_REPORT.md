@@ -231,26 +231,30 @@ docs/V2_IMPLEMENTATION_REPORT.md  # This file
 
 ---
 
-## Future Improvements
+## Implementation Status
 
-### Phase 2 (Suggested)
+### Phase 2 (COMPLETED)
 
-1. **Unified Pull Command with Resource Selection**
+1. **Selective Sync Flags** ✅
    ```bash
    newo pull --only projects,attributes
    newo pull --exclude conversations
+   newo push --only projects
+   newo pull --all  # Explicit all resources
    ```
 
-2. **Unified Entity Commands**
+2. **Watch Mode** ✅
    ```bash
-   newo create <type> <idn> [options]
-   newo delete <type> <idn> [--confirm]
+   newo watch                      # Watch all files
+   newo watch --only projects      # Watch only projects
+   newo watch --debounce 2000      # Custom debounce delay
    ```
 
-3. **Command Aliases**
+3. **Diff Command** ✅
    ```bash
-   newo sync pull    # New unified command
-   newo pull         # Legacy alias (still works)
+   newo diff                       # Show all differences
+   newo diff --only projects       # Only project diffs
+   newo diff --detailed            # Content-level diffs
    ```
 
 ### Phase 3 (Future)
@@ -259,6 +263,7 @@ docs/V2_IMPLEMENTATION_REPORT.md  # This file
 2. Update CLI to use V2 bootstrap directly
 3. Remove duplicate code from original sync files
 4. Implement remaining entity strategies
+5. Unified entity commands (`newo create <type>`, `newo delete <type>`)
 
 ---
 

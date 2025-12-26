@@ -10,10 +10,12 @@ Core Commands:
   newo pull [--customer <idn>]                  # download projects + attributes -> ./newo_customers/<idn>/
   newo push [--customer <idn>] [--no-publish]    # upload modified *.guidance/*.jinja + attributes back to NEWO, publish flows by default
   newo status [--customer <idn>]                # show modified files that would be pushed
+  newo watch [--customer <idn>]                 # watch for file changes and auto-push (NEW)
+  newo diff [--customer <idn>]                  # show differences between local and remote (NEW)
   newo conversations [--customer <idn>] [--all] # download user conversations -> ./newo_customers/<idn>/conversations.yaml
-  newo sandbox "<message>" [--customer <idn>]   # test agent in sandbox - single message mode (NEW v3.1.0)
+  newo sandbox "<message>" [--customer <idn>]   # test agent in sandbox - single message mode
   newo sandbox --actor <id> "message"           # continue existing sandbox conversation with chat ID
-  newo pull-attributes [--customer <idn>]       # download customer + project attributes -> ./newo_customers/<idn>/attributes.yaml + projects/{project}/attributes.yaml
+  newo pull-attributes [--customer <idn>]       # download customer + project attributes
   newo list-customers                           # list available customers and their configuration
   newo meta [--customer <idn>]                  # get project metadata (debug command)
   newo import-akb <file> <persona_id> [--customer <idn>]  # import AKB articles from structured text file
@@ -67,6 +69,20 @@ Flags:
   --confirm                    # confirm destructive operations without prompting
   --no-publish                 # skip automatic flow publishing during push operations
 
+Selective Sync Flags (NEW):
+  --only <resources>           # sync only specified resources (comma-separated)
+  --exclude <resources>        # exclude specified resources from sync
+  --all                        # explicitly sync all resources
+  --debounce <ms>              # debounce delay for watch mode (default: 1000ms)
+  --detailed, -d               # show detailed content diff (for diff command)
+
+  Resources: projects, attributes, integrations, akb, conversations (read-only)
+  Examples:
+    newo pull --only projects,attributes      # pull only projects and attributes
+    newo push --exclude integrations          # push all except integrations
+    newo watch --only projects --debounce 2000  # watch projects with 2s delay
+    newo diff --only projects --detailed      # show project diffs with content
+
 Environment Variables:
   NEWO_BASE_URL                                 # NEWO API base URL (default: https://app.newo.ai)
 
@@ -100,6 +116,21 @@ Usage Examples:
   newo pull                                    # Download all projects and attributes
   newo status                                  # Check for local modifications
   newo push                                    # Upload changes back to NEWO
+
+  # Watch mode (auto-push on changes):
+  newo watch                                   # Watch all files and auto-push changes
+  newo watch --only projects                   # Watch only project files
+  newo watch --debounce 2000                   # 2-second debounce delay
+
+  # Diff (compare local vs remote):
+  newo diff                                    # Show all differences
+  newo diff --only projects                    # Show only project differences
+  newo diff --detailed                         # Show content-level diffs
+
+  # Selective sync:
+  newo pull --only projects                    # Pull only projects
+  newo push --exclude integrations             # Push all except integrations
+  newo pull --all                              # Explicit all resources
 
   # Multi-customer operations:
   newo pull --customer acme                    # Pull projects for Acme only

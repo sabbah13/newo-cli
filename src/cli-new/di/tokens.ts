@@ -90,6 +90,16 @@ export const RESOURCE_TYPES = {
 export const ALL_RESOURCE_TYPES = Object.values(RESOURCE_TYPES);
 
 /**
+ * Pushable resource types (excludes read-only resources like conversations)
+ */
+export const PUSHABLE_RESOURCE_TYPES = ['projects', 'attributes', 'integrations', 'akb'] as const;
+
+/**
  * Type for resource type values
  */
 export type ResourceType = (typeof RESOURCE_TYPES)[keyof typeof RESOURCE_TYPES];
+
+/**
+ * Type for pushable resource types
+ */
+export type PushableResourceType = (typeof PUSHABLE_RESOURCE_TYPES)[number];

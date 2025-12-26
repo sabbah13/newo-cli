@@ -217,7 +217,7 @@ All 5 resource types now use the same interface:
 | AKB | `AkbSyncStrategy` | pull, push, status |
 | Conversations | `ConversationSyncStrategy` | pull only |
 
-#### 2. Selective Sync (Coming Soon)
+#### 2. Selective Sync
 
 The V2 SyncEngine supports selective resource sync:
 
@@ -227,13 +227,19 @@ await syncEngine.pullSelected(customer, ['projects', 'attributes']);
 await syncEngine.pushSelected(customer, ['integrations']);
 ```
 
-Future CLI enhancement:
+CLI usage:
 ```bash
 # Pull only specific resources
 newo pull --only projects,attributes
 
 # Exclude certain resources
 newo pull --exclude conversations
+
+# Push only specific resources
+newo push --only projects
+
+# Explicit all resources
+newo pull --all
 ```
 
 #### 3. Improved Migration
@@ -432,31 +438,61 @@ newo pull  # Will refresh token
 
 ---
 
-## Future Roadmap
+## New Features (V2 Architecture)
 
-### Planned Features
+### Selective Sync
 
-1. **Unified Pull Command**
-   ```bash
-   newo pull --only projects,integrations
-   newo pull --all  # Everything
-   ```
+Sync only specific resource types:
 
-2. **Unified Entity Commands**
-   ```bash
-   newo create agent MyBot --project proj
-   newo delete skill OldSkill --confirm
-   ```
+```bash
+# Pull only projects and attributes
+newo pull --only projects,attributes
 
-3. **Watch Mode**
-   ```bash
-   newo watch  # Auto-push on file changes
-   ```
+# Push all except integrations
+newo push --exclude integrations
 
-4. **Diff Command**
-   ```bash
-   newo diff  # Show local vs remote differences
-   ```
+# Explicit all resources
+newo pull --all
+
+# Available resources: projects, attributes, integrations, akb, conversations
+```
+
+### Watch Mode
+
+Auto-push on file changes:
+
+```bash
+# Watch all files and auto-push
+newo watch
+
+# Watch only project files
+newo watch --only projects
+
+# Custom debounce delay (default: 1000ms)
+newo watch --debounce 2000
+
+# Press Ctrl+C to stop watching
+```
+
+### Diff Command
+
+Compare local files with remote platform:
+
+```bash
+# Show all differences
+newo diff
+
+# Show only project differences
+newo diff --only projects
+
+# Show detailed content-level diffs
+newo diff --detailed
+```
+
+The diff output shows:
+- **➕ Added locally** - Files that exist locally but not remotely
+- **📝 Modified** - Files that differ between local and remote
+- **➖ Deleted locally** - Files that exist remotely but not locally
 
 ---
 

@@ -61,6 +61,7 @@
   },
   "dependencies": {
     "axios": "^1.7.7",
+    "chokidar": "^5.0.0",
     "dotenv": "^16.4.5",
     "fs-extra": "^11.2.0",
     "js-yaml": "^4.1.0",
@@ -69,6 +70,7 @@
   },
   "devDependencies": {
     "@types/chai": "^4.3.11",
+    "@types/chokidar": "^1.7.5",
     "@types/fs-extra": "^11.0.4",
     "@types/js-yaml": "^4.0.9",
     "@types/minimist": "^1.2.5",

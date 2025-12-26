@@ -41,6 +41,8 @@ import { handleCreateWebhooksCommand } from './cli/commands/create-webhooks.js';
 import { handleListRegistriesCommand } from './cli/commands/list-registries.js';
 import { handleListRegistryItemsCommand } from './cli/commands/list-registry-items.js';
 import { handleAddProjectCommand } from './cli/commands/add-project.js';
+import { handleWatchCommand } from './cli/commands/watch.js';
+import { handleDiffCommand } from './cli/commands/diff.js';
 import type { CliArgs, NewoApiError } from './types.js';
 
 dotenv.config();
@@ -217,6 +219,14 @@ async function main(): Promise<void> {
 
       case 'add-project':
         await handleAddProjectCommand(customerConfig, args, verbose);
+        break;
+
+      case 'watch':
+        await handleWatchCommand(customerConfig, args, verbose);
+        break;
+
+      case 'diff':
+        await handleDiffCommand(customerConfig, args, verbose);
         break;
 
       default:
