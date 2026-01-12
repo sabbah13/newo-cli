@@ -587,6 +587,21 @@ export interface PublishFlowResponse {
 
 // Sandbox Chat Types
 
+export interface IntegrationSettingDescription {
+  readonly title: string;
+  readonly idn: string;
+  readonly control_type: string;
+  readonly value_type: string;
+  readonly is_required: boolean;
+  readonly is_readonly: boolean;
+  readonly default_value?: string | null;
+  readonly description?: string | null;
+  readonly group?: string | null;
+  readonly possible_values?: readonly string[] | null;
+  readonly possible_values_only?: boolean;
+  readonly possible_values_url?: string | null;
+}
+
 export interface Integration {
   readonly id: string;
   readonly title: string;
@@ -594,6 +609,8 @@ export interface Integration {
   readonly description: string;
   readonly is_disabled: boolean;
   readonly channel: string;
+  readonly integration_settings_descriptions?: readonly IntegrationSettingDescription[];
+  readonly connector_settings_descriptions?: readonly IntegrationSettingDescription[];
 }
 
 export interface IntegrationSetting {
@@ -874,4 +891,122 @@ export interface AddProjectFromRegistryRequest {
   registry_idn: string;
   registry_item_idn: string;
   registry_item_version: string | null;
+}
+
+// Create NEWO Customer Types (v3 API)
+
+export interface CustomerMember {
+  email: string;
+  role: 'owner' | 'account_manager' | 'technical_owner' | 'referral';
+  tenants?: string[];
+  first_name?: string;
+  external_account_id?: string;
+  contact_email?: string;
+}
+
+export interface CustomerAttributeInput {
+  idn: string;
+  value: string;
+  is_hidden?: boolean;
+  group?: string;
+}
+
+export interface CustomerProjectInput {
+  idn: string;
+  title?: string;
+  registry_idn?: string;
+  registry_item_idn?: string;
+  registry_item_version?: string;
+  is_auto_update_enabled?: boolean;
+}
+
+export interface CreateNewoCustomerRequest {
+  secret: string;
+  customer: {
+    organization_name: string;
+    tenant: string;
+    comment?: string;
+    query_params?: string;
+    members: CustomerMember[];
+    contact_email: string;
+    contact_phone?: string;
+    external_customer_id?: string;
+    organization_type?: 'customer' | 'partner';
+    organization_status?: 'temporal' | 'permanent';
+    billing_method?: string;
+    platform_links?: {
+      portal?: string;
+      builder?: string;
+      creator?: string;
+      chat_widget?: string;
+    };
+    organization_logo?: {
+      title?: string;
+      external_logo_id?: string;
+    };
+    attributes?: CustomerAttributeInput[];
+    a_service?: {
+      partner_idn: string;
+      member_idn: string;
+    };
+  };
+  projects?: CustomerProjectInput[];
+}
+
+export interface CreateNewoCustomerResponse {
+  id: string;
+  idn: string;
+}
+
+// Analytics Logs Types
+
+export type LogLevel = 'info' | 'warning' | 'error';
+export type LogType = 'system' | 'operation' | 'call';
+
+export interface LogEntry {
+  readonly log_id: string;
+  readonly level: LogLevel;
+  readonly log_type: LogType;
+  readonly project_idn: string;
+  readonly data: {
+    readonly external_event_id?: string;
+    readonly reference_idn?: string;
+    readonly operation_type?: string;
+    readonly arguments?: readonly { name: string; value: string }[];
+    readonly user_actor_id?: string;
+    readonly integration_idn?: string;
+    readonly connector_idn?: string;
+    readonly to_integration_idn?: string;
+    readonly to_connector_idn?: string;
+    readonly flow_idn?: string;
+    readonly skill_idn?: string;
+    readonly agent_idn?: string;
+    readonly line?: number;
+    readonly runtime_context_id?: string;
+    readonly [key: string]: unknown;
+  };
+  readonly message: string;
+  readonly datetime: string;
+}
+
+export interface LogsResponse {
+  readonly items: readonly LogEntry[];
+}
+
+export interface LogsQueryParams {
+  page?: number;
+  per?: number;
+  from_datetime?: string;
+  to_datetime?: string;
+  levels?: LogLevel | LogLevel[];
+  log_types?: LogType | LogType[];
+  message?: string;
+  project_idn?: string;
+  flow_idn?: string;
+  skill_idn?: string;
+  external_event_id?: string;
+  runtime_context_id?: string;
+  user_persona_ids?: string;
+  user_actor_ids?: string;
+  agent_persona_ids?: string;
 }

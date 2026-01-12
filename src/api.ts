@@ -55,7 +55,11 @@ import type {
   AkbTopicsResponse,
   Registry,
   RegistryItem,
-  AddProjectFromRegistryRequest
+  AddProjectFromRegistryRequest,
+  CreateNewoCustomerRequest,
+  CreateNewoCustomerResponse,
+  LogsQueryParams,
+  LogsResponse
 } from './types.js';
 
 // Per-request retry tracking to avoid shared state issues
@@ -575,5 +579,52 @@ export async function addProjectFromRegistry(
 ): Promise<CreateProjectResponse> {
   // Uses the same endpoint as createProject, but with registry fields populated
   const response = await client.post<CreateProjectResponse>('/api/v1/designer/projects', projectData);
+  return response.data;
+}
+
+// Create NEWO Customer (v3 API - creates a new customer account)
+export async function createNewoCustomer(
+  client: AxiosInstance,
+  customerData: CreateNewoCustomerRequest
+): Promise<CreateNewoCustomerResponse> {
+  const response = await client.post<CreateNewoCustomerResponse>('/api/v3/customer', customerData);
+  return response.data;
+}
+
+// Analytics Logs API
+export async function getLogs(
+  client: AxiosInstance,
+  params: LogsQueryParams
+): Promise<LogsResponse> {
+  // Build query params, handling arrays for levels and log_types
+  const queryParams = new URLSearchParams();
+
+  if (params.page !== undefined) queryParams.set('page', String(params.page));
+  if (params.per !== undefined) queryParams.set('per', String(params.per));
+  if (params.from_datetime) queryParams.set('from_datetime', params.from_datetime);
+  if (params.to_datetime) queryParams.set('to_datetime', params.to_datetime);
+  if (params.message) queryParams.set('message', params.message);
+  if (params.project_idn) queryParams.set('project_idn', params.project_idn);
+  if (params.flow_idn) queryParams.set('flow_idn', params.flow_idn);
+  if (params.skill_idn) queryParams.set('skill_idn', params.skill_idn);
+  if (params.external_event_id) queryParams.set('external_event_id', params.external_event_id);
+  if (params.runtime_context_id) queryParams.set('runtime_context_id', params.runtime_context_id);
+  if (params.user_persona_ids) queryParams.set('user_persona_ids', params.user_persona_ids);
+  if (params.user_actor_ids) queryParams.set('user_actor_ids', params.user_actor_ids);
+  if (params.agent_persona_ids) queryParams.set('agent_persona_ids', params.agent_persona_ids);
+
+  // Handle levels (can be single or array)
+  if (params.levels) {
+    const levelsValue = Array.isArray(params.levels) ? params.levels.join(',') : params.levels;
+    queryParams.set('levels', levelsValue);
+  }
+
+  // Handle log_types (can be single or array)
+  if (params.log_types) {
+    const typesValue = Array.isArray(params.log_types) ? params.log_types.join(',') : params.log_types;
+    queryParams.set('log_types', typesValue);
+  }
+
+  const response = await client.get<LogsResponse>(`/api/v1/analytics/logs?${queryParams.toString()}`);
   return response.data;
 }

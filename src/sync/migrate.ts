@@ -216,48 +216,94 @@ async function migrateProjectStructure(
             idn: sourceFlow.idn,
             title: sourceFlow.title
           });
-          flowId = flowResponse.id;
+
+          // Handle "pending-sync" response - re-fetch to get actual flow ID
+          if (flowResponse.id === 'pending-sync' || !flowResponse.id.match(/^[0-9a-f-]{36}$/i)) {
+            // Wait briefly for sync
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            // Re-fetch agent to get actual flow ID
+            const refreshedAgents = await listAgents(destClient, projectId);
+            const refreshedAgent = refreshedAgents.find(a => a.id === agentId);
+            const createdFlow = refreshedAgent?.flows?.find(f => f.idn === sourceFlow.idn);
+
+            if (createdFlow) {
+              flowId = createdFlow.id;
+            } else {
+              if (verbose) console.error(`   ⚠️  Flow ${sourceFlow.idn} created but could not retrieve ID`);
+              continue; // Skip this flow
+            }
+          } else {
+            flowId = flowResponse.id;
+          }
           flowsCreated++;
         }
 
-        // Read flow metadata for events and states
-        const flowMetaPath = path.join(
+        // Flow directory path
+        const flowDirPath = path.join(
           customerProjectsDir(sourceCustomer.idn),
           sourceProj.idn,
           sourceAgent.idn,
-          sourceFlow.idn,
-          'metadata.yaml'
+          sourceFlow.idn
         );
 
-        if (await fs.pathExists(flowMetaPath)) {
-          const flowMeta = yaml.load(await fs.readFile(flowMetaPath, 'utf8')) as any;
+        if (await fs.pathExists(flowDirPath)) {
+          // Read flow metadata for events and states
+          const flowMetaPath = path.join(flowDirPath, 'metadata.yaml');
+          const flowMeta = await fs.pathExists(flowMetaPath)
+            ? yaml.load(await fs.readFile(flowMetaPath, 'utf8')) as any
+            : {};
 
-          // Create skills
+          // Create skills by reading skill subdirectories
           const destSkills = await listFlowSkills(destClient, flowId);
           const destSkillMap = new Map(destSkills.map(s => [s.idn, s]));
 
-          for (const sourceSkill of flowMeta.skills || []) {
-            if (destSkillMap.has(sourceSkill.idn)) continue;
+          // Get all subdirectories in flow directory (these are skills)
+          const flowDirContents = await fs.readdir(flowDirPath, { withFileTypes: true });
+          const skillDirs = flowDirContents.filter(d => d.isDirectory());
+
+          for (const skillDir of skillDirs) {
+            const skillIdn = skillDir.name;
+            if (destSkillMap.has(skillIdn)) continue;
+
+            // Read skill metadata
+            const skillMetaPath = path.join(flowDirPath, skillIdn, 'metadata.yaml');
+            if (!await fs.pathExists(skillMetaPath)) continue;
+
+            const skillMeta = yaml.load(await fs.readFile(skillMetaPath, 'utf8')) as any;
 
             try {
               await createSkill(destClient, flowId, {
-                idn: sourceSkill.idn,
-                title: sourceSkill.title,
-                runner_type: sourceSkill.runner_type,
-                model: sourceSkill.model,
+                idn: skillMeta.idn || skillIdn,
+                title: skillMeta.title || skillIdn,
+                runner_type: skillMeta.runner_type || 'guidance',
+                model: skillMeta.model,
                 prompt_script: ''
               });
               skillsCreated++;
+              if (verbose) console.log(`   ✅ Created skill: ${skillIdn}`);
             } catch (error: any) {
               if (verbose && error.response?.status !== 409) {
-                console.error(`   ⚠️  Failed to create skill ${sourceSkill.idn}: ${error.message}`);
+                console.error(`   ⚠️  Failed to create skill ${skillIdn}: ${error.message}`);
               }
             }
           }
 
-          // Create events with full metadata
+          // Get current skills in destination to validate event references
+          const currentDestSkills = await listFlowSkills(destClient, flowId);
+          const destSkillIdnSet = new Set(currentDestSkills.map(s => s.idn));
+
+          // Create events with full metadata (only if referenced skill exists)
           for (const event of flowMeta.events || []) {
             try {
+              // Skip events that reference skills not yet created
+              if (event.skill_idn && !destSkillIdnSet.has(event.skill_idn)) {
+                if (verbose) {
+                  console.log(`   ⏭️  Skipping event ${event.idn} - skill ${event.skill_idn} not yet created`);
+                }
+                continue;
+              }
+
               const eventRequest: CreateFlowEventRequest = {
                 idn: event.idn,
                 description: event.description || event.idn,
@@ -276,8 +322,9 @@ async function migrateProjectStructure(
 
               await createFlowEvent(destClient, flowId, eventRequest);
             } catch (error: any) {
-              if (verbose && error.response?.status !== 409 && error.response?.status !== 422) {
-                console.error(`   ⚠️  Failed to create event ${event.idn}: ${error.message}`);
+              // Don't log 409 (already exists) or 422 (validation) errors as they're expected
+              if (error.response?.status !== 409 && error.response?.status !== 422) {
+                if (verbose) console.error(`   ⚠️  Failed to create event ${event.idn}: ${error.message}`);
               }
             }
           }
@@ -448,7 +495,6 @@ async function migrateAKB(
 async function migrateIntegrationConnectors(
   sourceClient: AxiosInstance,
   destClient: AxiosInstance,
-  // @ts-ignore - Parameter kept for future use
   verbose: boolean
 ): Promise<number> {
   const sourceIntegrations = await listIntegrations(sourceClient);
@@ -461,6 +507,11 @@ async function migrateIntegrationConnectors(
     const destInt = destIntMap.get(sourceInt.idn);
     if (!destInt) continue;
 
+    // Build set of allowed setting idns from destination integration schema
+    const destSettingIdns = new Set(
+      (destInt.connector_settings_descriptions || []).map(s => s.idn)
+    );
+
     const sourceConnectors = await listConnectors(sourceClient, sourceInt.id);
     const destConnectors = await listConnectors(destClient, destInt.id);
     const destConnMap = new Map(destConnectors.map(c => [c.connector_idn, c]));
@@ -468,17 +519,37 @@ async function migrateIntegrationConnectors(
     for (const sourceConn of sourceConnectors) {
       if (destConnMap.has(sourceConn.connector_idn)) continue;
 
+      // Filter settings to only include those that exist in destination schema
+      const filteredSettings = sourceConn.settings.filter(s => {
+        const allowed = destSettingIdns.size === 0 || destSettingIdns.has(s.idn);
+        if (!allowed && verbose) {
+          console.log(`   ⏭️  Skipping setting ${s.idn} for ${sourceConn.connector_idn} (not in dest schema)`);
+        }
+        return allowed;
+      });
+
+      // Log if settings were filtered
+      if (filteredSettings.length !== sourceConn.settings.length && verbose) {
+        const skippedCount = sourceConn.settings.length - filteredSettings.length;
+        console.log(`   📋 Filtered ${skippedCount} settings for ${sourceConn.connector_idn}`);
+      }
+
       try {
         await createConnector(destClient, destInt.id, {
           title: sourceConn.title,
           connector_idn: sourceConn.connector_idn,
           integration_idn: sourceInt.idn,
-          settings: sourceConn.settings
+          settings: filteredSettings
         });
         connectorsCreated++;
+        if (verbose) {
+          console.log(`   ✅ Created connector: ${sourceConn.connector_idn} (${sourceInt.idn})`);
+        }
       } catch (error: any) {
-        if (verbose && error.response?.status !== 409) {
-          console.error(`   ⚠️  Failed to create connector ${sourceConn.connector_idn}: ${error.message}`);
+        // Always log connector creation failures (not just in verbose mode)
+        const errMsg = error.response?.data?.reason || error.message;
+        if (error.response?.status !== 409) {
+          console.error(`   ⚠️  Failed to create connector ${sourceConn.connector_idn} (${sourceInt.idn}): ${errMsg}`);
         }
       }
     }

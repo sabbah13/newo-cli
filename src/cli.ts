@@ -23,6 +23,7 @@ import { handleDeleteFlowCommand } from './cli/commands/delete-flow.js';
 import { handleCreateSkillCommand } from './cli/commands/create-skill.js';
 import { handleDeleteSkillCommand } from './cli/commands/delete-skill.js';
 import { handleCreateProjectCommand } from './cli/commands/create-project.js';
+import { handleCreateCustomerCommand } from './cli/commands/create-customer.js';
 import { handleCreateEventCommand } from './cli/commands/create-event.js';
 import { handleCreateStateCommand } from './cli/commands/create-state.js';
 import { handleCreateParameterCommand } from './cli/commands/create-parameter.js';
@@ -43,6 +44,7 @@ import { handleListRegistryItemsCommand } from './cli/commands/list-registry-ite
 import { handleAddProjectCommand } from './cli/commands/add-project.js';
 import { handleWatchCommand } from './cli/commands/watch.js';
 import { handleDiffCommand } from './cli/commands/diff.js';
+import { handleLogsCommand } from './cli/commands/logs.js';
 import type { CliArgs, NewoApiError } from './types.js';
 
 dotenv.config();
@@ -104,6 +106,10 @@ async function main(): Promise<void> {
         await handleStatusCommand(customerConfig, args, verbose);
         break;
 
+      case 'logs':
+        await handleLogsCommand(customerConfig, args, verbose);
+        break;
+
       case 'conversations':
         await handleConversationsCommand(customerConfig, args, verbose);
         break;
@@ -150,6 +156,10 @@ async function main(): Promise<void> {
 
       case 'create-project':
         await handleCreateProjectCommand(customerConfig, args, verbose);
+        break;
+
+      case 'create-customer':
+        await handleCreateCustomerCommand(customerConfig, args, verbose);
         break;
 
       case 'create-event':

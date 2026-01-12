@@ -12,6 +12,7 @@ Core Commands:
   newo status [--customer <idn>]                # show modified files that would be pushed
   newo watch [--customer <idn>]                 # watch for file changes and auto-push (NEW)
   newo diff [--customer <idn>]                  # show differences between local and remote (NEW)
+  newo logs [--customer <idn>]                  # fetch and display analytics logs from platform (NEW)
   newo conversations [--customer <idn>] [--all] # download user conversations -> ./newo_customers/<idn>/conversations.yaml
   newo sandbox "<message>" [--customer <idn>]   # test agent in sandbox - single message mode
   newo sandbox --actor <id> "message"           # continue existing sandbox conversation with chat ID
@@ -54,7 +55,20 @@ Enterprise Features:
   newo pull-akb [--customer <idn>]                          # download AKB articles for all personas with agents → ./newo_customers/<idn>/akb/
   newo push-akb [--customer <idn>]                          # upload AKB articles from local YAML files to platform
 
-Account Migration (NEW):
+Analytics & Monitoring (NEW):
+  newo logs [--customer <idn>]                               # fetch last 1 hour of analytics logs
+  newo logs --hours <n>                                      # fetch logs from last N hours
+  newo logs --from <datetime> --to <datetime>                # fetch logs in datetime range (ISO format)
+  newo logs --level <levels>                                 # filter by level: info, warning, error (comma-separated)
+  newo logs --type <types>                                   # filter by type: system, operation, call (comma-separated)
+  newo logs --flow <idn> --skill <idn>                       # filter by flow and/or skill
+  newo logs --message <text>                                 # search in log messages
+  newo logs --follow, -f                                     # tail mode - continuously poll for new logs
+  newo logs --json                                           # output logs as JSON array
+  newo logs --raw                                            # output each log as single JSON line (for piping)
+
+Account & Customer Management:
+  newo create-customer <org_name> --email <email> [--tenant <t>] [--phone <p>] [--project <idn>] [--status <temporal|permanent>]  # create new NEWO customer
   newo migrate-account --source <idn> --dest <idn> [--yes]  # migrate complete account from source to destination
   newo verify --source <idn> --dest <idn>                    # verify migration by comparing entity counts
   newo create-webhooks [--customer <idn>]                    # create webhooks from YAML files
@@ -170,6 +184,21 @@ Usage Examples:
   newo sandbox --actor abc123... "I want 2 large pizzas"         # Continue conversation
   newo sandbox "Test query" --verbose                            # With debug info
   newo sandbox "Test query" --quiet                              # For automation/scripts
+
+  # Analytics logs (NEW v3.5.0):
+  newo logs                                                      # Last 1 hour of logs
+  newo logs --hours 24                                           # Last 24 hours
+  newo logs --level warning,error                                # Only warnings and errors
+  newo logs --type call --skill CreateActor                      # Skill calls for specific skill
+  newo logs --flow CACreatorFlow --follow                        # Tail logs for specific flow
+  newo logs --from "2026-01-11T00:00:00Z" --to "2026-01-12T00:00:00Z"  # Date range
+  newo logs --json --per 100                                     # Get 100 logs as JSON
+  newo logs --message "error" --level error                      # Search errors with message
+
+  # Customer creation (NEW v3.5.0):
+  newo create-customer "Acme Corp" --email admin@acme.com --tenant acme   # Create basic customer
+  newo create-customer "Test Co" --email test@test.com --status temporal  # Temporal (trial) customer
+  newo create-customer "Partner" --email p@p.com --project nac_integration --auto-update  # With project template
 
 File Structure:
   newo_customers/
