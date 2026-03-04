@@ -1,0 +1,12 @@
+id: 7c16c030-e305-4f8a-ada3-60b25f553410
+idn: prompt_get_intent_type_map
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: 886d3126-625b-41d0-b1d6-4de760b378f1
+    name: working_hours
+    default_value: ""
+path: ""

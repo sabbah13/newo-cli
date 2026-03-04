@@ -1,0 +1,9 @@
+id: 6bed43a7-f1ea-45ad-b944-8180bba5e8ee
+idn: _migration_2_5_112
+title: _migration_2_5_112
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

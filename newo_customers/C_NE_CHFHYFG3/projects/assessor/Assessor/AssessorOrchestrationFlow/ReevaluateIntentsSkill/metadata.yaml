@@ -1,0 +1,9 @@
+id: c1469cfb-3d03-4d59-ad71-cd505d904f88
+idn: ReevaluateIntentsSkill
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

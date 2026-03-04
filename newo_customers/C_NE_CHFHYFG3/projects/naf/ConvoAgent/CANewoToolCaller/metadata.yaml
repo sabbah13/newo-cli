@@ -1,0 +1,33 @@
+id: e8867cef-8bb5-44bf-8bca-28a8aa5dbcc2
+idn: CANewoToolCaller
+title: CANewoToolCaller
+description: ""
+default_runner_type: nsl
+default_model:
+  provider_idn: google
+  model_idn: gemini25_flash
+events:
+  - id: 5059eedb-3754-4e11-8158-edc2c6491300
+    description: null
+    idn: broadcast_analyze_conversation
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: AnalyzeConversation
+    state_idn: null
+    integration_idn: system
+    connector_idn: system
+  - id: 690a2b89-c504-4746-a310-be26d22c1bb6
+    description: null
+    idn: result_success
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: ResultSuccessSkill
+    state_idn: null
+    integration_idn: http
+    connector_idn: http_connector
+state_fields:
+  - id: cebf97ac-5d51-46f5-ac7f-6644f74cf570
+    title: ""
+    idn: conversation_channel
+    default_value: ""
+    scope: user

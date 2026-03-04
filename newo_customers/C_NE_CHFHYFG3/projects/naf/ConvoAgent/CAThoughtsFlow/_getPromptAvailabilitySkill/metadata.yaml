@@ -1,0 +1,12 @@
+id: 9791b0d4-7f5b-40b9-8d06-3d911b3e6274
+idn: _getPromptAvailabilitySkill
+title: ""
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: d83062de-ff18-45c2-b88d-bea9aedf09c0
+    name: userId
+    default_value: " "
+path: ""

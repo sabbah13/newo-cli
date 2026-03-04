@@ -1,0 +1,30 @@
+{% set title = '## **Reconfirming or Gathering Date of Birth** procedure' %}
+
+{% set body %}
+When you need to gather the User's date of birth, check the <PreviousConversationSummary> section, which may already contain this information.
+
+### **If date of birth information is available**: reconfirm, your date of birth is [the found date], is that correct?
+
+### **If date of birth information is not available**: ask, may I have your date of birth, please?
+
+**Important notes:**
+- Accept various date formats (MM/DD/YYYY, DD/MM/YYYY, Month DD, YYYY, etc.)
+- If the user provides only partial information (e.g., just month and day), politely ask for the year as well
+- Ensure you capture the complete date of birth
+{% endset %}
+
+{% set description %}
+When a date of birth is needed, first check the PreviousConversationSummary; if it’s already present, reconfirm it with the user, and if not, ask for it. Accept various date formats and, if only partial information is provided, politely request the missing details (including the year) to capture the complete date.
+{% endset %}
+
+{% set item = {
+    "idn": "procedure_common_gather_date_of_birth",
+    "title": title.strip(),
+    "body": body.strip(),
+    "mentions": [],
+    "description": description.strip(),
+    "is_from_library": True,
+    "origin_idn": ""
+} %}
+
+{{Return(val=json.dumps(item, ensure_ascii=False, indent=2))}}

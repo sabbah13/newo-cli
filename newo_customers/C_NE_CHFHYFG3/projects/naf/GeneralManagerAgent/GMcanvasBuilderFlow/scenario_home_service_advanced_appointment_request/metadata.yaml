@@ -1,0 +1,9 @@
+id: 43c70b7b-2302-4620-bd88-bdf01c9fadd8
+idn: scenario_home_service_advanced_appointment_request
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

@@ -1,0 +1,18 @@
+id: 707fcdda-1404-4826-a205-f2aa0425e736
+idn: _updateTaskManagerStatusSkill
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: 54042a3b-42dc-448b-9eec-f55f7dde6d62
+    name: status
+    default_value: " "
+  - id: e6ba3f57-9118-4ccf-ac29-aa8a7d70e010
+    name: comment
+    default_value: " "
+  - id: 061fbd85-9c77-42f5-863a-9a024db74522
+    name: taskId
+    default_value: " "
+path: ""

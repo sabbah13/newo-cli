@@ -1,0 +1,12 @@
+{% set agent_persona_id = GetAgentPersona().id | string %}
+{% set intents = json.loads(GetPersonaAttribute(id=agent_persona_id, field="intents")) %}
+{% if not intents %}
+    {{Return()}}
+{% endif %}
+{% for x in range(999) %}
+    {{Sleep(duration=60, interruptible="False")}}
+    {% set intents = json.loads(GetPersonaAttribute(id=agent_persona_id, field="intents")) %}
+    {% if not intents %}
+        {{Return()}}
+    {% endif %}
+{% endfor %}

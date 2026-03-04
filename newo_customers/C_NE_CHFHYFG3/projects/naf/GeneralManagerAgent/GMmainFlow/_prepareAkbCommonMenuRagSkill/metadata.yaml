@@ -1,0 +1,12 @@
+id: 073c9ff2-e8ba-460f-8c45-b10520d09b1b
+idn: _prepareAkbCommonMenuRagSkill
+title: _prepareAkbCommonMenuRagSkill
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_pro
+parameters:
+  - id: 5498180d-330d-4f5b-a05e-fc93be191468
+    name: currentMenu
+    default_value: " "
+path: ""

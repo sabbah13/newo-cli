@@ -1,0 +1,11 @@
+{{Set(name="mode", value=GetCustomerAttribute(field="project_attributes_setting_voice_integration_service_voice_mode"))}}
+
+{{#if mode == "transcriber"}}
+    {{SetState(name="conversation_started_newo_voice_skill", value="Gen1ConversationStartedInboundSkill")}}
+    {{SetState(name="conversation_started_newo_voice_web_skill", value="Gen1ConversationStartedInboundSkill")}}
+{{/if}}
+
+{{#if mode == "voice-to-voice"}}
+    {{SetState(name="conversation_started_newo_voice_skill", value="v2v_conversation_started")}}
+    {{SetState(name="conversation_started_newo_voice_web_skill", value="v2v_conversation_started_web")}}
+{{/if}}

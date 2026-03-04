@@ -1,0 +1,25 @@
+{% set non_working_days = GetCustomerAttribute(field="project_attributes_private_dynamic_schedule_non_working_days") %}
+{% set working_days_hours_exceptions = GetCustomerAttribute(field="project_attributes_private_dynamic_schedule_working_days_hours_exceptions") %}
+
+{% if non_working_days.strip() %}
+    {% set non_working_days %}
+**Non-working days:**
+- {{non_working_days}}{% endset %}
+{% endif %}
+
+{% if working_days_hours_exceptions.strip() %}
+    {% set working_days_hours_exceptions %}
+# **Working days and working hours exceptions:**
+- {{working_days_hours_exceptions}}{% endset %}
+{% endif %}
+
+
+{% set working_schedule %}{{non_working_days}}
+# **Working days:**
+- {{GetCustomerAttribute(field="project_attributes_private_dynamic_schedule_working_days")}}
+
+# **Working hours:**
+- {{GetCustomerAttribute(field="project_attributes_private_dynamic_schedule_working_hours")}}{{working_days_hours_exceptions}}
+{% endset %}
+
+{{Return(val=working_schedule.strip())}}

@@ -1,0 +1,9 @@
+id: ebb8745c-323f-416c-83be-a993cfdee61b
+idn: default_itm_wh_catering
+title: ""
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

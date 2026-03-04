@@ -1,0 +1,24 @@
+id: 04234515-fd0f-41af-bac6-bed9d19384fc
+idn: _getMainInstructionSkill
+title: ""
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: 35fc3202-4de6-4340-b401-9f0b8e5a6a89
+    name: taskIdn
+    default_value: " "
+  - id: 3988ab22-9908-478e-9b2c-af625842ae74
+    name: scenario
+    default_value: " "
+  - id: 00640a0d-bc08-49b8-ada1-78b7a3a3c647
+    name: industry
+    default_value: " "
+  - id: 5a87fc25-3ee3-40fe-8e6e-1c73d308a1b9
+    name: isOutboundCall
+    default_value: " "
+  - id: 038f00b5-a4e4-4ba3-b4f0-8a4cf0d81798
+    name: convoAgentPersonaId
+    default_value: " "
+path: ""

@@ -1,0 +1,15 @@
+id: c4b661e1-f159-44c6-8d43-9d8792a4e995
+idn: _receiveAvailableSlotsTwoNearestSkill
+title: ""
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: b68e9274-fd71-4210-ae01-1857262268b7
+    name: availability
+    default_value: " "
+  - id: 853f9b7e-ef03-4bfa-8cc3-c83566d61b9d
+    name: userRequestedDatetime
+    default_value: " "
+path: ""

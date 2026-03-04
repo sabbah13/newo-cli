@@ -1,0 +1,15 @@
+id: 0c4a7429-1302-4c40-9441-3488aff7e963
+idn: _defineConversationSuccessSkill
+title: ""
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: 043d29c8-cfb8-4411-80d6-ff74babab700
+    name: summary
+    default_value: " "
+  - id: f4262d06-565f-44cb-b892-79b213db0b84
+    name: userId
+    default_value: " "
+path: ""

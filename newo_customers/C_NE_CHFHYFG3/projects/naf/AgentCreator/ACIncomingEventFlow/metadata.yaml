@@ -1,0 +1,28 @@
+id: 9fc2312a-b9a6-4209-8284-5291f02ef82d
+idn: ACIncomingEventFlow
+title: ACIncomingEventFlow
+description: Agent Creator Incoming Event Flow
+default_runner_type: nsl
+default_model:
+  provider_idn: google
+  model_idn: gemini25_flash
+events:
+  - id: 0fee4b86-385f-4401-8aac-ad5bb1756418
+    description: null
+    idn: agent_creator_event
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: AgentCreatorIncomingEvent
+    state_idn: null
+    integration_idn: api
+    connector_idn: webhook
+  - id: 670c4fc5-aaf7-4398-8433-70e8cf5beb7d
+    description: null
+    idn: agent_creator_event
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: AgentCreatorIncomingEvent
+    state_idn: null
+    integration_idn: system
+    connector_idn: system
+state_fields: []

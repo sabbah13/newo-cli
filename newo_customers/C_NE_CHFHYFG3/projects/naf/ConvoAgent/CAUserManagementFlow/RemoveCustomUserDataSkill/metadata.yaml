@@ -1,0 +1,9 @@
+id: b46ae071-f3c2-43bc-b406-dfa215742fa0
+idn: RemoveCustomUserDataSkill
+title: RemoveCustomUserDataSkill
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

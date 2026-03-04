@@ -1,0 +1,9 @@
+id: 4c289a4c-fbf1-4473-90a5-5e8013a9fbf3
+idn: scenario_sales_appointment_via_calendar
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

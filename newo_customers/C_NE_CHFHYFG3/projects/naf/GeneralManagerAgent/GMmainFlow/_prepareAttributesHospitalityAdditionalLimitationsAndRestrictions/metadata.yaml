@@ -1,0 +1,9 @@
+id: 3207a695-68d3-4206-8d23-c5dbcd414d8a
+idn: _prepareAttributesHospitalityAdditionalLimitationsAndRestrictions
+title: _prepareAttributesHospitalityAdditionalLimitationsAndRestrictions
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

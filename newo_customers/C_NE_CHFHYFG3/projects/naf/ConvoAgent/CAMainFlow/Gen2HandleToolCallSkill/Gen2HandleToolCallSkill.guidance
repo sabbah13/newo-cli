@@ -1,0 +1,44 @@
+{{StartNotInterruptibleBlock()}}
+
+{{#if GetCustomerAttribute(field="project_attributes_setting_voice_integration_service_voice_to_voice_provider_genai_functions_enabled") == "False"}}
+    {{Return()}}
+{{/if}}
+
+{{Set(name="tool_name", value=GetTriggeredAct(fields="name"))}}
+{{Set(name="tool_parameters", value=GetTriggeredAct(fields=["parameters"]))}}
+
+{{Set(name="user_id", value=GetUser(field="id"))}}
+{{Set(name="actor_id", value=utils_get_and_set_last_convo_actor_id(user_id=user_id))}}
+
+{{#if IsEmpty(text=actor_id)}}
+    {{Return()}}
+{{/if}}
+
+{{Set(name="message", value=Concat("<Thoughts>
+The function (tool) call was called:
+```
+Tool name: `", tool_name, "`
+Tool parameters: `", tool_parameters, "`
+```
+Potentially, depending on conversation, you need to notify the User about it.
+</Thoughts>"
+))}}
+
+{{CreateMessageAct(text=message, from="agent", userActorId=actor_id)}}
+{{SendSystemEvent(
+    eventIdn="urgent_message",
+    connectorIdn="system",
+    baseInstruction=message,
+    uninterruptible="True"
+)}}
+
+{{Set(name="interval", value=GetCustomerAttribute(field="project_attributes_setting_follow_up_timer_voice_interval_agent_speech_started"))}}
+{{SendSystemEvent(
+    eventIdn="convoagent_update_followup",
+    connectorIdn="system",
+    interval=interval,
+    personaId=user_id,
+    reason="tool called"
+)}}
+
+{{StopNotInterruptibleBlock()}}

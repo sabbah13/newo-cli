@@ -1,0 +1,21 @@
+id: cff2e45c-26de-4eff-a040-e54a1bb8e100
+idn: _sendSmsSkill
+title: _sendSmsSkill
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: 8ff7b919-3518-4504-a25b-c44feda33183
+    name: target_number
+    default_value: " "
+  - id: 3ae2a741-e8da-453b-bb8b-199599b545f6
+    name: smsText
+    default_value: " "
+  - id: 6746f6c5-5b07-445b-a82b-d52f0be1f70b
+    name: targetNumber
+    default_value: " "
+  - id: 8afc0828-d602-4ccb-94aa-9ec60f43acd8
+    name: sms_text
+    default_value: " "
+path: ""

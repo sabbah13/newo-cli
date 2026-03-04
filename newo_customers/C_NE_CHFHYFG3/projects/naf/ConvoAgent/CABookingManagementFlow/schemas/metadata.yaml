@@ -1,0 +1,12 @@
+id: 9fc32df1-19a2-4046-9648-e3eb3cdc4fc3
+idn: schemas
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: fb5e2a90-862e-4f63-823c-2e9a68124038
+    name: booking_id
+    default_value: ""
+path: ""

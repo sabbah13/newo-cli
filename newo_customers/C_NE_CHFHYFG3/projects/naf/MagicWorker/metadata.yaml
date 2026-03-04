@@ -1,0 +1,8 @@
+id: 74eb8e77-4dcf-48ae-89b8-0043ab4145f0
+idn: MagicWorker
+title: MagicWorker
+description: >-
+  This worker is capable of simulating keyboard and mouse actions within a
+  browser and behaving "like a human" when interacting with web applications
+  that lack APIs. This agent is often used for booking tables at restaurants,
+  scheduling slots at spas, and so on.

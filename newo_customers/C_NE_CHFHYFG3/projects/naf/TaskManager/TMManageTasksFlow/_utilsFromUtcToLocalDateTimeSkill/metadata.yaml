@@ -1,0 +1,12 @@
+id: bc1850d7-d794-43a4-bead-d63fb8cf806b
+idn: _utilsFromUtcToLocalDateTimeSkill
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: 0a806541-bb82-40f0-9c3b-e3a55e727aa6
+    name: datetimeUtc
+    default_value: " "
+path: ""

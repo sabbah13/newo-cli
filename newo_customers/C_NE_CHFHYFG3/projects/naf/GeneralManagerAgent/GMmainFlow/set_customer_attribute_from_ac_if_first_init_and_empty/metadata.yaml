@@ -1,0 +1,21 @@
+id: 1d3d4ae5-afd8-449a-bff8-8993a3afb5b7
+idn: set_customer_attribute_from_ac_if_first_init_and_empty
+title: set_customer_attribute_from_ac_if_first_init_and_empty
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: ed33e8c1-a746-4a90-9449-a20a8967fdb5
+    name: ac_field
+    default_value: ""
+  - id: c93b631d-c025-4660-9ad6-628dcb1dc6f7
+    name: is_first_init_done
+    default_value: "True"
+  - id: 50cd52e0-934e-4d58-97b1-18afcf7194aa
+    name: default
+    default_value: " "
+  - id: a35bb392-46e8-43ca-a4f6-e557dc428f9e
+    name: naf_field
+    default_value: ""
+path: ""

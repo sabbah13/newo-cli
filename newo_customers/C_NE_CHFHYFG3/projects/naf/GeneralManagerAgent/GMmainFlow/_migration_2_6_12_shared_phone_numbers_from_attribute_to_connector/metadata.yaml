@@ -1,0 +1,9 @@
+id: 30fcbca4-7d91-49fd-a447-0a911266fbd2
+idn: _migration_2_6_12_shared_phone_numbers_from_attribute_to_connector
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

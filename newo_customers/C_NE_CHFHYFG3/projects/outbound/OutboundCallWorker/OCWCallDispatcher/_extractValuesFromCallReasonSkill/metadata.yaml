@@ -1,0 +1,15 @@
+id: af8c5584-a88e-4456-ae19-286a7422f016
+idn: _extractValuesFromCallReasonSkill
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: 48ab4710-7929-466b-9ed8-2eabe5643471
+    name: schema
+    default_value: " "
+  - id: aa2f8401-bbdc-4b05-b495-cb8e9aee8d70
+    name: callReason
+    default_value: " "
+path: ""

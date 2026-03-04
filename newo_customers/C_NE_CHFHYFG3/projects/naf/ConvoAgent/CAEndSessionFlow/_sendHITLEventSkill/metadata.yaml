@@ -1,0 +1,51 @@
+id: 756be8d2-fc0f-4cb8-8519-99bd80acb3f6
+idn: _sendHITLEventSkill
+title: ""
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: 7e2dade9-da98-46ac-9c61-abf1562744c2
+    name: outboundCall
+    default_value: " "
+  - id: 322ddd97-e8d9-4365-ba8a-e4a10e6de67a
+    name: potentialRevenue
+    default_value: " "
+  - id: 87e19f37-ff38-4cc6-b48d-9bab813730f9
+    name: recordingUrl
+    default_value: " "
+  - id: d00110e0-ea14-406c-b013-58003c1beda5
+    name: revenueGenerating
+    default_value: " "
+  - id: c99e1e1b-4545-4917-b1d9-668d9e20c1f5
+    name: success
+    default_value: " "
+  - id: c0107062-3bcc-4ab1-8168-08036662f427
+    name: summary
+    default_value: " "
+  - id: f9bfa5d1-4dd5-46b4-8b4e-c9300e076735
+    name: userId
+    default_value: " "
+  - id: 832e86f4-55d3-43b3-8343-83c25bc50992
+    name: workingHours
+    default_value: " "
+  - id: 04395c51-1897-4cd2-ba62-52bdcca7e656
+    name: semaphore
+    default_value: " "
+  - id: 5eb25bf2-a34f-44cb-b769-f75af3ca4a92
+    name: args
+    default_value: " "
+  - id: 3530a4cb-72ba-4024-9aba-30fc623bf353
+    name: asr
+    default_value: " "
+  - id: 12a0e7e1-aa97-49c7-9b10-9bfb1b3193b3
+    name: businessLabel
+    default_value: " "
+  - id: 61c3a411-9d53-4c64-bc0f-f1f95eb6317d
+    name: category
+    default_value: " "
+  - id: 7693ed22-9cb6-4916-aeca-a1a04560ef58
+    name: commonValues
+    default_value: " "
+path: ""

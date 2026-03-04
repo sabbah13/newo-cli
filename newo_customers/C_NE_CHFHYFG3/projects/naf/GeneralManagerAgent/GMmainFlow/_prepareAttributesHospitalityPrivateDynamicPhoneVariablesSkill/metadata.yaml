@@ -1,0 +1,9 @@
+id: 37727308-12b4-41b2-9a3a-0920f58077ab
+idn: _prepareAttributesHospitalityPrivateDynamicPhoneVariablesSkill
+title: _prepareAttributesHospitalityPrivateDynamicPhoneVariablesSkill
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

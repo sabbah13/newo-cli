@@ -1,0 +1,52 @@
+{% set user_id = GetUser().id | string %}
+
+{% if GetPersonaAttribute(id=user_id, field="outbound_call") != "True" %}
+    {{Return()}}
+{% endif %}
+
+{% set arguments = GetTriggeredAct().arguments %}
+
+{% if arguments.referenceIdn != "make_call" %}
+    {{Return()}}
+{% endif %}
+
+{% set task_id = GetState(name="task_id") %}
+
+{% set reason = arguments.reason %}
+
+{% if reason == "active-call-by-number-limit" %}
+    {{_updateTaskManagerStatusSkill(taskId=task_id, status="canceled", comment="The number of calls to the same number has been exceeded. Cancel task execution.")}}
+
+    {% set payload = {"phone_number": GetPersonaAttribute(id=user_id, field="outbound_original_phone_number"), "status": "error", "call_ended_reason": reason, "task_id": task_id, "user_id": user_id} %}
+
+    {{_sendWebhookResultSkill(taskId=task_id, userId=user_id, payload=json.dumps(payload, ensure_ascii=False, indent=2))}}
+    {{_updateCallTableSkill(recording="-", reason="error", userId=user_id, summary="The number of calls to the same number has been exceeded. Cancel task execution.", taskId=task_id)}}
+
+{% elif reason in ("active-calls-by-time-limit", "total-calls-by-time-limit") %}
+    {# Get task from outbound_call_context where it was stored by _setupCallSkill #}
+    {% set outbound_call_context = GetPersonaAttribute(id=user_id, field="outbound_call_context").strip() %}
+    {% if outbound_call_context %}
+        {% set current_outbound_context = json.loads(outbound_call_context) %}
+        {% set task_context = current_outbound_context.get(task_id, None) %}
+        {% if task_context and task_context.task %}
+            {% set task_obj = json.dumps(task_context.task, ensure_ascii=False, indent=2) %}
+            {{put_task_to_wait_list(task=task_obj)}}
+        {% else %}
+            {# Fallback: if task not in context, request from TaskManager #}
+            {{SendSystemEvent(eventIdn="task_manager_get_task", connectorIdn="system", taskId=task_id, global="True", callbackArguments="retry", requesterIdn=GetAgentPersona().name)}}
+        {% endif %}
+    {% else %}
+        {# Fallback: if no context, request from TaskManager #}
+        {{SendSystemEvent(eventIdn="task_manager_get_task", connectorIdn="system", taskId=task_id, global="True", callbackArguments="retry", requesterIdn=GetAgentPersona().name)}}
+    {% endif %}
+    {{_updateTaskManagerStatusSkill(taskId=task_id, status="in queue", comment="The maximum number of calls is currently in progress. The task has been placed in the AKB queue.")}}
+{# Telnyx specific case#}
+{% elif arguments.message in ("486 User Busy") %}
+    {{_setupRetrySkill(comment="Call finished because " ~ arguments.message, attemptNumber=GetState(name="attempts_number"), taskId=task_id, userId=user_id, recording="-", reason="customer-did-not-answer")}}
+{% else %}
+    {% set payload = {"phone_number": GetPersonaAttribute(id=user_id, field="outbound_original_phone_number"), "status": "error", "call_ended_reason":
+    "unknown", "task_id": task_id, "user_id": user_id} %}
+
+    {{_sendWebhookResultSkill(taskId=task_id, userId=user_id, payload=json.dumps(payload, ensure_ascii=False, indent=2))}}
+    {{_updateCallTableSkill(recording="-", userId=user_id, reason="error", summary="Error occurred, reason unknown. Additional info: " ~ arguments.message or "-", taskId=task_id)}}
+{% endif %}

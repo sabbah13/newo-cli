@@ -1,0 +1,15 @@
+id: 3f08d2a4-376d-495e-b909-681146c6514c
+idn: _schemasSkill
+title: ""
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: 7fc376a2-d10d-4301-87ec-bd21f073960c
+    name: workingStatus
+    default_value: "False"
+  - id: c1042b48-791b-4733-91e0-ec25aca05160
+    name: thoughts
+    default_value: "False"
+path: ""

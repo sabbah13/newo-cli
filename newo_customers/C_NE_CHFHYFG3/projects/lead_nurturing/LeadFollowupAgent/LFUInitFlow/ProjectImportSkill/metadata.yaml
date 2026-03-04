@@ -1,0 +1,9 @@
+id: 8fd1badc-594f-4d2a-b27a-483d477b4f6f
+idn: ProjectImportSkill
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

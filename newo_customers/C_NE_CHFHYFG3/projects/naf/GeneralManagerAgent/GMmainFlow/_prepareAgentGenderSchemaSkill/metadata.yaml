@@ -1,0 +1,9 @@
+id: af178f1a-a5cb-4071-8eac-a87b8221fd20
+idn: _prepareAgentGenderSchemaSkill
+title: ""
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

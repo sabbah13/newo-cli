@@ -1,0 +1,15 @@
+id: 89dea185-3f03-4170-a9ba-4951910cbd79
+idn: _defineIntentSkill
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_pro
+parameters:
+  - id: 1f1bc7f6-e934-443e-bc73-6b3b5053c894
+    name: intent_type_map
+    default_value: ""
+  - id: a35c47a6-16fc-4163-9a39-58bac43bb9f6
+    name: transcript
+    default_value: ""
+path: ""

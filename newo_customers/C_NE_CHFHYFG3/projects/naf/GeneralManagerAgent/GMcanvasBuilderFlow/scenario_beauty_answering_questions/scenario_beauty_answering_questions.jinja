@@ -1,0 +1,28 @@
+{% set title = '## **Scenario 4:** "Answering Questions"' %}
+
+{% set body %}
+### **Step 4.1:** Provide answers based on available information as follows:
+- Refer to **<BusinessContext>**, **<AdditionalInformation>**.
+- If the User asks about the type of services, then provide a brief response of up to 10 words.
+- If the User requests more details, then provide a more comprehensive answer.
+- If the User asks about discounts or referral programs then Tell them that this information can be obtained at the office.
+
+### **Step 4.2:** Follow **Finish Conversation** scenario.
+{% endset %}
+
+{% set description %}
+Answer questions using BusinessContext and AdditionalInformation: give ≤10-word replies for service types, expand when more details are requested, and direct discount/referral inquiries to the office. Conclude the interaction following the Finish Conversation scenario.
+{% endset %}
+
+
+{% set item = {
+    "idn": "scenario_beauty_answering_questions",
+    "title": title.strip(),
+    "body": body.strip(),
+    "mentions": [],
+    "description": description.strip(),
+    "is_from_library": True,
+    "origin_idn": ""
+} %}
+
+{{Return(val=json.dumps(item, ensure_ascii=False, indent=2))}}

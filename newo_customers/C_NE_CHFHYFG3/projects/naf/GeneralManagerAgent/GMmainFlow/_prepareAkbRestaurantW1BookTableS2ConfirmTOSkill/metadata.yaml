@@ -1,0 +1,9 @@
+id: 457f4bf0-379f-4464-8a56-2b569b9b6177
+idn: _prepareAkbRestaurantW1BookTableS2ConfirmTOSkill
+title: _prepareAkbRestaurantW1BookTableS2ConfirmTOSkill
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

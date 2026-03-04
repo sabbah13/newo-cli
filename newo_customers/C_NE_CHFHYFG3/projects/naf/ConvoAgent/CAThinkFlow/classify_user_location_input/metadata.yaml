@@ -1,0 +1,12 @@
+id: e52533b6-15bb-4f2f-b057-3d64b6caa566
+idn: classify_user_location_input
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: 013c6716-7afb-406a-a07c-2dd396f0036c
+    name: memory_conversation
+    default_value: ""
+path: ""

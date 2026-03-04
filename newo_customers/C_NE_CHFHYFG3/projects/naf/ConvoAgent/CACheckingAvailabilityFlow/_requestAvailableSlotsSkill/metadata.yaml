@@ -1,0 +1,18 @@
+id: d034a0ee-3222-4a75-8a58-3eef81f92db1
+idn: _requestAvailableSlotsSkill
+title: ""
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: f5b741a0-134f-4fa7-a17d-d6771536221c
+    name: memory
+    default_value: " "
+  - id: ea992bb7-1bd4-4a78-9232-f8459e4ab155
+    name: agentAnswer
+    default_value: " "
+  - id: 5b260d2a-fe6e-49be-b48b-aa5c40cf038f
+    name: userId
+    default_value: " "
+path: ""

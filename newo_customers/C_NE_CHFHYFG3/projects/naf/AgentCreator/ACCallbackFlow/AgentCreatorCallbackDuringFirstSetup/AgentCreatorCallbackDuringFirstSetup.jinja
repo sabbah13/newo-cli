@@ -1,0 +1,64 @@
+{# Important: We must guarantee that Agent will be ready to be used before sending an event to Agent Creator #}
+
+{# `account_initialized_first_time` is being set as `True` in `ProjectImportSkill` in `GMmainFlow` before `Post-setup` process. Starting from that point, we assume that Agent is ready for interaction #}
+{% set account_initialized_first_time = GetCustomerAttribute(field="project_attributes_private_account_initialized_first_time") %}
+
+{# If Account was not initialized, we wait #}
+{% if account_initialized_first_time != "True" %}
+    {% set exit_from_loop = False %}
+    {% set max_tries = 10 %}
+    {% set wait_seconds = 10 %}
+    {% for i in range(max_tries) %}
+        {% if not exit_from_loop %}
+            {{Sleep(duration=wait_seconds, interruptible="n")}}
+            {% set account_initialized_first_time = GetCustomerAttribute(field="project_attributes_private_account_initialized_first_time") %}
+            {% if account_initialized_first_time == "True" %}
+                {% set exit_from_loop = True %}
+            {% endif %}
+        {% endif %}
+    {% endfor %}
+    {% if account_initialized_first_time != "True" %}
+        {{DUMMY("Warning: Agent was not initialized after waiting for " ~ (max_tries * wait_seconds) ~ " seconds. Proceeding anyway.")}}
+    {% endif %}
+{% endif %}
+
+{% set customer_idn = GetCustomer().idn %}
+{% set agent_voice_phone_number = GetCustomerAttribute(field="project_representative_agent_voice_phone_number") %}
+{% set agent_creator_actor_id = GetCustomerAttribute(field="agent_creator_actor_id") %}
+
+{{SendCommand(
+    commandIdn="onboarding_setup",
+    integrationIdn="api",
+    connectorIdn="webhook",
+    phoneNumber=agent_voice_phone_number,
+    creatorActorId=agent_creator_actor_id,
+    customerIdn=customer_idn
+)}}
+
+{% set newo_chat_connector_info = GetConnectorInfo(integrationIdn="newo_chat", connectorIdn="newo_chat")%}
+{% set widget_script_url = "" %}
+{% if newo_chat_connector_info %}
+    {% set widget_script_url = newo_chat_connector_info.settings.widget_script_url | string %}
+{% endif %}
+
+{% set arguments = {
+    "phone_number": agent_voice_phone_number,
+    "customer_idn": customer_idn,
+    "incoming_webhook": GetWebhook(webhookIdn="outbound_call_webhook", webhookType="incoming").url | string,
+    "agent_creator_webhook": GetWebhook(webhookIdn="agent_creator_webhook", webhookType="incoming").url | string,
+    "webrtc_connector_idn": "newo_voice_connector_web"
+} %}
+
+{% if widget_script_url %}
+    {{arguments.update({"widget_script": widget_script_url})}}
+{% endif %}
+
+{{SendCommand(
+    commandIdn="send_actor_event",
+    integrationIdn="customer_intercom",
+    connectorIdn="agent_creator",
+    userPersonaId=CreatePersona(name="InitPersona") | string,
+    toActorId=agent_creator_actor_id,
+    eventIdn="create_customer_finished",
+    eventArguments=json.dumps(arguments, ensure_ascii=False, indent=2)
+)}}

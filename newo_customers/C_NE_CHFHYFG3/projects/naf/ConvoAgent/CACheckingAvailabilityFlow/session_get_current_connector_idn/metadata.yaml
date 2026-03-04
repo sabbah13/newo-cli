@@ -1,0 +1,12 @@
+id: 4439c489-886c-4bd6-bdd4-61a73756f689
+idn: session_get_current_connector_idn
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: 26711204-46ee-406f-ac63-559fc968a9ba
+    name: user_id
+    default_value: ""
+path: ""

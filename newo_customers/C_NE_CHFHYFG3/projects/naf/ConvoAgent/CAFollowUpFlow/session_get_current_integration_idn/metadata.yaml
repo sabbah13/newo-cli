@@ -1,0 +1,12 @@
+id: 21f1e1e2-2153-4063-9880-c3b4f1d0014f
+idn: session_get_current_integration_idn
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: c59bc0f3-e24f-42bd-98d8-c678ce822ce2
+    name: user_id
+    default_value: ""
+path: ""

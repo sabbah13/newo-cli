@@ -1,0 +1,23 @@
+{% set intents = json.loads(intents) %}
+{% set failed_intents = [] %}
+{% for intent in intents %}
+    {% set should_include = False %}
+    {% if intent.status != "success" %}
+        {% set should_include = True %}
+    {% endif %}
+    {% for step in intent.assessment.steps %}
+        {% if step.completed is sameas False %}
+            {% set should_include = True %}
+        {% endif %}
+    {% endfor %}
+    {% if intent.assessment.cta.completed is sameas False %}
+        {% set should_include = True %}
+    {% endif %}
+    {% if intent.assessment.scoring.total_steps > intent.assessment.scoring.completed_steps or intent.assessment.scoring.assessment_score < 90 %}
+        {% set should_include = True %}
+    {% endif %}
+    {% if should_include %}
+        {{failed_intents.append(intent)}}
+    {% endif %}
+{% endfor %}
+{{Return(val=json.dumps(failed_intents, ensure_ascii=False, indent=2))}}

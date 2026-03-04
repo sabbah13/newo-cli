@@ -1,0 +1,67 @@
+{% set customer_info = GetCustomerInfo() %}
+{% if not customer_info %}
+    {{Return()}}
+{% endif %}
+
+{% set builder_link = customer_info.platform_links.builder %}
+{% if not builder_link %}
+    {{Return()}}
+{% endif %}
+
+{# ! TODO: Replace WebHook with Customer Intercom #}
+{% if "dev" in builder_link %}
+    {# ! TODO: Create WebHook #}
+    {% set web_search_request_webhook = "" %}
+{% elif "qa" in builder_link %}
+    {# ! TODO: Create WebHook #}
+    {% set web_search_request_webhook = "" %}
+{% elif "stg" in builder_link %}
+    {# ! TODO: Create WebHook #}
+    {% set web_search_request_webhook = "" %}
+{% else %}
+    {% set web_search_request_webhook = "https://hooks.internal.newoai.org/oOlP_aqscLzEJ1jWOGzbEQ" %}
+{% endif %}
+
+{% set web_search_response_webhook = GetWebhook(webhookIdn = "web_search", webhookType = "incoming") %}
+{% if not web_search_response_webhook %}
+    {{Return()}}
+{% endif %}
+
+{% set payload = {
+    "external_actor_id": customer_info.idn,
+    "arguments": [
+        {
+            "name": "webhook",
+            "value": web_search_response_webhook.url | string
+        },
+        {
+            "name": "customer_idn",
+            "value": customer_info.idn
+        },
+        {
+            "name": "objective",
+            "value": objective
+        },
+        {
+            "name": "max_results",
+            "value": "20"
+        }
+    ]
+} %}
+
+{% set headers = {
+    "Accept": "application/json",
+    "Content-Type": "application/json"
+} %}
+
+{{SendCommand(
+    commandIdn="send_request",
+    integrationIdn="http",
+    connectorIdn="http_connector",
+    userPersonaId=GetAgentPersona().id|string,
+    method="POST",
+    url=web_search_request_webhook,
+    headers=json.dumps(headers, ensure_ascii=False, indent=2),
+    body=json.dumps(payload, ensure_ascii=False, indent=2),
+    targetAction="web_search"
+)}}

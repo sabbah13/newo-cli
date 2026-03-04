@@ -1,0 +1,9 @@
+id: 65683f5f-f6f6-4e4d-8aa6-26ceaa8b9f1e
+idn: SearchBookingTool
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

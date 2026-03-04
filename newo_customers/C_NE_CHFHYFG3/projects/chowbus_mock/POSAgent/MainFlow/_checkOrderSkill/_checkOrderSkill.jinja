@@ -1,0 +1,137 @@
+{% set agent_persona_id = GetAgentPersona(field="id").id|string %}
+{% set menu = json.loads(GetPersonaAttribute(id=agent_persona_id, field="latest_menu")) %}
+
+{# Find **VALID AND INVALID ITEMS** #}
+
+{% set items_list_response = json.loads(_extractItemsSkill(conversation=memory,agentAnswer=agentAnswer)) %}
+{% set items_list = items_list_response.order_items %}
+
+{# Find **VALID AND INVALID MODIFIERS FOR VALID ITEMS** #}
+
+{% set items_list_names = [] %}
+{% for item in items_list %}
+    {{items_list_names.append(item.item_name ~ " " ~ item.item_modifiers)}}
+{% endfor %}
+
+{% set item_modifiers_resolution_schema = {
+    "type": "object",
+    "properties": {},
+    "description": "Modifiers to be applied to each item in the order",
+    "required": items_list_names
+} %}
+
+{% set item_ref_modifier_map = {} %}
+
+{% for item in items_list %}
+    {% set item_ref = menu[item["item_name"]] %}
+    {{item_ref_modifier_map.update({item["item_name"]: {}})}}
+    {% set item_ref_modifier_names = [] %}
+    {% for modifier in item_ref.modifiers %}
+        {{item_ref_modifier_names.append(modifier.name)}}
+        {{item_ref_modifier_map[item["item_name"]].update({modifier["name"]: modifier})}}
+    {% endfor %}
+    {% set item_modifier_schema_key = item.item_name ~ " " ~ item.item_modifiers %}
+    {{item_modifiers_resolution_schema.properties.update({item_modifier_schema_key: {
+        "type": "object",
+        "properties": {
+            "applicable_modifiers": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "modifier_name": {
+                            "type": "string",
+                            "description": "modifier applicable to " + item_modifier_schema_key,
+                            "enum": item_ref_modifier_names
+                        },
+                        "modifier_quantity": {
+                            "type": "integer",
+                            "description": "if specified, default to 1"
+                        }
+                    }
+                }
+            },
+            "non_applicable_modifiers": {
+                "type": "array",
+                "items": {
+                    "type": "string",
+                    "description": "modifiers that cannot be mapped to the following list: " + json.dumps(item_ref_modifier_names)
+                }
+            }
+        }
+    }})}}
+{% endfor %}
+
+{% set modifiers_resolution = json.loads(_extractModifiersSkill(schema=json.dumps(item_modifiers_resolution_schema), memory=memory, agentAnswer=agentAnswer)) %}
+
+{# **VALIDATE FAILURE POINTS** #}
+{% set error = '' %}
+{% for item_name in modifiers_resolution.keys() %}
+    {% set invalid_modifiers = modifiers_resolution[item_name].non_applicable_modifiers %}
+    {% if invalid_modifiers %}
+        {% set error = error + "The item **" + item_name + "** does not have the following modifiers: " + ", ".join(invalid_modifiers) + "\n" %}
+    {% endif %}
+{% endfor %}
+{% if error %}
+    {{SendSystemEvent(eventIdn="set_prompt_custom_section", connectorIdn="system", sectionName="CurrentFoodOrderContext", sectionValue="The system HAS FAILED TO VALIDATE the order.\n The reason is: " ~ error ~ "\nThe order may still be submitted without non-validated parts.")}}
+{#
+    {% if askedToWait == "True" %}
+        {{SendSystemEvent(
+            eventIdn="urgent_message",
+            connectorIdn="system",
+            baseInstruction="The agent double checked the order received by the user and found the following mistakes:\n" + error + "\nAsk user to react accordingly and help them to resolve them.",
+            uninterruptible="True",
+            callAnalyzeConversationSkill="False",
+            callManageTaskSkill="False",
+            callUserIsWaitingSkill="False",
+        )}}
+    {% endif %}
+
+    {{Return()}}
+#}
+{% endif %}
+
+{# **BUILD ORDER** #}
+{% set current_order = {"items": []} %}
+{% for item in items_list %}
+    {% set item_modifier_schema_key = item.item_name ~ " " ~ item.item_modifiers %}
+
+    {% set item_ref = menu[item["item_name"]] %}
+    {% set modifiers = modifiers_resolution[item_modifier_schema_key].applicable_modifiers %}
+    {% set added_modifiers = [] %}
+    {% for modifier in modifiers %}
+        {{DUMMY(added_modifiers)}}
+        {% set modifier_to_add = item_ref_modifier_map[item["item_name"]][modifier["modifier_name"]] %}
+        {{DUMMY(modifier_to_add)}}
+        {{added_modifiers.append(modifier_to_add)}}
+    {% endfor %}
+    {% set item_to_add = {"partnerId": item_ref["id"], "price": item_ref["price"], "name": item["item_name"], "quantity": item["item_quantity"], "modifiers": added_modifiers} %}
+    {% set current_order_items = current_order["items"] %}
+    {{DUMMY(current_order_items)}}
+    {{current_order_items.append(item_to_add)}}
+{% endfor %}
+
+{% set order_items = [] %}
+{% for item in current_order["items"] %}
+    {% set line = item.name + " x " + item.quantity|string %}
+    {{order_items.append(line)}}
+{% endfor %}
+
+{% set current_order_text = '\n'.join(order_items) %}
+
+{{SetPersonaAttribute(id=userId, field="current_order_human", value=current_order_text)}}
+
+{{SetPersonaAttribute(id=userId, field="current_order", value=json.dumps(current_order))}}
+{{SendSystemEvent(eventIdn="set_prompt_custom_section", connectorIdn="system", sectionName="CurrentFoodOrderContext", sectionValue="The system HAS SUCESSFULLY VALIDATED the following order:\n" ~ json.dumps(current_order))}}
+
+{% if askedToWait == "True" %}
+    {{SendSystemEvent(
+        eventIdn="urgent_message",
+        connectorIdn="system",
+        baseInstruction="The agent double checked the order received by the user and it was SUCCESSFULLY VALIDATED.",
+        uninterruptible="True",
+        callAnalyzeConversationSkill="False",
+        callManageTaskSkill="False",
+        callUserIsWaitingSkill="False",
+    )}}
+{% endif %}

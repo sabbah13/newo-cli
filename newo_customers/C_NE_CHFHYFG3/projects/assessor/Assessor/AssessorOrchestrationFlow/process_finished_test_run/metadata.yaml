@@ -1,0 +1,15 @@
+id: fcd36de8-afce-4a46-861e-d423abad4655
+idn: process_finished_test_run
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: ab377ba9-1f7f-4347-a922-81aa11e02a9c
+    name: intents
+    default_value: ""
+  - id: 73f69b4b-1381-440f-a9d7-a4cb03ffd0fe
+    name: agent_persona_id
+    default_value: ""
+path: ""

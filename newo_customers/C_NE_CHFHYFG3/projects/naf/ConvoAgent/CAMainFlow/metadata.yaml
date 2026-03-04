@@ -1,0 +1,356 @@
+id: 7e78a25c-d8a7-4ed2-a360-31c4d90d9049
+idn: CAMainFlow
+title: CAMainFlow
+description: ""
+default_runner_type: guidance
+default_model:
+  provider_idn: google
+  model_idn: gemini25_flash
+events:
+  - id: c2f4cf87-6320-4b1f-ac99-086ffba71b9c
+    description: null
+    idn: agent_speech_ended
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: agent_speech_ended_handler
+    state_idn: null
+    integration_idn: newo_voice
+    connector_idn: newo_voice_connector
+  - id: a75c9603-e3f3-4325-8b2c-0c3e502b66e3
+    description: null
+    idn: agent_speech_ended
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: agent_speech_ended_handler
+    state_idn: null
+    integration_idn: newo_voice
+    connector_idn: newo_voice_connector_web
+  - id: b4cae4b9-2f37-4614-bbb6-e42a0b620bcb
+    description: null
+    idn: analyze_conversation
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: UpdateConversationMetaSkill
+    state_idn: null
+    integration_idn: system
+    connector_idn: system
+  - id: cb586cbc-6f7f-457c-a233-2748f91edefa
+    description: null
+    idn: conversation_ended
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: ConversationEndedSkill
+    state_idn: null
+    integration_idn: null
+    connector_idn: null
+  - id: 0e53c671-4c98-4f25-a948-7df370320f79
+    description: null
+    idn: conversation_started
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: ConversationStartedSkill
+    state_idn: null
+    integration_idn: vapi
+    connector_idn: null
+  - id: 0febb6f8-0ae9-4eb9-80ba-f37c47cf7601
+    description: null
+    idn: conversation_started
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: ConversationStartedSkill
+    state_idn: null
+    integration_idn: newo_chat
+    connector_idn: null
+  - id: 5c717f3b-d51c-4a5c-9bfb-cab69022393d
+    description: null
+    idn: conversation_started
+    skill_selector: skill_idn_from_state
+    interrupt_mode: queue
+    skill_idn: null
+    state_idn: conversation_started_newo_voice_skill
+    integration_idn: newo_voice
+    connector_idn: newo_voice_connector
+  - id: 63bdd80f-de73-4b43-9ff8-cf79f7bc099b
+    description: null
+    idn: conversation_started
+    skill_selector: skill_idn_from_state
+    interrupt_mode: queue
+    skill_idn: null
+    state_idn: conversation_started_newo_voice_web_skill
+    integration_idn: newo_voice
+    connector_idn: newo_voice_connector_web
+  - id: 7900ab5f-0f3b-40e4-ad2c-3d808177d549
+    description: null
+    idn: convoagent_activate_waiting_mode
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: ControllerWaitingModeSkill
+    state_idn: null
+    integration_idn: system
+    connector_idn: system
+  - id: 4f036618-414f-436d-8702-23ad31381aca
+    description: null
+    idn: convoagent_clear_cached_prompt
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: prompt_clear_cache
+    state_idn: null
+    integration_idn: system
+    connector_idn: system
+  - id: 35695ece-287b-4cdb-ad71-37506c0b8c96
+    description: null
+    idn: convoagent_create_message_act
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: CreateMessageActSkill
+    state_idn: null
+    integration_idn: system
+    connector_idn: system
+  - id: 4ade00d0-9541-4122-b336-9800f37ffb6f
+    description: null
+    idn: convoagent_send_context
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: v2v_send_context
+    state_idn: null
+    integration_idn: system
+    connector_idn: system
+  - id: cffe339c-e52b-46a1-a285-d99bbe1db286
+    description: null
+    idn: push_agent_turn
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: PushAgentTurnSkill
+    state_idn: null
+    integration_idn: system
+    connector_idn: system
+  - id: 4fdd7977-2ad8-47d4-b49a-07f6b8477136
+    description: null
+    idn: real_user_message
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: RealUserMessageSkill
+    state_idn: null
+    integration_idn: system
+    connector_idn: system
+  - id: 4d0ba2db-c5d0-48af-967c-aa628f1d076d
+    description: null
+    idn: result_success
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: CallTransferredSkill
+    state_idn: null
+    integration_idn: newo_voice
+    connector_idn: newo_voice_connector
+  - id: 36b037be-82a2-494c-a1c1-4e1e20455a44
+    description: null
+    idn: switch_conversation_started_skill
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: SwitchConversationStartedSkill
+    state_idn: null
+    integration_idn: system
+    connector_idn: system
+  - id: cce0c68d-b004-4f7a-ba76-686ed500211b
+    description: null
+    idn: switch_outbound_reply_skill
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: SwitchReplyOutboundSkill
+    state_idn: null
+    integration_idn: system
+    connector_idn: system
+  - id: 597e28bd-9da0-4b19-9699-516fd5725a5e
+    description: null
+    idn: tool_called
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: Gen2HandleToolCallSkill
+    state_idn: null
+    integration_idn: newo_voice
+    connector_idn: newo_voice_connector
+  - id: ec2f78fa-de48-47cf-82b3-4354202ca8b4
+    description: null
+    idn: tool_called
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: Gen2HandleToolCallSkill
+    state_idn: null
+    integration_idn: newo_voice
+    connector_idn: newo_voice_connector_web
+  - id: a6143ffc-fbde-4ec9-8873-a3bc66cba8dd
+    description: null
+    idn: user_message
+    skill_selector: skill_idn
+    interrupt_mode: interrupt
+    skill_idn: UserSMSReplySkill
+    state_idn: null
+    integration_idn: twilio_messenger
+    connector_idn: sms_connector
+  - id: 692486fb-e868-441a-971e-8370a99806d5
+    description: null
+    idn: user_message
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: UserNewoChatReplySkill
+    state_idn: null
+    integration_idn: newo_chat
+    connector_idn: newo_chat
+  - id: f112e484-13f4-4a8b-a0a9-1cfbe7e7c969
+    description: null
+    idn: user_message
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: UserSandboxReplySkill
+    state_idn: null
+    integration_idn: sandbox
+    connector_idn: convo_agent_sandbox
+  - id: f6ed0d8e-9978-4fb3-abf1-4a21549d867a
+    description: null
+    idn: user_message
+    skill_selector: skill_idn
+    interrupt_mode: interrupt
+    skill_idn: UserPhoneReplySkill
+    state_idn: null
+    integration_idn: vapi
+    connector_idn: vapi_caller
+  - id: 5100824b-002f-41d1-95dd-6cfb4178ad9f
+    description: null
+    idn: user_message
+    skill_selector: skill_idn_from_state
+    interrupt_mode: interrupt
+    skill_idn: null
+    state_idn: phone_reply_skill
+    integration_idn: newo_voice
+    connector_idn: newo_voice_connector
+  - id: cd8acc52-aeff-4a11-a6dc-65d93385a5f9
+    description: null
+    idn: user_message
+    skill_selector: skill_idn_from_state
+    interrupt_mode: interrupt
+    skill_idn: null
+    state_idn: phone_reply_skill
+    integration_idn: newo_voice
+    connector_idn: newo_voice_connector_web
+  - id: b775d222-7bcf-4167-92a1-6e44873e9678
+    description: null
+    idn: user_message
+    skill_selector: skill_idn
+    interrupt_mode: interrupt
+    skill_idn: UserTelegramReplySkill
+    state_idn: null
+    integration_idn: telegram
+    connector_idn: telegram_connector
+  - id: 22d2bdf4-04a7-41e8-a5a9-b813e0437810
+    description: null
+    idn: user_message
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: UserAPIReplySkill
+    state_idn: null
+    integration_idn: api
+    connector_idn: webhook
+  - id: 1eceefc1-4d92-4951-9137-4243fdd2bf8d
+    description: null
+    idn: user_message_proxy
+    skill_selector: skill_idn
+    interrupt_mode: interrupt
+    skill_idn: UserProxyReplySkill
+    state_idn: null
+    integration_idn: system
+    connector_idn: system
+  - id: 833d401a-f55f-484a-b2e7-a93492ed695a
+    description: null
+    idn: waiting_mode_fallback
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: WaitingFallbackSkill
+    state_idn: null
+    integration_idn: program_timer
+    connector_idn: waiting_mode_fallback
+state_fields:
+  - id: efae51f0-c29f-453c-98b7-76f7fbb64d10
+    title: ""
+    idn: cached_base_prompt
+    default_value: ""
+    scope: user
+  - id: 326674fe-5b63-4531-90ac-00bbd30214c3
+    title: ""
+    idn: conversation_last_no_task_prompt
+    default_value: ""
+    scope: user
+  - id: 1b1e0efc-a41f-4cd7-9bd0-9594fe7da7f7
+    title: ""
+    idn: conversation_last_task_prompt
+    default_value: ""
+    scope: user
+  - id: 2fe5c145-60e6-4537-a255-c2a487d2f53d
+    title: ""
+    idn: conversation_started_newo_voice_skill
+    default_value: v2v_conversation_started
+    scope: agent
+  - id: 25934dfa-6e4e-44de-a58f-b85de3bc2431
+    title: ""
+    idn: conversation_started_newo_voice_web_skill
+    default_value: v2v_conversation_started_web
+    scope: agent
+  - id: 518ad650-4ffb-4160-9578-f37898cbdf6b
+    title: ""
+    idn: corrected_memory
+    default_value: ""
+    scope: user
+  - id: 8f14b564-42a3-4a28-840a-fe19ba10b290
+    title: ""
+    idn: fast_prompt
+    default_value: ""
+    scope: user
+  - id: 67ffe103-1e40-47b9-80fd-45c94e832636
+    title: ""
+    idn: greeting_phrase
+    default_value: ""
+    scope: user
+  - id: 3a87ea27-0d12-4d5e-a092-4950dff5544e
+    title: ""
+    idn: main_instruction
+    default_value: ""
+    scope: user
+  - id: fce7aafe-0c2d-403a-91ab-011ace2bb773
+    title: ""
+    idn: phone_reply_skill
+    default_value: UserPhoneReplySkill
+    scope: user
+  - id: 363a097c-6941-4b01-b93e-9a15d19fd4bb
+    title: ""
+    idn: tasks_description
+    default_value: ""
+    scope: user
+  - id: 13d9246d-371d-4d42-bc2b-882ac1af4cb6
+    title: thoughts
+    idn: thoughts
+    default_value: ""
+    scope: user
+  - id: a52fc922-ae10-48da-843d-18ed31cc2527
+    title: ""
+    idn: thoughts_last_no_task_prompt
+    default_value: ""
+    scope: user
+  - id: e6799dc1-5ab3-401d-8eb7-3a040bfb81fa
+    title: ""
+    idn: thoughts_last_task_prompt
+    default_value: ""
+    scope: user
+  - id: 80fbb691-32e4-4b19-ad3f-4a6c0e02c3af
+    title: ""
+    idn: user_reply_buffer
+    default_value: ""
+    scope: user
+  - id: b8e86424-da66-4c95-b0a2-92db29bbaa9f
+    title: ""
+    idn: waiting_mode_active
+    default_value: "False"
+    scope: user
+  - id: fdc767c9-d3ae-4ab3-804f-e4227cd7bbe1
+    title: ""
+    idn: waiting_mode_footer_instruction
+    default_value: ""
+    scope: user

@@ -1,0 +1,9 @@
+id: 0be1c978-30ac-4b3f-bb3b-13696304e550
+idn: AnalyzeConversationSkill
+title: AnalyzeConversationSkill
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

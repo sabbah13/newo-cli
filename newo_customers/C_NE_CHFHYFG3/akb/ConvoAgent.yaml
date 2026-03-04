@@ -1,0 +1,740 @@
+- topic_name: Beer / 啤酒
+  topic_facts:
+    - 'Beer / 啤酒. A selection of bottled and draft beers, including Asian and domestic brands, available individually, in buckets, or as a tower. Keywords: Tsingtao; Sapporo; Draft Beer; Coorslight; Beer Tower; Asahi; Beer Bucket; Original Taiwan Beer; Mango Taiwan Beer; Lychee Taiwan Beer; Sam Adams Boston Lager; Asahi Non-alcoholic Beer; Corona Extra; Pilsner Urquell; Paulaner Hefe; Paulaner Munich; Peroni Nastro Azzurro; Blue Moon; Delirium Tremens; Budweiser; Bud Light; 1664 Blanc; Snow Beer; Suntory -196 Degrees Centigrade Strong Sparkling Wine; Lemon Minus196; Grapefruit Minus196; Peach Minus196; Strawberry Minus196; Taiwan Beer'
+  confidence: 100
+  source: menu0
+  created_at: '2026-03-03T06:44:43.007685'
+  updated_at: '2026-03-03T06:44:43.007690'
+  labels:
+    - rag_context
+    - rag_context_menu
+  topic_summary: |-
+    ## Beer (啤酒)
+    - tsingtao(355ml) / 青岛(355ml) - $5.99
+    - sapporo(650ml) / 札幌(650ml) - $11.99
+    - draft beer (coorslight 400ml) / 扎啤 (Coorslight 400ml) - $4.99
+    - beer tower(coorslight 3l) / 酒炮(Coorslight 3L) - $29.99
+    - asahi(330ml) / 朝日啤酒(330ml) - $5.99
+    - beer bucket(pick any 5 items ) / 酒桶（任选5支） - $22.99 (任意选五瓶啤酒
+    Choose any five beers) | (required, pick 5, can repeat): tsingtao/青岛啤酒, asahi/朝日, original taiwan beer/原味台湾啤酒, mango taiwan beer/芒果台湾啤酒, lychee taiwan beer/荔枝台湾啤酒, sam adams boston lager/山姆·亚当斯 波士顿拉格啤酒, asahi non-alcoholic beer/朝日无酒精啤酒, corona extra/科罗娜 特级啤酒, pilsner urquell/皮尔森 乌尔奎尔啤酒, paulaner hefe/保拉纳 小麦啤酒, paulaner munich/保拉纳 慕尼黑啤酒, peroni nastro azzurro/佩罗尼 蓝带啤酒, blue moon/蓝月亮小麦啤酒, budweiser/百威啤酒, bud light/百威淡啤, 1664 blanc/1664 白啤, snow beer/雪花啤酒, lemon minus196/柠檬味 三得利 -196 气泡酒, peach minus196/桃子味 三得利 -196 气泡酒, strawberry minus196/草莓味 三得利 -196 气泡酒, grapefruit minus196/西柚味 三得利 -196 气泡酒
+    - taiwan beer(330ml) / 台湾啤酒(330ml) - $5.99 | (required, pick 1): mango/芒果, lychee/荔枝, original/原味
+    - sam adams boston lager 12oz / 山姆·亚当斯 波士顿拉格啤酒（355ml） - $5.99
+    - asahi non-alcoholic beer 11.2oz / 无酒精朝日啤酒（330ml） - $5.99
+    - corona extra 12oz / 科罗娜 特级啤酒（355ml） - $5.99
+    - paulaner hefe 11.2oz / 保拉纳 小麦啤酒（330ml） - $5.99
+    - paulaner munich 12oz / 保拉纳 慕尼黑啤酒（355ml） - $5.99
+    - peroni nastro azzurro 11.2oz / 佩罗尼 蓝带啤酒（330ml） - $5.99
+    - blue moon 12oz / 蓝月亮小麦啤酒 12oz - $5.99
+    - delirium tremens 16.9oz / 粉象啤酒 16.9oz - $13.99
+    - budweiser 12oz / 百威啤酒 12oz - $5.99
+    - bud light 12oz / 百威淡啤 12oz - $5.99
+    - 1664 blanc 11.2oz / 1664白啤 11.2oz - $5.99
+    - snow beer 11.2oz / 雪花啤酒 11.2oz - $5.99
+    - suntory -196 degrees centigrade strong sparkling wine /minus 196 / 三得利 -196°C 强力气泡酒/minus 196 - $5.99 | -196flavor/-196口味 (required, pick 1): lemon/柠檬, grapefruit/西柚, peach/桃子, strawberry/草莓
+    - pilsner urquell / 皮尔森 乌尔奎尔啤酒（330ml） - $5.99
+- topic_name: Cold Dish / 凉菜 / Appetizers
+  topic_facts:
+    - 'Cold Dish / 凉菜 / Appetizers. A variety of chilled appetizers, often featuring savory and tangy flavors. Keywords: Jellyfish With Vinegar; Preserved Egg With Tofu; Cucumber; Cold Shredded Potato With Garlic; Scallion Oil Dried Tofu; Spicy Beef; Chinese Lettuce; Mao Stomach; Sliced Whelk With Scallion'
+  confidence: 100
+  source: menu1
+  created_at: '2026-03-03T06:44:43.021193'
+  updated_at: '2026-03-03T06:44:43.021197'
+  labels:
+    - rag_context
+    - rag_context_menu
+  topic_summary: |-
+    ## Cold Dish (凉菜)
+    - jellyfish w. vinegar / 老醋海蜇头 - $17.99
+    - preserved egg w. tofu / 皮蛋豆腐 - $14.99
+    - cucumber / 凉拌黄瓜 - $10.99
+    - cold shredded potato w. garlic / 凉拌土豆丝 - $10.99
+    - scallion oil dried tofu / 葱油干豆腐 - $13.99
+    - spicy beef / 辣拌牛腱 - $17.99
+    - chinese lettuce / 凉拌莴笋 - $12.99
+    - mao stomach / 冒毛肚 - $11.99
+    - sliced whelk w. scallion / 葱油螺片 - $19.99
+- topic_name: Warm Winter Set / 暖冬套餐 / Combo Meal
+  topic_facts:
+    - 'Warm Winter Set / 暖冬套餐 / Combo Meal. A large combination meal perfect for cold weather, featuring a variety of grilled items, noodles, and drinks. Keywords: Warm Winter Set A; Grilled Supreme Flavor Chicken Gizzards; Stir-fried Shredded Squid; Cucumber; Fried Instant Noodles; Beef Skewer; Lamb Skewer; Chicken Skewer; Grill Shrimp; Pork Belly; Grilled Cabbage; Grilled Potato Chips; Coke; Sprite'
+  confidence: 100
+  source: menu2
+  created_at: '2026-03-03T06:44:43.036027'
+  updated_at: '2026-03-03T06:44:43.036031'
+  labels:
+    - rag_context
+    - rag_context_menu
+  topic_summary: |-
+    ## Warm Winter Set (暖冬套餐)
+    - warm winter set a / 暖冬A餐 - $88.00 | includes: grilled supreme flavor chicken gizzards/烤绝味鸡胗, stir-fried shredded squid/干煸鱿鱼须, cucumber/凉拌黄瓜, fried instant noodles/炒方便面, beef skewer/牛肉串, lamb(w. fat)/羊肉串, chicken skewer/鸡肉串, grill shrimp (no shell)/秘制烤虾, pork belly/五花肉, grilled cabbage/烤包菜, grilled potato chips/烤土豆片, coke/可乐, sprite/雪碧
+- topic_name: New / 新品上市 / New Arrivals
+  topic_facts:
+    - 'New / 新品上市 / New Arrivals. Recently added dishes to the menu, including spicy entrees and grilled skewers. Keywords: Spicy & Sour Sauteed Shredded Potato; Spicy Braised Pig Feet & Chicken Feet; Dry Pot Cauliflower With Pork Belly; Beef With Pineapple; Braised And Grilled Chicken Feet'
+  confidence: 100
+  source: menu3
+  created_at: '2026-03-03T06:44:43.052588'
+  updated_at: '2026-03-03T06:44:43.052591'
+  labels:
+    - rag_context
+    - rag_context_menu
+  topic_summary: |-
+    ## New (新品上市)
+    - spicy & sour sauteed shredded potato / 东北老式酸辣土豆丝 - $15.99
+    - spicy braised pig feet & chicken feet / 麻辣猪蹄炖鸡爪 - $24.99
+    - dry pot cauliflower with pork belly / 干锅花菜 - $18.99
+    - beef with pineapple (3pcs) / 菠萝牛肉串（3串） - $6.99
+    - braised and grilled chicken feet (5 skewers) / 卤烤鸡爪（5串） - $5.99
+- topic_name: Top Meat / 烤肉必点榜 / Must-Order Grilled Meats
+  topic_facts:
+    - 'Top Meat / 烤肉必点榜 / Must-Order Grilled Meats. A curated list of recommended and popular grilled meat skewers. Keywords: Xingjing Spcial Lamb; Mongolia Beef; Grilled Wagyu'
+  confidence: 100
+  source: menu4
+  created_at: '2026-03-03T06:44:43.066928'
+  updated_at: '2026-03-03T06:44:43.066932'
+  labels:
+    - rag_context
+    - rag_context_menu
+  topic_summary: |-
+    ## Top Meat (烤肉必点榜)
+    - xingjing spcial lamb / 新疆红柳大羊 - $3.99
+    - mongolia beef / 蒙古大牛 - $3.99
+    - grilled wagyu(3 skwrs) / 烤和牛(3串) - $5.99
+- topic_name: Meat / 烤肉类 / Grilled Meats
+  topic_facts:
+    - 'Meat / 烤肉类 / Grilled Meats. A wide selection of grilled meat skewers and larger portions, including lamb, beef, pork, and chicken. Keywords: Lamb; Beef Skewer; Grill Beef No Fat; Beef Tendon; Pork Belly; Chicken; Braised And Grilled Chicken Feet; Lamb Leg; Pork Intestine; Mini Sausage; Pork Belly With Enoki; New Orleans Chicken Wings; Grilled Pig Feet; Pork Kidney; Grilled Lamb Ribs; BBQ Combo; Grilled Supreme Flavor Chicken Gizzards; Fresh Meat Sausage'
+  confidence: 100
+  source: menu5
+  created_at: '2026-03-03T06:44:43.080203'
+  updated_at: '2026-03-03T06:44:43.080207'
+  labels:
+    - rag_context
+    - rag_context_menu
+  topic_summary: |-
+    ## Meat (烤肉类)
+    - lamb(w. fat)(3 skwrs) / 羊肉串(3串） - $6.49
+    - beef skewer (3 pcs) / 牛肉串 (3串) - $6.49
+    - grill beef no fat (10 skwrs) / 纯瘦小牛肉 10串 - $7.99
+    - beef tendon(3 skwrs) / 熟筋(3串) - $6.49
+    - pork belly(3 skwrs) / 五花肉(3串) - $5.49
+    - chicken / 鸡肉 - $5.99
+    - braised and grilled chicken feet (5 skewers) / 卤烤鸡爪（5串） - $5.99
+    - lamb leg / 远古时代手把烤羊腿 - $15.99
+    - pork intestine(3 skwrs) / 猪大肠(3串) - $5.99
+    - mini sausage / 亲亲肠 - $2.49
+    - pork belly w. enoki / 五花肉金针菇 - $2.99
+    - new orleans chicken wings / 新奥尔良鸡翅 - $3.99
+    - grilled pig feet / 烤猪蹄 - $5.99
+    - pork kidney(10pcs) / 望京小腰(10个) - $12.99
+    - grilled lamb ribs / 烤羊小排 - $13.99
+    - bbq combo(30 skewers) / 椒麻把把烧 - $26.99
+    - grilled supreme flavor chicken gizzards / 烤绝味鸡胗 - $8.99
+    - fresh meat sausage / 鲜肉肠 - $2.99
+- topic_name: Grilled Fish / 烤鱼类
+  topic_facts:
+    - 'Grilled Fish / 烤鱼类. A whole grilled fish served with a choice of spicy or savory flavors. Keywords: Grilled Fish; Spicy Grilled Fish; Garlic Grilled Fish; Hot Grilled Fish'
+  confidence: 100
+  source: menu6
+  created_at: '2026-03-03T06:44:43.092703'
+  updated_at: '2026-03-03T06:44:43.092706'
+  labels:
+    - rag_context
+    - rag_context_menu
+  topic_summary: |-
+    ## Grilled Fish (烤鱼类)
+    - grilled fish / 烤鱼 - $43.99 | (required, pick 1): spicy/香辣, garlic/蒜蓉, hot/麻辣
+- topic_name: Seafood / 海鲜类 / Grilled Seafood
+  topic_facts:
+    - 'Seafood / 海鲜类 / Grilled Seafood. Grilled seafood items, including skewers and shellfish. Keywords: Squid Tentacles; Grilled Oyster; Fish Tofu; Garlic Scallop; Grill Shrimp'
+  confidence: 100
+  source: menu7
+  created_at: '2026-03-03T06:44:43.106446'
+  updated_at: '2026-03-03T06:44:43.106452'
+  labels:
+    - rag_context
+    - rag_context_menu
+  topic_summary: |-
+    ## Seafood (海鲜类)
+    - squid tentacles(3 skwrs) / 鱿鱼须(3串) - $6.49
+    - grilled oyster (garlic) (single) (large) / 烤生蚝(蒜蓉)(单个)(大) - $8.99
+    - fish tofu(3 skwrs) / 鱼豆腐(3串) - $6.49
+    - garlic scallop(ea) / 烤扇贝(蒜蓉)(单个) - $8.99
+    - grill shrimp (no shell) (3) / 秘制烤虾 / 3串 - $9.99
+- topic_name: Vegetables / 蔬菜类 / Grilled Vegetables
+  topic_facts:
+    - 'Vegetables / 蔬菜类 / Grilled Vegetables. A variety of grilled vegetables, served as skewers or portions. Keywords: Tofu Skin; Grilled Cabbage; Mushroom; Cayenne Pepper; Corn; Garlic Eggplant; Cilantro With Tofu Roll; Chives; Enoki; Grilled String Bean; Grilled Potato Chips'
+  confidence: 100
+  source: menu8
+  created_at: '2026-03-03T06:44:45.674463'
+  updated_at: '2026-03-03T06:44:45.674466'
+  labels:
+    - rag_context
+    - rag_context_menu
+  topic_summary: |-
+    ## Vegetables (蔬菜类)
+    - tofu skin(10 skwrs) / 豆腐皮(10串) - $5.99
+    - grilled cabbage / 烤包菜 - $8.99
+    - mushroom(3 skwrs) / 蘑菇(3串) - $4.99
+    - cayenne pepper / 牛角椒(1串) - $1.99
+    - corn / 玉米(1串) - $3.99
+    - garlic eggplant / 蒜香茄子(1份) - $8.99
+    - cilantro with tofu roll / 豆皮卷香菜 - $1.99
+    - chives / 韭菜(1份) - $8.99
+    - enoki / 金针菇(1份) - $8.99
+    - grilled string bean / 烤四季豆/份 - $10.99
+    - grilled potato chips / 烤土豆片/份 - $9.99
+- topic_name: Skewer Hot Pot / 麻辣涮串锅
+  topic_facts:
+    - 'Skewer Hot Pot / 麻辣涮串锅. A spicy hot pot containing a pre-set assortment of 30 skewers. Keywords: Skewer Hot Pot; Quail Egg; Fish Ball; Fish Tofu; Chinese Cabbage; Vegetable Roll; Wood Ear Mushroom; Beef Tripe; Mushroom; Fried Bean Curd'
+  confidence: 100
+  source: menu9
+  created_at: '2026-03-03T06:44:45.690763'
+  updated_at: '2026-03-03T06:44:45.690766'
+  labels:
+    - rag_context
+    - rag_context_menu
+  topic_summary: |-
+    ## Skewer Hot Pot (麻辣涮串锅 )
+    - skewer hot pot / 麻辣涮串锅 - $34.99 (一锅30串
+    鹌鹑蛋，鱼丸，鱼豆腐，大白菜，菜卷，木耳，毛肚，蘑菇，油豆腐
+    quail egg，fish ball，fish tofu，Chinese cabbage，vegetable roll， wood ear mushroom，beef tripe，mushroom，fried bean curd)
+- topic_name: Hot Dish / 炒菜 (Part 1)
+  topic_facts:
+    - 'Hot Dish / 炒菜 (Part 1). A selection of cooked-to-order stir-fried and braised dishes, including seafood, pork, and vegetables. Keywords: Stir-fried Shredded Squid; Chicken Claw Pot; Spicy Corn Bucket; Spicy Crab; Foil Enoki; Pork With Sour Cabbage & Potato Noodle; Spicy Clam; Lamb Spine Hot Pot; Foil Quail Egg; Pan Fried Chicken Skeleton'
+  confidence: 100
+  source: menu10
+  created_at: '2026-03-03T06:44:45.707553'
+  updated_at: '2026-03-03T06:44:45.707557'
+  labels:
+    - rag_context
+    - rag_context_menu
+  topic_summary: |-
+    ## Hot Dish (炒菜)
+    - stir-fried shredded squid / 干煸鱿鱼须 - $18.99
+    - chicken claw pot / 马勺凤爪 - $15.99
+    - spicy corn bucket / 香辣玉米桶 - $13.99
+    - spicy crab / 香辣蟹 - $25.99
+    - foil enoki / 锡纸金针菇 - $13.99
+    - pork w. sour cabbage & potato noodle / 猪肉酸菜炖粉条 - $18.99
+    - spicy clam / 辣炒花蚬 - $19.99
+    - lamb spine hot pot / 羊蝎子 - $24.99
+    - foil quail egg / 锡纸鹌鹑蛋 - $14.99
+    - pan fried chicken skeleton / 铁板鸡架桶 - $15.99
+- topic_name: Hot Dish / 炒菜 (Part 2)
+  topic_facts:
+    - 'Hot Dish / 炒菜 (Part 2). A selection of cooked-to-order stir-fried and braised dishes, including tofu, beef, fish, and seafood. Keywords: Pan-fried Stinky Tofu; Sautéed Lettuce With Chili Sauce; Spicy Crawfish; Garlic Sauteed Bean Sprouts; Chengdu Spicy Beef With Silken Tofu; Stir-fried Beef With Pepper; Spicy Szechuan Boil Grouper Fish Fillet; Sour Mustard With Grouper Fish Fillet; Foil Handmade Shrimp Paste; Foil Oyster With Egg'
+  confidence: 100
+  source: menu11
+  created_at: '2026-03-03T06:44:45.721869'
+  updated_at: '2026-03-03T06:44:45.721873'
+  labels:
+    - rag_context
+    - rag_context_menu
+  topic_summary: |-
+    - pan-fried stinky tofu / 铁板臭豆腐 - $16.99
+    - sautéed lettuce with chili sauce / 炝炒莴笋 - $15.99
+    - spicy crawfish / 麻辣鲜活小龙虾 - $24.99
+    - garlic sauteed bean sprouts / 蒜香豆苗 - $17.99
+    - chengdu spicy beef w. silken tofu / 成都豆花牛 - $22.99
+    - stir-fried beef with pepper / 小炒黄牛肉 - $19.99
+    - spicy szechuan boil grouper fish fillet / 水煮斑鱼片 - $20.99
+    - sour mustard with grouper fish fillet / 酸菜斑鱼片 - $21.99
+    - foil handmade shrimp paste / 锡纸手工虾滑 - $19.99
+    - foil oyster with egg / 锡纸生蚝温泉蛋 - $10.99
+- topic_name: Main Dish/soup / 主食/汤 (Part 1)
+  topic_facts:
+    - 'Main Dish/soup / 主食/汤 (Part 1). A selection of staple dishes like dumplings, noodles, and fried rice. Keywords: Pork Cabbage Dumplings; Fried Instant Noodles; Cold Noodle; Shred Potato Fried Rice; Scallion Pancake; Fried Rice With Skewer; Egg Fried Rice'
+  confidence: 100
+  source: menu12
+  created_at: '2026-03-03T06:44:45.856780'
+  updated_at: '2026-03-03T06:44:45.856784'
+  labels:
+    - rag_context
+    - rag_context_menu
+  topic_summary: |-
+    ## Main Dish/soup (主食/汤)
+    - pork cabbage dumplings / 猪肉白菜水饺 - $11.99
+    - fried instant noodles / 炒方便面 - $12.99
+    - cold noodle / 冷面 - $12.99
+    - shred potato fried rice / 土豆丝炒饭 - $12.99
+    - scallion pancake / 烤葱油饼 - $2.49
+    - fried rice w. skewer / 串炒饭 - $14.99
+    - egg fried rice / 蛋炒饭 - $12.99
+- topic_name: Main Dish/soup / 主食/汤 (Part 2)
+  topic_facts:
+    - 'Main Dish/soup / 主食/汤 (Part 2). A selection of rice noodle dishes, soups, and sides. Keywords: Spicy Rice Noodle Pot; Seafood Rice Noodle Pot; Spicy Clam Rice Noodles; Non-spicy Clam Rice Noodle; Flour Soup; Haggis Soup In Pot; White Rice; Pigs Trotter Rice Noodles'
+  confidence: 100
+  source: menu13
+  created_at: '2026-03-03T06:44:45.869806'
+  updated_at: '2026-03-03T06:44:45.869811'
+  labels:
+    - rag_context
+    - rag_context_menu
+  topic_summary: |-
+    - spicy rice noodle pot / 香辣米线 - $15.99
+    - seafood rice noodle pot / 三鲜米线 - $15.99
+    - spicy clam rice noodles / 香辣花甲粉 - $17.99
+    - non-spicy clam rice noodle / 三鲜花甲粉 - $17.99
+    - flour soup / 疙瘩汤 - $12.99
+    - haggis soup in pot / 羊杂汤 - $17.99
+    - white rice / 米饭 - $1.99
+    - pigs trotter rice noodles / 猪蹄米线 - $18.99
+- topic_name: Special Fruittea / 特饮系列 / Fruit Tea
+  topic_facts:
+    - 'Special Fruittea / 特饮系列 / Fruit Tea. A variety of milk teas, fruit teas, and fresh milk drinks with optional toppings like jelly, boba, and milk cap. Keywords: Rose Milk Tea; Jasmine Green Tea; Mango Green Tea; Passionfruit Green Tea; White Peach Oolong Tea; Dirty Mango Milk; Strawberry Dirty Milk; Brown Sugar Fresh Milk; Strawberry Iced Tea; Lychee Jelly; Popping Boba; Milkcap; Red Bean'
+  confidence: 100
+  source: menu14
+  created_at: '2026-03-03T06:44:45.884014'
+  updated_at: '2026-03-03T06:44:45.884017'
+  labels:
+    - rag_context
+    - rag_context_menu
+  topic_summary: |-
+    ## Special Fruittea (特饮系列)
+    - Group A | lychee jelly/椰果 +$0.50, popping boba/爆爆珠 +$0.50, milkcap/奶盖 +$0.50, red bean/红豆 +$0.50
+      - rose milk tea / 玫瑰奶茶 - $5.99 | (required, pick 1, default: lychee jelly): group A options
+      - jasmine green tea / 茉香绿茶 - $5.99 | (optional): group A options
+      - mango green tea / 芒果绿茶 - $5.99 | (optional): group A options
+      - passionfruit green tea / 百香果绿茶 - $5.99 | (optional): group A options
+      - white peach oolong tea / 白桃乌龙茶 - $5.99 | (optional): group A options
+      - dirty mango milk / 芒果脏脏鲜奶 - $5.99 | (optional): group A options
+      - strawberry dirty milk / 草莓脏脏奶 - $5.99 | (optional): group A options
+      - brown sugar fresh milk / 黑糖鲜奶 - $5.99 | (optional): group A options
+      - strawberry iced tea / 草莓冰茶 - $5.99 | (optional): group A options
+- topic_name: Slush / 冰沙系列 / Smoothies
+  topic_facts:
+    - 'Slush / 冰沙系列 / Smoothies. Blended ice drinks in fruit flavors with a choice of toppings. Keywords: Mango Slush; Strawberry Slush; Lychee Jelly; Popping Boba; Milkcap; Red Bean'
+  confidence: 100
+  source: menu15
+  created_at: '2026-03-03T06:44:45.896400'
+  updated_at: '2026-03-03T06:44:45.896403'
+  labels:
+    - rag_context
+    - rag_context_menu
+  topic_summary: |-
+    ## Slush (冰沙系列)
+    - Group B | lychee jelly/椰果 +$0.50, popping boba/爆爆珠 +$0.50, milkcap/奶盖 +$0.50, red bean/红豆 +$0.50
+      - mango slush / 芒果满满冰沙 - $5.99 | (required, pick 3-4, can repeat): group B options
+      - strawberry slush / 草莓满满冰沙 - $5.99 | (required, pick 1): group B options
+- topic_name: Gelato / 意式冰淇淋 / Ice Cream
+  topic_facts:
+    - 'Gelato / 意式冰淇淋 / Ice Cream. Italian-style ice cream in various flavors. Keywords: Chocolate Truffle; Matcha Ice Cream; Hojicha Ice Cream'
+  confidence: 100
+  source: menu16
+  created_at: '2026-03-03T06:44:48.536494'
+  updated_at: '2026-03-03T06:44:48.536498'
+  labels:
+    - rag_context
+    - rag_context_menu
+  topic_summary: |-
+    ## Gelato (意式冰淇淋)
+    - chocolate truffle / 巧克力松露冰淇淋 - $5.49
+    - matcha ice cream / 抹茶冰淇淋 - $4.90 | (required, pick 1): level1/一度, level2/二度, level3/三度
+    - hojicha ice cream / 焙茶冰淇淋 - $4.90
+- topic_name: Soju / 烧酒 / Korean & Japanese Alcohol
+  topic_facts:
+    - 'Soju / 烧酒 / Korean & Japanese Alcohol. A selection of Korean Soju in various flavors, plus Japanese plum wine and sake. Keywords: Soju; Original Soju; Strawberry Soju; Peach Soju; Lychee Soju; Yogurt Soju; Watermelon Soju; Green Grape Soju; Pineapple Soju; Blueberry Soju; Passionfruit Soju; Apple Soju; Plum Soju; Mandarin Orange Soju; Plum Wine; Kurosawa Nigori; Makiri Junmai Ginjo'
+  confidence: 100
+  source: menu17
+  created_at: '2026-03-03T06:44:48.551585'
+  updated_at: '2026-03-03T06:44:48.551590'
+  labels:
+    - rag_context
+    - rag_context_menu
+  topic_summary: |-
+    ## Soju (烧酒)
+    - soju / 烧酒 - $14.99 | (required, pick 1): original/原味, strawberry/草莓, peach/桃子, lychee/荔枝, yogurt/酸奶, watermelon/西瓜, green grape/绿提, pineapple/菠萝, blueberry/蓝莓, passionfruit/百香果, apple/苹果, plum/梅子, mandarin orange/橘子
+    - plum wine / 梅子酒 - $14.99
+    - kurosawa nigori(300m) / 黑泽清酒 - $18.99
+    - makiri junmai ginjo(300ml) / 魔斩(300ml) - $21.99
+- topic_name: Soft Drinks / 饮料
+  topic_facts:
+    - 'Soft Drinks / 饮料. A selection of classic sodas, iced tea, and other non-alcoholic beverages. Keywords: Sprite; Coke; Diet Coke; Ginger Ale; Ice Tea; Wang Lao Ji Tea; Wang Zai Milk; Soy Drink; Fanta; Hot Tea'
+  confidence: 100
+  source: menu18
+  created_at: '2026-03-03T06:44:48.563745'
+  updated_at: '2026-03-03T06:44:48.563749'
+  labels:
+    - rag_context
+    - rag_context_menu
+  topic_summary: |-
+    ## Soft Drinks (饮料)
+    - sprite / 雪碧 - $1.99
+    - coke / 可乐 - $1.99
+    - diet coke / 健怡可乐 - $1.99
+    - ginger ale / 姜汁汽水 - $1.99
+    - ice tea / 柠檬冰茶 - $1.99
+    - wang lao ji tea / 王老吉 - $2.99
+    - wang zai milk / 旺仔牛奶 - $2.99
+    - soy drink / 豆奶 - $2.99
+    - fanta / 芬达 - $1.99
+    - hot tea / 热茶 - $2.99
+- topic_name: Hungry Panda / 熊猫外卖 / Delivery Combos
+  topic_facts:
+    - 'Hungry Panda / 熊猫外卖 / Delivery Combos. Special combination meals available for delivery, featuring a choice of main dishes and sides. Keywords: Combo A; Combo B; Teppan Chicken Bucket; Cold Mix Cucumber; Stir-fried Yellow Beef; White Rice'
+  confidence: 100
+  source: menu19
+  created_at: '2026-03-03T06:44:48.576357'
+  updated_at: '2026-03-03T06:44:48.576361'
+  labels:
+    - rag_context
+    - rag_context_menu
+  topic_summary: |-
+    ## Hungry Panda (熊猫外卖)
+    - combo a / 套餐A - $18.99 | include/包含 (required, pick 2): teppan chicken bucket/铁板鸡架桶, cold mix cucumber/凉拌黄瓜, stir-fried yellow beef/小炒黄牛肉, white rice/白饭
+    - combo b / 套餐B - $18.99 | include/包含 (required, pick 2): teppan chicken bucket/铁板鸡架桶, cold mix cucumber/凉拌黄瓜, stir-fried yellow beef/小炒黄牛肉, white rice/白饭
+- topic_name: Summer Special Raw Skewers Combo / 夏日特价生串套餐
+  topic_facts:
+    - 'Summer Special Raw Skewers Combo / 夏日特价生串套餐. Large combo packages of uncooked skewers for home grilling, plus some cooked sides. Keywords: Raw Skewers Combo 1; Raw Skewers Combo 2; Half A Dozen Fresh Oysters; Raw Beef Skewer; Raw Lamb Skewer; Raw Chicken Skewer; Raw Squid Tentacles; Raw Fish Tofu; Raw Orleans Chicken Wings; Raw Chicken Feet; Raw Mini Sausage; Egg Fried Rice; Cucumber; Grilled Oyster; Lamb Skewer'
+  confidence: 100
+  source: menu20
+  created_at: '2026-03-03T06:44:48.589383'
+  updated_at: '2026-03-03T06:44:48.589389'
+  labels:
+    - rag_context
+    - rag_context_menu
+  topic_summary: |-
+    ## Summer Special Raw Skewers Combo (夏日特价生串套餐)
+    - raw skewers combo 1 / 生串套餐一 - $100.00 | includes: raw beef skewer 5pcs/生牛肉串5串, raw lamb skewer 5pcs/生羊肉串5串, raw chicken skewer 5pcs/生鸡肉串5串, raw squid tentacles 5pcs/生鱿鱼须5串, raw fish tofu 5pcs/生鱼豆腐5串, raw orleans chicken wings 5pcs/生奥尔良鸡翅5串, raw chicken feet 5pcs/生鸡爪5串, raw mini sausage 3pcs/生亲亲肠3串, fried rice with egg (cooked) 1 portion/蛋炒饭（熟食）1份, cucumber (cold dish) 1 portion/凉拌黄瓜（凉菜）1份
+    - raw skewers combo 2 / 生串套餐二 - $150.00 | includes: raw beef skewer 10pcs/生牛肉串10串, raw lamb skewer 10pcs/生羊肉串10串, raw chicken skewer 10pcs/生鸡肉串10串, raw squid tentacles 10pcs/生鱿鱼须10串, raw fish tofu 10pcs/生鱼豆腐10串, raw orleans chicken wings 5pcs/生奥尔良鸡翅5串, raw chicken feet 5pcs/生鸡爪5串, raw mini sausage 3pcs/生亲亲肠5串, fried rice with egg (cooked) 1 portion/蛋炒饭（熟食）1份, cucumber (cold dish) 1 portion/凉拌黄瓜（凉菜）1份
+    - half a dozen fresh oysters (with lamb skewer 10pcs) / 半打新鲜生蚝（送10串羊肉串） - $50.00 | includes: grilled oyster (garlic) 6pcs/新鲜蒜蓉生蚝6个, lamb skewer 10pcs/羊肉串10串
+- topic_name: Spicy Double Combo Set / 热辣双人行套餐 / Spicy Combo for Two
+  topic_facts:
+    - 'Spicy Double Combo Set / 热辣双人行套餐 / Spicy Combo for Two. Set meals for two people featuring a combination of spicy entrees, sides, and drinks. Keywords: Spicy Double Combo A; Spicy Double Combo B; Spicy Szechuan Boil Grouper Fish Fillet; Cucumber Salad; Pan-fried Chicken Skeleton; White Rice; Strawberry Slush; Spicy Rice Noodles Soup; Egg Fried Rice'
+  confidence: 100
+  source: menu21
+  created_at: '2026-03-03T06:44:48.602236'
+  updated_at: '2026-03-03T06:44:48.602240'
+  labels:
+    - rag_context
+    - rag_context_menu
+  topic_summary: |-
+    ## Spicy Double Combo Set (热辣双人行套餐)
+    - spicy double combo a / 热辣A餐 - $55.00 | includes: spicy szechuan boil grouper fish fillet/水煮斑鱼片, cucumber salad/凉拌黄瓜, pan-fried chicken skeleton/铁板鸡架桶, white rice*2/白饭2份, strawberry slush *2/草莓冰沙2杯
+    - spicy double combo b / 热辣B餐 - $55.00 | includes: spicy rice noodles soup/香辣米线, egg fried rice/蛋炒饭, pan-fried chicken skeleton/铁板鸡架桶, cucumber salad/凉拌黄瓜, strawberry slush *2/草莓冰沙2杯
+- topic_name: Open Items / 开价菜 / Market Price Items
+  topic_facts:
+    - 'Open Items / 开价菜 / Market Price Items. Special items whose price varies based on market availability. Keywords: Open Items; Sweet Soup Balls'
+  confidence: 100
+  source: menu22
+  created_at: '2026-03-03T06:44:48.614256'
+  updated_at: '2026-03-03T06:44:48.614259'
+  labels:
+    - rag_context
+    - rag_context_menu
+  topic_summary: |-
+    ## Open Items (开价菜)
+    - open items / 开价菜 - market price
+    - sweet soup balls / 汤圆 - market price
+- topic_name: w1s2_confirm_slots_task
+  topic_facts:
+    - w1s2_confirm_slots_task
+  confidence: 100
+  source: ' '
+  created_at: '2026-03-03T07:14:30.179237'
+  updated_at: '2026-03-03T07:14:30.179240'
+  labels:
+    - restaurant_industry
+    - Default Scenario
+    - w1_book_table_workflow
+    - task_object_format
+  topic_summary: |-
+    {
+      "task_idn": "w1s2_confirm_slots_task",
+      "receiver_worker_idn": "MagicWorker",
+      "receiver_task_idn": "w1s3_reserve_table_task",
+      "second_receiver_worker_idn": "NO_WORKER",
+      "second_receiver_task_idn": "NO_TASK",
+      "task_description": "Here CW confirms the slots with User and sends them to MW to book in Opentable",
+      "owner_send_due": "ASAP",
+      "owner_task_start_user_message": " ",
+      "owner_task_send_user_message": " ",
+      "info": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "task_idn": {
+              "type": "string",
+              "enum": ["w1s2_confirm_slots_task"],
+              "description": "AF, always set this field to w1s2_confirm_slots_task"
+            },
+            "reservation_date": {
+              "type": "string",
+              "description": "If the user says Tomorrow or this/next Friday you must convert it into a calendar date YYYY-MM-DD considering the conversation.date and <Calendar>. Or use the date reconfirmed by the ConvoAgent."
+            },
+            "reservation_time": {
+              "type": "string",
+              "description": "Put only last approved by user time in 12-hour format. Example: 6:00 PM, 9: AM"
+            },
+            "reservation_datetime": {
+              "type": "string",
+              "description": "You must convert the reservation_date and the reservation_time into ISO 8601 (ex: 2024-05-28T18:30:00.000-07:00) considering the conversation.timezone"
+            },
+            "number_of_guests": {
+              "type": "string",
+              "description": "Number of guests for the reservation."
+            },
+            "user_reservation_comments": {
+              "type": "string",
+              "description": "Preferred setting outdoor, indoor, special occasion, etc."
+            },
+            "user_phone": {
+              "type": "string",
+              "description": "User's phone number number in the \"E.164\" format (without \"+\", with country code). Default country code is 1 but it may be different."
+            },
+            "user_name": {
+              "type": "string",
+              "description": "User's full name. Required to fill in first and last name. If the user does not provide a last name, put the first name twice."
+            },
+            "user_confirmation": {
+              "type": "boolean",
+              "description": "Set true only when you see in the **conversation** that ConvoAgent has asked the user if he can proceed with the booking, and the user has given permission. Otherwise, set it to false."
+            },
+            "required_fields_missing": {
+              "type": "boolean",
+              "description": "If all required fields in your object are filled, set this field to false. Set this to true if based on the provided <Conversation> you cannot fill any required field."
+            },
+            "details_to_reconfirm": {
+              "type": "string",
+              "description": "If any required fields are missing, provide their names in a human-readable format, separated by commas. For example: User Phone, User Confirmation. Otherwise set to No missing fields"
+            }
+          },
+          "required": [
+            "task_idn",
+            "reservation_date",
+            "reservation_time",
+            "reservation_datetime",
+            "number_of_guests",
+            "user_phone",
+            "user_name",
+            "user_confirmation",
+            "required_fields_missing"
+          ]
+        }
+      }
+    }
+- topic_name: w1s3_reserve_table_task
+  topic_facts:
+    - w1s3_reserve_table_task
+  confidence: 100
+  source: ' '
+  created_at: '2026-03-03T07:14:30.293692'
+  updated_at: '2026-03-03T07:14:30.293695'
+  labels:
+    - restaurant_industry
+    - Default Scenario
+    - w1_book_table_workflow
+    - task_instruction
+  topic_summary: |-
+    Your objective is to create a restaurant reservation based on task context provided by strictly following instructions below.
+
+    # **STEP 1:** Assemble and go to book_url
+    You must assemble the `book_url` by your own (as described below) and execute a command to open it.
+
+    ## **Assembling book_url**
+
+    *Note: In your explanation, write that you constructed a booking url, mention the time and number of people you are about to book.*
+
+    ### **Template**
+    `https://www.google.com/maps/reserve/v/dine/c/ ?hl=en&ssst=ZZZZZZZZZZZZ&ps=CCCCCCCCCCCCC`
+
+    **Where:**
+    - `ZZZZZZZZZZZZ` (`ssst` query parameter) is the `reservation_datetime` from `INPUT_VALUES`, for which you need to make sure to escape special characters. Example: `2024-06-25T16:30:00.000-07:00` turns to `2024-06-25T16%3A30%3A00.000-07%3A00`.
+    - `CCCCCCCCCCCCC` (`ps` query parameter) is the integer `number_of_guests` from `INPUT_VALUES`.
+    - In `ssst` query parameter, you should use timezone as is. The time provided already in specified timezone, so you don't need to somehow convert it. For example: if the provided time is `2024-06-25T16:30:00.000-07:00`, you must insert it in `book_url` template as `2024-06-25T16%3A30%3A00.000-07%3A00`
+
+    ### **Example of assembled book_url**
+    https://www.google.com/maps/reserve/v/dine/c/ ?hl=en&ssst=2024-05-26T00%3A30%3A00.000Z&ps=5
+
+    ---
+
+    # **STEP 2:** Click on time slot button with corresponding **reservation_time** from **INPUT_VALUES**
+    - If seating preference is provided (**reservation_time** from **INPUT_VALUES**) in **INPUT_VALUES**, you must click the time slot under selected seating option using room names from **TASK_CONTEXT**.
+      - Issue only **CLICK** on the time slot, it should be single command.
+      - In your explanation, write that you clicked on the time slot requested by the task.
+    - If the **CURRENT BROWSER CONTENT** does not contains a **reservation_time** from **INPUT_VALUES** button available, issue OUTPUT command with "Failed: selected date is unavailable" argument.
+
+    ---
+
+    # **STEP 3:** Prefer OpenTable if you are asked to continue with OpenTable or Yelp and proceed to **STEP 4**
+    - In your explanation, write that as you were asked to choose between OpenTable and Yelp and you chosen **OpenTable**.
+    - If no user info form or OpenTable / Yelp select appear, it means that the time slot is unavailable, and you must issue **OUTPUT** that you failed to create a reservation due to absence of requested time slot.
+
+    ---
+
+    # **STEP 4:** Type user data from **INPUT_VALUES**, type reservation notes if they are present in **INPUT_VALUES**, click Reserve
+    - In your explanation, write what exactly you have put to fields and notice that you clicked Reserve button in the end.
+      - You can only type in <input> tags.
+      - If there is no corresponding fields (<input> tags) present in **CURRENT BROWSER CONTENT** to fill the data from **INPUT_VALUES**: **OUTPUT** that the form is not available with failed status.
+
+    ---
+
+    # **STEP 5:** Issue **OUTPUT** according to new browser content
+    - If the "Reservation confirmed" text is present in **CURRENT BROWSER CONTENT**, it means that the booking was completed successful and your **OUTPUT** must include reservation details you just created.
+    - If you don't see a confirmation of the reservation, **OUTPUT** a summary what you currently see in your browser content along with "Failed" status.
+
+    ---
+
+    # **Success Criteria**
+
+    All of the criteria below must be met to finish the job successfully.
+
+    ## **Success** status criteria
+    - A valid **book_url** was successfully opened
+    - A reservation slot is present in **CURRENT BROWSER CONTENT** and is successfully clicked
+    - The user data from **INPUT_VALUES** were successfully and correctly typed in a corresponding field and form is submitted
+    - "Reservation confirmed" is present in **CURRENT BROWSER CONTENT**
+- topic_name: w1s3_reserve_table_task
+  topic_facts:
+    - w1s3_reserve_table_task
+  confidence: 100
+  source: ' '
+  created_at: '2026-03-03T07:14:30.399775'
+  updated_at: '2026-03-03T07:14:30.399777'
+  labels:
+    - restaurant_industry
+    - Default Scenario
+    - w1_book_table_workflow
+    - task_object_format
+  topic_summary: |-
+    {
+      "task_idn": "w1s3_reserve_table_task",
+      "receiver_worker_idn": "SmsWorker",
+      "receiver_task_idn": "w1s4_send_sms_user_task",
+      "second_receiver_worker_idn": "NO_WORKER",
+      "second_receiver_task_idn": "NO_TASK",
+      "task_description": "Here MW books the slot at Opentable and sends the result to CW",
+      "owner_send_due": "ASAP",
+      "owner_task_start_user_message": " ",
+      "owner_task_send_user_message": " ",
+      "info": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "task_idn": {
+              "type": "string",
+              "enum": ["w1s3_reserve_table_task"],
+              "description": "AF, always set this field to w1s3_reserve_table_task"
+            },
+            "user_phone": {
+              "type": "string",
+              "description": "AF, Set to user_phone from the TASK_CONTEXT"
+            },
+            "user_name": {
+              "type": "string",
+              "description": "AF, Set to user_name from the TASK_CONTEXT"
+            },
+            "time_slots_booked": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "date": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "time_slot": {
+                    "type": "string"
+                  },
+                  "location": {
+                    "type": "string",
+                    "description": "Try to know location of the slot from BOT RESPONSE. Otherwise it should be optional missing."
+                  },
+                  "number_of_guests": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "date",
+                  "time_slot",
+                  "number_of_guests"
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+- topic_name: MagicWorker_w1s3_reserve_table_task
+  topic_facts:
+    - MagicWorker_w1s3_reserve_table_task
+  confidence: 100
+  source: ' '
+  created_at: '2026-03-03T07:14:30.493274'
+  updated_at: '2026-03-03T07:14:30.493277'
+  labels:
+    - restaurant_industry
+    - Default Scenario
+    - w1_book_table_workflow
+    - scripts
+  topic_summary: |-
+    await page.goto("https://www.google.com/maps/reserve/v/dine/c/5tHzSy086ZM?ssst=2024-07-23T20%3A00%3A00.000Z&ps=4")
+    await page.wait_for_load_state()
+    #screenshot#
+    await page.click("button[data-room-name='Restaurant']:has-text('6:00 PM')") # exclude [data-room-name='Restaurant'] if there is only one seating option in TASK CONTEXT
+    await page.wait_for_load_state()
+    #screenshot#
+    await page.fill("input[aria-label='First name']", "Nina")
+    await page.fill("input[aria-label='Last name']", "Nonenko")
+    await page.fill("input[aria-label='Phone number']", "+79998887766")
+    await page.fill("input[aria-label='Email']", "ninanonenko@gmail.com")
+    #screenshot#
+    await page.click("button:has-text('Reserve')")
+    await page.locator('[role="dialog"]', has_text="Reservation confirmed").wait_for(timeout=10000)
+- topic_name: w1s4_send_sms_user_task
+  topic_facts:
+    - w1s4_send_sms_user_task
+  confidence: 100
+  source: ' '
+  created_at: '2026-03-03T07:14:30.589682'
+  updated_at: '2026-03-03T07:14:30.589688'
+  labels:
+    - restaurant_industry
+    - Default Scenario
+    - w1_book_table_workflow
+    - task_context
+  topic_summary: |-
+    {
+      "phone_number_rule": "user_phone",
+      "sms_text_template": "Crimson Wok - Chinatown Reservation Confirmation! NAME: [user_name] PHONE: [user_phone] PARTY SIZE: [number_of_guests] DATE: [reservation_date] TIME: [reservation_time]."
+    }
+- topic_name: w1s4_send_sms_user_task
+  topic_facts:
+    - w1s4_send_sms_user_task
+  confidence: 100
+  source: ' '
+  created_at: '2026-03-03T07:14:30.683141'
+  updated_at: '2026-03-03T07:14:30.683144'
+  labels:
+    - restaurant_industry
+    - Default Scenario
+    - w1_book_table_workflow
+    - task_object_format
+  topic_summary: |-
+    {
+      "task_idn": "w1s4_send_sms_user_task",
+      "receiver_worker_idn": "NO_WORKER",
+      "receiver_task_idn": "NO_TASK",
+      "second_receiver_worker_idn": "NO_WORKER",
+      "second_receiver_task_idn": "NO_TASK",
+      "task_description": "SW is sending this SMS to the User",
+      "owner_send_due": "ASAP",
+      "owner_task_start_user_message": " ",
+      "owner_task_send_user_message": " ",
+      "info": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "task_idn": {
+              "type": "string",
+              "enum": ["w1s4_send_sms_user_task"],
+              "description": "AF, Always set it to w1s4_send_sms_user_task"
+            }
+          },
+          "required": []
+        }
+      },
+      "required": [
+        "task_idn",
+        "receiver_worker_idn",
+        "info"
+      ]
+    }

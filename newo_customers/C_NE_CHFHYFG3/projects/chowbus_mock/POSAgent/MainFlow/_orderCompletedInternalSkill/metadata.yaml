@@ -1,0 +1,9 @@
+id: 8ae609c9-6bd0-477e-a4e0-55301bf5ad25
+idn: _orderCompletedInternalSkill
+title: ""
+runner_type: guidance
+model:
+  provider_idn: openai
+  model_idn: gpt4o
+parameters: []
+path: ""

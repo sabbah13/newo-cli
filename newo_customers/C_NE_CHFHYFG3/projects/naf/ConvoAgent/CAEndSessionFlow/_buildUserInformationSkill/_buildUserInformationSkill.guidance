@@ -1,0 +1,19 @@
+{{!-- TODO: Refactor, make a better solution (caching is needed) --}}
+
+{{#system~}}
+user.full_name: {{_utilsPersonaAttributeGetWithDefaultsSkill(id=userId, field="full_name")}}
+
+user.email: {{_utilsPersonaAttributeGetWithDefaultsSkill(id=userId, field="email")}}
+
+user.language: {{_utilsPersonaAttributeGetWithDefaultsSkill(id=userId, field="user_language")}}
+
+user.detected_phone_number_country_code: {{_utilsPersonaAttributeGetWithDefaultsSkill(id=userId, field="detected_phone_number_country_code")}}
+user.detected_phone_number_with_country_code: {{_utilsPersonaAttributeGetWithDefaultsSkill(id=userId, field="detected_phone_number_with_country_code")}}
+user.detected_phone_number_without_country_code: {{_utilsPersonaAttributeGetWithDefaultsSkill(id=userId, field="detected_phone_number_without_country_code")}}
+
+user.provided_phone_number_country_code: {{_utilsPersonaAttributeGetWithDefaultsSkill(id=userId, field="provided_phone_number_country_code")}}
+user.provided_phone_number_with_country_code: {{_utilsPersonaAttributeGetWithDefaultsSkill(id=userId, field="provided_phone_number_with_country_code")}}
+user.provided_phone_number_without_country_code: {{_utilsPersonaAttributeGetWithDefaultsSkill(id=userId, field="provided_phone_number_without_country_code")}}
+{{~/system}}
+
+{{SetPersonaAttribute(id=userId, field="_private_dynamic_user_information", value=GetCurrentPrompt())}}

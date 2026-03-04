@@ -1,0 +1,9 @@
+id: 5e8985d0-c4ef-4a9c-800f-6fb88d654dba
+idn: AnalyzeConversationSkill
+title: ""
+runner_type: guidance
+model:
+  provider_idn: openai
+  model_idn: gpt4o
+parameters: []
+path: ""

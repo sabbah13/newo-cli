@@ -1,0 +1,9 @@
+id: caec4103-2096-4eea-ae63-adeb946ea1c5
+idn: SendAgentMessageSkill
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

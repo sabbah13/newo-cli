@@ -1,0 +1,9 @@
+id: 364d1d86-7882-4cd8-8ce1-ca13d0cc6022
+idn: prepare_connectors_workflow_builder_integration
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

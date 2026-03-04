@@ -1,0 +1,22 @@
+{# Check if NAF value is NOT empty #}
+{% set naf_value = GetCustomerAttribute(field=naf_field) %}
+{% if naf_value and naf_value.strip() %}
+    {{Return(val="")}}
+{% endif %}
+
+{# Reset it anyway as it might be fully absent #}
+{# _utilsCustomerAttributeSetIfEmptySkill, in fact #}
+{# previous ac attr was empty and empty was always created #}
+{# Check if it is NOT a first init, otherwise _utilsCustomerAttributeSetIfEmptySkill and exit #}
+{% if is_first_init_done | string == "True" %}
+    {{SetCustomerAttribute(field=naf_field, value=default)}}
+    {{Return(val="")}}
+{% endif %}
+
+{# Check for no option #}
+{% set ac_value = GetCustomerAttribute(field=ac_field) %}
+{% if not ac_value or not ac_value.strip() %}
+    {% set ac_value = default %}
+{% endif %}
+
+{{SetCustomerAttribute(field=naf_field, value=ac_value)}}

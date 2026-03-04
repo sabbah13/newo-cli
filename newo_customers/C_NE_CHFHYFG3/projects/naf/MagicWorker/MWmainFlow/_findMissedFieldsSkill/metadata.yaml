@@ -1,0 +1,15 @@
+id: a59001ff-acfb-4c29-b607-cb7901de774f
+idn: _findMissedFieldsSkill
+title: _findMissedFieldsSkill
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: 5f3357d3-16a3-49be-a22f-7e7084ff932a
+    name: taskIdn
+    default_value: " "
+  - id: e3de4b16-4f5f-4772-8bfe-064edbab55ed
+    name: taskObject
+    default_value: " "
+path: ""

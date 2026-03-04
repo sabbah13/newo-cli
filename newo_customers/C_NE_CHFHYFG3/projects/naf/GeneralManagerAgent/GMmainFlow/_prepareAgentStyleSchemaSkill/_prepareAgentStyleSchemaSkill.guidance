@@ -1,0 +1,44 @@
+{{#system~}}
+{
+  "type": "object",
+  "properties": {
+    "analysis": {
+      "type": "string",
+      "description": "Briefly explain your reasoning and approach for determining each field in this schema."
+    },
+    "defining_possible": {
+      "type": "boolean",
+      "description": "Based on your analysis, is it possible to identify the country? Set to `true` if yes, otherwise set to `false`."
+    },
+    "country": {
+      "type": "string",
+      "description": "If `defining_possible` is `true`, provide the name of the identified country based on the given information. Otherwise, leave this field empty."
+    },
+    "native_language": {
+      "type": "string",
+      "description": "If the `country` is identified, specify the primary (native) language spoken in that country. Otherwise, leave this field empty."
+    },
+    "accent": {
+      "type": "string",
+      "description": "Only include this field if the `native_language` is spoken across multiple regions with distinct, widely recognized accents - such as English, Spanish, or French - and if specifying the accent adds meaningful context (e.g., 'British' vs. 'American'). Do not specify an accent when the language is primarily spoken in one region or when the accent is already obvious from the country (e.g., do not use 'American' if the country is the USA). Leave this field empty in such cases."
+    },
+    "additional_languages": {
+      "type": "array",
+      "description": "If the `country` is identified, list any additional languages commonly spoken in that country, excluding the `native_language`. If no additional languages are commonly spoken or if the country is not identified, leave this field empty.",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "analysis",
+    "defining_possible",
+    "country",
+    "native_language",
+    "accent",
+    "additional_languages"
+  ]
+}
+{{~/system}}
+
+{{Return(val=GetCurrentPrompt())}}

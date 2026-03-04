@@ -1,0 +1,12 @@
+id: c6d96a85-752e-4d0d-ab08-c8ba96ae9358
+idn: _validatePhoneNumberSkill
+title: _validatePhoneNumberSkill
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: 3267c24a-cc17-41b6-b058-9fd87671039d
+    name: phoneNumber
+    default_value: " "
+path: ""

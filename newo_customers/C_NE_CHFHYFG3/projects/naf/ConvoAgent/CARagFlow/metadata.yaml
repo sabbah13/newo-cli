@@ -1,0 +1,19 @@
+id: f8201bef-5564-4638-a3df-c8ef132827e5
+idn: CARagFlow
+title: CARagFlow
+description: ""
+default_runner_type: guidance
+default_model:
+  provider_idn: google
+  model_idn: gemini25_flash
+events:
+  - id: f334f1cd-6935-43eb-8607-774f789a2be5
+    description: null
+    idn: prepare_rag_context_command
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: PrepareRagContext
+    state_idn: null
+    integration_idn: null
+    connector_idn: null
+state_fields: []

@@ -1,0 +1,9 @@
+{% set customer_info = GetCustomerInfo() %}
+{% set platform_links = customer_info.platform_links %}
+
+{% if platform_links %}
+    {% set portal_url = platform_links.portal.rstrip("/") %}
+    {{ Return(val=portal_url) }}
+{% else %}
+    {{ Return(val="") }}
+{% endif %}

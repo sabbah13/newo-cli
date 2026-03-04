@@ -1,0 +1,12 @@
+id: cbb978cd-c1a4-4a99-88aa-18ccc6aa700a
+idn: get_user_phone_number
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: 922d10d4-d759-40a2-9bd5-68b87916c246
+    name: user_id
+    default_value: ""
+path: ""

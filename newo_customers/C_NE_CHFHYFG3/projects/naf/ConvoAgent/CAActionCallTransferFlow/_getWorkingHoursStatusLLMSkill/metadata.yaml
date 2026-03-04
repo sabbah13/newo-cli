@@ -1,0 +1,9 @@
+id: bb51b667-8408-4b82-a3dc-c393246f4f76
+idn: _getWorkingHoursStatusLLMSkill
+title: ""
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

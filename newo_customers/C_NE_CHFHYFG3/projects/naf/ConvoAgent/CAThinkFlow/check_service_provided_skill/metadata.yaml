@@ -1,0 +1,12 @@
+id: 70ca61cd-d549-4c29-92b1-38aef59ac54b
+idn: check_service_provided_skill
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: b860ae54-609a-49fd-bc9d-e27c528111ef
+    name: memory_conversation
+    default_value: ""
+path: ""

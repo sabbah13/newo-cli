@@ -1,0 +1,9 @@
+id: b334c941-a554-45c0-b5e0-953826e43b22
+idn: _migration_2_5_128_restaurant_schema
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

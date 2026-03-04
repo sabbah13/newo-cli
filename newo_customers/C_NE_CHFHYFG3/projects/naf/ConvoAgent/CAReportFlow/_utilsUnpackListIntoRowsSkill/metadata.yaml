@@ -1,0 +1,12 @@
+id: c995cde4-2f9a-4f0a-ae34-a806d86b88f9
+idn: _utilsUnpackListIntoRowsSkill
+title: ""
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: 84edcda4-1d63-4b12-b834-d02763d2f910
+    name: valuesList
+    default_value: " "
+path: ""

@@ -1,0 +1,9 @@
+id: 0f53629e-6808-4b71-8039-ff5d88af03af
+idn: _prepareAttributesSalesSMSContentSkill
+title: _prepareAttributesSalesSMSContentSkill
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

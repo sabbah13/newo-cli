@@ -1,0 +1,9 @@
+id: 1f567c6d-49bf-4784-9de4-4f6571a1b851
+idn: BuildTodaysScheduleSchemaSkill
+title: BuildTodaysScheduleSchemaSkill
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

@@ -1,0 +1,25 @@
+{# Setup `API Integration` Connectors #}
+{{prepare_connectors_api_integration()}}
+
+{# Setup `Customer Intercom Integration` Connectors #}
+{{prepare_connectors_customer_intercom_integration()}}
+
+{% set customer_idn = GetCustomer().idn %}
+
+{% set arguments = {
+    "customer_idn": customer_idn,
+    "incoming_webhook": GetWebhook(webhookIdn="outbound_call_webhook", webhookType="incoming").url | string,
+    "agent_creator_webhook": GetWebhook(webhookIdn="agent_creator_webhook", webhookType="incoming").url | string
+} %}
+
+{% set agent_creator_actor_id = GetCustomerAttribute(field="agent_creator_actor_id") %}
+
+{{SendCommand(
+    commandIdn="send_actor_event",
+    integrationIdn="customer_intercom",
+    connectorIdn="agent_creator",
+    userPersonaId=CreatePersona(name="InitPersona") | string,
+    toActorId=agent_creator_actor_id,
+    eventIdn="create_customer_finished",
+    eventArguments=json.dumps(arguments, ensure_ascii=False, indent=2)
+)}}

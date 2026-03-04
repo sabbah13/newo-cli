@@ -1,0 +1,9 @@
+id: 7ffc775e-5b52-4b42-b1cd-5eb8b6d0644d
+idn: default_itm_nwh_beauty
+title: ""
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

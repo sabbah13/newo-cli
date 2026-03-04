@@ -1,0 +1,15 @@
+id: 000454e8-8878-46be-8042-8ebbbac20c8f
+idn: apply_migrations
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: 9ef184f1-6670-45b2-b021-d5bea29f76cd
+    name: previous_version
+    default_value: ""
+  - id: cb6061d5-06ec-4e02-875a-8a56163de881
+    name: current_version
+    default_value: ""
+path: ""

@@ -1,0 +1,9 @@
+id: eeb92b5e-db36-44cd-904d-88156e06f659
+idn: _prepareAttributesTechnologySkill
+title: _prepareAttributesTechnologySkill
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

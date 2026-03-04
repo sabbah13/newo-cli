@@ -1,0 +1,9 @@
+id: 5f5b9f19-9d6a-49b4-8d35-d06554857944
+idn: UpdateMenuNSLSkill
+title: ""
+runner_type: nsl
+model:
+  provider_idn: openai
+  model_idn: gpt4o
+parameters: []
+path: ""

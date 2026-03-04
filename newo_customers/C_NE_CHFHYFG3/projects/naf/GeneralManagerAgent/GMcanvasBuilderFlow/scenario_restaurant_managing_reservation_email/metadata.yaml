@@ -1,0 +1,9 @@
+id: 135ff618-7d60-49fb-ac58-03f155a1ef86
+idn: scenario_restaurant_managing_reservation_email
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

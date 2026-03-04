@@ -1,0 +1,9 @@
+id: 7debe388-01c8-4b9b-9717-9c97f7a71121
+idn: procedure_common_gather_email
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

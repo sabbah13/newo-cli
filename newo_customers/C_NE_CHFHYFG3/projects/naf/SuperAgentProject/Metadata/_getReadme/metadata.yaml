@@ -1,0 +1,9 @@
+id: b5364971-b06a-477f-89ca-145565cff9bb
+idn: _getReadme
+title: ""
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

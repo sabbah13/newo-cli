@@ -1,0 +1,9 @@
+id: c37f32ef-8028-42b4-8a4a-4e5b5c10c585
+idn: _validateOrderSkill
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

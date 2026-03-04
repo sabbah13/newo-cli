@@ -1,0 +1,9 @@
+id: d9f12d41-1b18-4ba6-be4b-2ce9d29a2687
+idn: ReceiveConversation
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

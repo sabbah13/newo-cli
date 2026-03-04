@@ -1,0 +1,1 @@
+{{SendSystemEvent(eventIdn="urgent_message", connectorIdn="system", baseInstruction=Concat("Say that you just received the confirmation from the system that the user just submitted the form. Thank the user for the order and inform them that the order will arrive approximately in ", GetTriggeredAct(fields=["eta"])), uninterruptible="True")}}

@@ -1,0 +1,12 @@
+id: 3f910ab7-f47f-4b2b-af21-b2fa4f6dcdb0
+idn: utils_get_and_set_last_convo_actor_id
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: 08112fac-20e8-443a-9ede-803c9a997568
+    name: user_id
+    default_value: ""
+path: ""

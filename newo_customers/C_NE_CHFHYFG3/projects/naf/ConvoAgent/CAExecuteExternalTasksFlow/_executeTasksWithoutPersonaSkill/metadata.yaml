@@ -1,0 +1,15 @@
+id: 4f746eea-f450-46a5-a94e-ecc20cecbb90
+idn: _executeTasksWithoutPersonaSkill
+title: ""
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: 76e7c03e-c52f-4002-95a0-be2d1709085b
+    name: tasksToExecute
+    default_value: " "
+  - id: bc491be0-1627-4daa-a730-c64f4b3624fe
+    name: inputTasks
+    default_value: " "
+path: ""

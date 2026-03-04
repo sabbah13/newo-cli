@@ -1,0 +1,9 @@
+id: 8392c842-cb27-4902-9874-7c6d6a7dd572
+idn: default_itm_wh_home_service
+title: ""
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

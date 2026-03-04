@@ -1,0 +1,15 @@
+id: fa1377ef-d021-49dc-9278-c2e556fae4a8
+idn: utils_build_intent_type_map_llm_filtered
+title: ""
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: 6b0869e7-3d7b-426d-ae02-ee20b269d2b9
+    name: filter
+    default_value: ""
+  - id: 4991fb60-536f-4c7c-be48-dceda5944443
+    name: base
+    default_value: ""
+path: ""

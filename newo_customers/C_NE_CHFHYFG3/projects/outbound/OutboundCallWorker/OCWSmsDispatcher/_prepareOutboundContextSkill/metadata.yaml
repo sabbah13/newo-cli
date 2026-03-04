@@ -1,0 +1,18 @@
+id: 60022372-c270-44c3-9232-e55439125899
+idn: _prepareOutboundContextSkill
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: 8fe70abf-1b84-406d-ba76-866e0ebcf683
+    name: actorId
+    default_value: ""
+  - id: 77cd7e33-65b4-4ecb-9eaa-3e56eb495e35
+    name: messageReason
+    default_value: ""
+  - id: 22ab3d2d-d704-414e-8808-de481527d219
+    name: userId
+    default_value: ""
+path: ""

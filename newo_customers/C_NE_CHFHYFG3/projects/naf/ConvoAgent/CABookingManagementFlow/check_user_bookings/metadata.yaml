@@ -1,0 +1,12 @@
+id: 303a7b1b-894c-4ae8-9329-f0f22da3ca50
+idn: check_user_bookings
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: e479deff-a7b4-4e6a-b13d-9e01e4f428f0
+    name: user_id
+    default_value: ""
+path: ""

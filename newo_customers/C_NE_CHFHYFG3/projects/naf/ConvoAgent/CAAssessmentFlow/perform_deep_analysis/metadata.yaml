@@ -1,0 +1,33 @@
+id: 9d15b2cc-ee54-4116-8363-f898ef460b98
+idn: perform_deep_analysis
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: 18ad05b7-6be4-4f2a-bfbc-2b4d47a78132
+    name: scenarios
+    default_value: ""
+  - id: 9eff07c2-e847-45bc-a42b-3d3044c059cd
+    name: intent_name
+    default_value: ""
+  - id: acca03cb-dc93-4275-9e4b-588a5d0a636c
+    name: intents
+    default_value: ""
+  - id: 19b8685b-5fc5-40ac-9e28-4b104a56f3b4
+    name: main_scenario
+    default_value: ""
+  - id: 7d2b3878-f66d-43fe-aa82-832493cab7d3
+    name: report_is_sent
+    default_value: ""
+  - id: 141b8bdd-7edf-48c0-8658-924bfeee3fc4
+    name: session_short_description
+    default_value: ""
+  - id: 4db23dea-89fa-4d47-acca-55ca1a0b1968
+    name: transcript
+    default_value: ""
+  - id: 93dd8c52-dae8-444a-83b5-088ab652a77a
+    name: user_id
+    default_value: ""
+path: ""

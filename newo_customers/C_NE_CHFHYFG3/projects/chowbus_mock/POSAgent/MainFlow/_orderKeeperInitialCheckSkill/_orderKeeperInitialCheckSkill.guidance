@@ -1,0 +1,44 @@
+{{Set(name="schema", value=_orderKeeperSchemasSkill(promise="True"))}}
+
+{{#system~}}Based on the agent's <LastReply> determine if the agent is actively promising to add an item to the order or submit the order.
+
+**Guidelines for setting "promised"**:
+1. Set "promised" to `true` if the agent explicitly states that *they themselves* will add an item to the user's order or submit their order.
+  - Examples:
+    - "Give me a moment, I’ll enter your order into the system..."
+    - "...I will submit your order now..."
+    - "I will submit your pick up / delivery order now."
+    - "I'm submitting your pick up / delivery order..."
+Be careful not to set as promised if the agent stated that they are already added item / submitted the order.
+2. Set "promiseTarget" to the corresponding action the agent is commited to do.
+
+**Note:** The Agent can talk in different languages.
+
+---
+
+<LastReply>
+{{agentAnswer}}
+</LastReply>
+
+---
+
+JSON object:{{~/system}}
+
+{{Set(name="promise", value=Gen(jsonSchema=schema, validateSchema="True", temperature=0.2, topP=0, thinkingBudget=85))}}
+
+{{#if GetValueJSON(obj=promise, key="promised") == "true"}}
+  {{Set(name="promiseTarget", value=Stringify(GetValueJSON(obj=promise, key="promiseTarget")))}}
+  {{Set(name="askedToWait", value=GetValueJSON(obj=promise, key="askedToWait"))}}
+  {{#if promiseTarget == "submit_order"}}
+    {{_submitOrderSkill(userId=userId, agentAnswer=agentAnswer, memory=memory)}}
+    {{Return()}}
+  {{/if}}
+  {{#if promiseTarget == "enter_order"}}
+    {{#if askedToWait == "true"}}
+      {{_checkOrderSkill(userId=userId, agentAnswer=agentAnswer, memory=memory, askedToWait="True")}}
+    {{else}}
+      {{_checkOrderSkill(userId=userId, agentAnswer=agentAnswer, memory=memory)}}
+    {{/if}}
+    {{Return()}}
+  {{/if}}
+{{/if}}

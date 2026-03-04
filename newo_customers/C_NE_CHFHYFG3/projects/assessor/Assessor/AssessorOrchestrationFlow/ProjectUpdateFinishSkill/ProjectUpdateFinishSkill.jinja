@@ -1,0 +1,12 @@
+{{SetState(name="run_options", value=json.dumps(GetTriggeredAct().arguments, ensure_ascii=False, indent=2))}}
+
+{% set agent_persona_id = GetAgentPersona().id | string %}
+{% set run_on_update = GetPersonaAttribute(id=agent_persona_id, field="run_on_update") %}
+{% if not run_on_update.strip() or run_on_update == "False" %}
+    {{Return()}}
+{% endif %}
+
+{# wait for all intents to complete (previous queue) #}
+{{wait_run_completion()}}
+
+{{RequestFullAssessment()}}

@@ -1,0 +1,9 @@
+id: 6eb55cee-fa5a-43e2-bacc-4899561345e7
+idn: GoogleMeetingCreationErrorSkill
+title: ""
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

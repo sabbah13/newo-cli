@@ -1,0 +1,18 @@
+id: 11bf9f24-32ed-46d1-998d-1fa2a0849b0f
+idn: _noAnswerSkill
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: 34cc0d80-6093-49e8-953f-7d4042453748
+    name: taskId
+    default_value: ""
+  - id: 571996df-a3b8-42bf-93a3-67c5a2d0e102
+    name: userId
+    default_value: ""
+  - id: abcab156-db2f-4e47-9979-967caf7ebf20
+    name: reason
+    default_value: ""
+path: ""

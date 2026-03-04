@@ -1,0 +1,18 @@
+id: 4086ad2b-94e1-48cc-a829-2eb7d02c108f
+idn: define_lead
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: c32c0e12-944e-46ac-9b66-80e918c6fd2a
+    name: intent_name
+    default_value: ""
+  - id: 118fdbfe-a155-4bd4-a216-55f4740d6033
+    name: industry
+    default_value: ""
+  - id: 54ad18a7-a688-4e11-9351-5bcc426e2f54
+    name: session
+    default_value: ""
+path: ""

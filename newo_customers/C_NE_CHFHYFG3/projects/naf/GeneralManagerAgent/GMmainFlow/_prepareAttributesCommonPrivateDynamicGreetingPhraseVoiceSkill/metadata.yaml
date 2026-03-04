@@ -1,0 +1,9 @@
+id: 92282dd8-0733-44e4-bcb7-edbdda9a0af6
+idn: _prepareAttributesCommonPrivateDynamicGreetingPhraseVoiceSkill
+title: _prepareAttributesCommonPrivateDynamicGreetingPhraseVoiceSkill
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

@@ -1,0 +1,9 @@
+id: e51e38c5-a5c6-4a19-99ed-c0e57ec4a2cd
+idn: controller_save_library_item_system_batch
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

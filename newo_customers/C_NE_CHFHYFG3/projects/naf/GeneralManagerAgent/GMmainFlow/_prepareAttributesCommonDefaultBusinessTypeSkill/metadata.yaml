@@ -1,0 +1,9 @@
+id: ee1217da-5872-4d51-9d21-579a45eb1c5d
+idn: _prepareAttributesCommonDefaultBusinessTypeSkill
+title: _prepareAttributesCommonDefaultBusinessTypeSkill
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

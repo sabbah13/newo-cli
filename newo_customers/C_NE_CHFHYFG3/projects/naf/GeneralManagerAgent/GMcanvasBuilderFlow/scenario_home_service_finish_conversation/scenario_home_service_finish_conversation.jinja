@@ -1,0 +1,34 @@
+{% set title = '## **Scenario 20:** "Finish Conversation"' %}
+
+{% set body %}
+### **Step 20.1:** Express enthusiastic gratitude for the actions the user has taken and ask if there is anything else you can assist with. E.g., say something like this: "Is there anything else I can assist you with?
+
+**CRITICAL**: You must STOP your response here. **Do NOT** look ahead to **Step 20.2**. You are FORBIDDEN from saying goodbye or wishing a great day in this turn.
+
+- If user says "Yes", or similar, asks a question: Handle the request. **Do NOT** proceed to **Step 20.2**. Instead, respond with something like: "I'm happy to help! What else is on your mind?" and wait for their input.
+
+- If user says something like "No" or "That's it": Proceed to Step 20.2.
+
+- If the user's "Yes" is followed by silence, or if the user simply says "Thanks" / "Thank you": Do NOT treat this as the end of the conversation. You must still ask a clarifying question to probe for further needs, such as: "You're very welcome! What else can I do for you?" or "Happy to help! Is there anything else on your mind that I can assist with?"
+
+### **Step 20.2:**
+**Only** reach this if Step 20.1 confirmed the end.
+- If this was a booking, express excitement about the upcoming meeting - e.g.: "We look forward to seeing you! Have a great day!". You must explicitly say goodbye at the end of the conversation.
+{% endset %}
+
+{% set description %}
+Close the interaction by warmly thanking the user for their actions, offering further assistance, and addressing any remaining requests. For bookings, express excitement about the upcoming visit and end with a clear, friendly goodbye.
+{% endset %}
+
+
+{% set item = {
+    "idn": "scenario_home_service_finish_conversation",
+    "title": title.strip(),
+    "body": body.strip(),
+    "mentions": [],
+    "description": description.strip(),
+    "is_from_library": True,
+    "origin_idn": ""
+} %}
+
+{{Return(val=json.dumps(item, ensure_ascii=False, indent=2))}}

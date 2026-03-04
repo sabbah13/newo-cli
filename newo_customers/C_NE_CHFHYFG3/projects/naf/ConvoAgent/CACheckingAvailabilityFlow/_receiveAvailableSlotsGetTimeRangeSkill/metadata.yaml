@@ -1,0 +1,12 @@
+id: c09e6f5f-02a7-4e22-83f0-46163647c4cf
+idn: _receiveAvailableSlotsGetTimeRangeSkill
+title: ""
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: e6518a43-ec2e-469f-82d2-06bc7b17e410
+    name: dateTime
+    default_value: " "
+path: ""

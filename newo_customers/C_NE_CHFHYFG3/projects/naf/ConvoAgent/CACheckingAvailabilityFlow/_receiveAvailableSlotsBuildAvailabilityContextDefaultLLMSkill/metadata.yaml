@@ -1,0 +1,15 @@
+id: 3900f177-8005-4744-8c0c-ce466fa1627a
+idn: _receiveAvailableSlotsBuildAvailabilityContextDefaultLLMSkill
+title: ""
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: aceddf68-fdc7-4435-a195-796a1a20e16e
+    name: userId
+    default_value: " "
+  - id: b2bbd638-0c56-43ae-b446-c2cf2811e322
+    name: output
+    default_value: " "
+path: ""

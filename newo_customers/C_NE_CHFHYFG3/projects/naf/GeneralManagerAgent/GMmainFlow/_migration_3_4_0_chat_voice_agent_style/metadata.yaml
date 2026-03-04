@@ -1,0 +1,9 @@
+id: 19b512c6-a11b-4080-989e-18fd06f59d44
+idn: _migration_3_4_0_chat_voice_agent_style
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

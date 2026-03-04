@@ -1,0 +1,82 @@
+{{Set(name="user_name", value=GetUser(field="name"))}}
+{{Set(name="business_name", value=GetCustomerAttribute(field="project_business_name_phonetic"))}}
+{{#if IsEmpty(text=business_name)}}
+	{{Set(name="business_name", value=GetCustomerAttribute(field="project_business_name"))}}
+{{/if}}
+
+
+{{Set(name="set_default_greeting", value="False")}}
+
+{{#if GetPersonaAttribute(id=userId, field="outbound_session")}}
+	{{#if reason == "customer-did-not-answer"}}
+		{{Set(name="set_default_greeting", value="True")}}
+	{{/if}}
+
+	{{#if reason == "customer-busy"}}
+		{{Set(name="set_default_greeting", value="True")}}
+	{{/if}}
+{{/if}}
+
+{{#if set_default_greeting == "True"}}
+	{{SetPersonaAttribute(id=userId, field="greeting_phrase", value=" ")}}
+	{{SetPersonaAttribute(id=userId, field="new_session_greeting_phrase", value=" ")}}
+	{{Return()}}
+{{/if}}
+
+{{Set(name="recent", value=Stringify(GetCustomerAttribute(field="project_representative_agent_voice_greeting_phrase_recent_returning")))}}
+{{Set(name="later", value=Stringify(GetCustomerAttribute(field="project_representative_agent_voice_greeting_phrase_later_returning")))}}
+
+
+{{#if reason == "assistant-forwarded-call"}}
+	{{#if user_name == "User"}}
+		{{Set(name="recent", value="Welcome back! It looks like all our specialists are currently busy. I'd be happy to take your information and forward it to my colleagues via email. If you still prefer to speak with the manager directly, just let me know and I’ll attempt to transfer you again.")}}
+		{{#if not later}}
+			{{Set(name="later", value=GetCustomerAttribute(field="project_representative_agent_voice_greeting_phrase"))}}
+		{{/if}}
+	{{else}}
+		{{Set(name="recent", value=Concat("Welcome back, ", GetUser(field="name"), "! It looks like all our specialists are currently busy. I'd be happy to take your information and forward it to my colleagues via email. If you still prefer to speak with the manager directly, just let me know and I’ll attempt to transfer you again."))}}
+		{{#if not later}}
+			{{Set(name="later", value=Concat("Welcome back to ", business_name, ", ", GetUser(field="name"), "! I'm ", GetCustomerAttribute(field="project_representative_agent_name"), ". How can I help you today?"))}}
+		{{/if}}
+	{{/if}}
+
+{{else}}
+
+	{{#if user_name == "User"}}
+		{{#if not recent}}
+			{{Set(name="recent", value=Concat("Welcome back to ", business_name, "! How can I help you?"))}}
+		{{/if}}
+		{{#if not later}}
+			{{Set(name="later", value=GetCustomerAttribute(field="project_representative_agent_voice_greeting_phrase"))}}
+		{{/if}}
+	{{else}}
+		{{#if not recent}}
+			{{Set(name="recent", value=Concat("Hello again, ", GetUser(field="name"), "! How can I assist you further?"))}}
+		{{/if}}
+		{{#if not later}}
+			{{Set(name="later", value=Concat("Welcome back to ", business_name, ", ", GetUser(field="name"), "! I'm ", GetCustomerAttribute(field="project_representative_agent_name"), ". How can I help you today?"))}}
+		{{/if}}
+	{{/if}}
+
+{{/if}}
+
+{{Set(name="user_language", value=_utilsPersonaAttributeGetWithDefaultsSkill(id=userId, field="user_language"))}}
+{{Set(name="primary_language", value=_utilsCustomerAttributeGetWithDefaultsSkill(field="project_business_language_primary"))}}
+{{Set(name="disclaimer_phrase", value=GetCustomerAttribute(field="project_representative_agent_voice_disclaimer_phrase"))}}
+
+{{Set(name="prompt", value=_generateGreetingPhrasesPromptSkill(
+	memory=get_prompt_memory(user_id=userId),
+	recent=recent,
+	later=later,
+	userLanguage=user_language,
+	primaryLanguage=primary_language,
+	disclaimerPhrase=disclaimer_phrase
+))}}
+{{#system~}}
+{{prompt}}
+{{~/system}}
+{{#assistant~}}{{Set(name="greeting_phrases", value=Gen(jsonSchema=_getSchemaSkill(schemaName="greeting"), validateSchema="True", temperature=0, topP=0, maxTokens=4000, skipFilter=True, thinkingBudget=425), expose=True)}}{{~/assistant}}
+
+{{SetPersonaAttribute(id=userId, field="greeting_phrase", value=_utilsMakeBusinessNamePhoneticSkill(source=Stringify(GetValueJSON(obj=greeting_phrases, key="recent_return_greeting"))))}}
+{{SetPersonaAttribute(id=userId, field="new_session_greeting_phrase", value=_utilsMakeBusinessNamePhoneticSkill(source=(Stringify(GetValueJSON(obj=greeting_phrases, key="later_return_greeting")))))}}
+{{SetPersonaAttribute(id=userId, field="current_session_summary", value=Stringify(GetValueJSON(obj=greeting_phrases, key="current_session_summary")))}}

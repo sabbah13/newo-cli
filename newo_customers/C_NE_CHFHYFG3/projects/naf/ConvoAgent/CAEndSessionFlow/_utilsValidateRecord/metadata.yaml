@@ -1,0 +1,15 @@
+id: 5c313716-5ad6-444e-a6d9-a43463805695
+idn: _utilsValidateRecord
+title: _utilsValidateRecord
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: 8eed7338-57dd-4394-8edd-f58bf04da2c8
+    name: commonValues
+    default_value: " "
+  - id: 37b54b71-e9cd-4d3b-a4e0-0a2a51253bf4
+    name: requestCategory
+    default_value: " "
+path: ""

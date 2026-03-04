@@ -1,0 +1,7 @@
+{% set agent_persona_id = GetAgentPersona().id | string %}
+{% set intents = json.loads(GetPersonaAttribute(id=agent_persona_id, field="intents")) %}
+{% if not intents %}
+    {{Return(val=False)}}
+{% else %}
+    {{Return(val=True)}}
+{% endif %}

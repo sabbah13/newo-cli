@@ -1,0 +1,9 @@
+id: 4abb41a9-72da-40c9-8cbe-ab1defdf0827
+idn: SaveConversationSkill
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

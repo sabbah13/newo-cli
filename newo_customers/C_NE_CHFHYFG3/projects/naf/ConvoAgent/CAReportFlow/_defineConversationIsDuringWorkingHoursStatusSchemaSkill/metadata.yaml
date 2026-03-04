@@ -1,0 +1,9 @@
+id: 915ec35d-c6ea-4690-b344-f5bdcfde9d37
+idn: _defineConversationIsDuringWorkingHoursStatusSchemaSkill
+title: ""
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

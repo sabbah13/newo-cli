@@ -1,0 +1,9 @@
+id: 9831c43e-de77-48f4-a024-12e7d3249b59
+idn: _prepareAttributesRestaurantPrivateDynamicGoogleVariablesSchemaSkill
+title: _prepareAttributesRestaurantPrivateDynamicGoogleVariablesSchemaSkill
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

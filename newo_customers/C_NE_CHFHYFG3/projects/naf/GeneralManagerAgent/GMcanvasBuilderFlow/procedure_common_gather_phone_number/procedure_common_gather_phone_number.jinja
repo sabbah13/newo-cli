@@ -1,0 +1,33 @@
+{% set title = '## **Reconfirming or Gathering Phone Number** procedure' %}
+
+{% set body %}
+Refer to the **<UserInformation>** section, which may already contain this information. You should either reconfirm permission to use it or request it if it has not been provided. Decide what to do:
+
+- **If `conversation.channel` in <ConversationMeta> is set to chat:**
+  - **If `user.provided_phone_number_without_country_code` is `null`, request to provide phone number - e.g.:** "Could you share a phone number we can use to stay in touch?"
+  - **After receiving the phone number, do NOT reconfirm it.**
+  - **Do not repeat the number back or ask for confirmation.**
+  - **Proceed to the next Step.**
+
+- **If `conversation.channel` in <ConversationMeta> is set to phone:**
+Refer to the **<UserInformation>** section, which may already contain this information. You should either reconfirm permission to use it or request it if not provided. Decide what to do:
+  - **If `user.detected_phone_number_without_country_code` is not `null`, reconfirm permission to use it - e.g.:** "I see your phone number is [user.detected_phone_number_without_country_code]. May I use it?"
+  - **If `user.detected_phone_number_without_country_code` is `null`, request to provide phone number - e.g.:** "Could you share a phone number we can use to stay in touch? Spell the phone number please.". **After they provide it, reconfirm it - e.g.:** "Let me make sure I got that right: [repeat phone number]. Is that correct?"
+  - **If `user.provided_phone_number_without_country_code` is already known, but needs to be reconfirmed, tell: "Let me make sure I got that right: [repeat phone number]. Is that correct?"
+{% endset %}
+
+{% set description %}
+Use the conversation channel and <UserInformation> to determine how to handle the phone number: in chat, request it only if missing and proceed without repeating or reconfirming. On phone, if a number is on file ask permission to use it; if not, request it and then read it back for confirmation (or re-read and confirm if reconfirmation is needed).
+{% endset %}
+
+{% set item = {
+    "idn": "procedure_common_gather_phone_number",
+    "title": title.strip(),
+    "body": body.strip(),
+    "mentions": [],
+    "description": description.strip(),
+    "is_from_library": True,
+    "origin_idn": ""
+} %}
+
+{{Return(val=json.dumps(item, ensure_ascii=False, indent=2))}}

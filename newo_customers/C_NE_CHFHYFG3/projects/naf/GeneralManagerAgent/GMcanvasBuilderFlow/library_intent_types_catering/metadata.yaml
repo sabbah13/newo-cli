@@ -1,0 +1,9 @@
+id: 46e10df6-6a4e-43d4-9a88-d2f0ee04a76b
+idn: library_intent_types_catering
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

@@ -1,0 +1,28 @@
+id: 4bc1f6f0-d774-4885-9f5a-1cc93ab9c46d
+idn: CAObserverFlow
+title: CAObserverFlow
+description: ""
+default_runner_type: guidance
+default_model:
+  provider_idn: google
+  model_idn: gemini25_flash
+events:
+  - id: 6084804b-d473-4b9c-8df3-7b15c12460dd
+    description: null
+    idn: broadcast_analyze_conversation
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: AnalyzeConversationSkill
+    state_idn: null
+    integration_idn: system
+    connector_idn: system
+  - id: e9ef41aa-b62a-4ef1-b75d-5fb65633a640
+    description: null
+    idn: define_user_phone_number
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: DefineUserPhoneNumberSkill
+    state_idn: null
+    integration_idn: null
+    connector_idn: null
+state_fields: []

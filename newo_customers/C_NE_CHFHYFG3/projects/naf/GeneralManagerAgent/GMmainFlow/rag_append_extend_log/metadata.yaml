@@ -1,0 +1,15 @@
+id: c28b872c-c6f9-4e39-b80e-4ec691a1a7ed
+idn: rag_append_extend_log
+title: rag_append_extend_log
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: b14b13f2-7b3c-465a-adae-8b89db116738
+    name: input_unstructured_text
+    default_value: ""
+  - id: 95f8b735-4ed1-48a2-99fb-5c40c347f449
+    name: output_log_attribute_name
+    default_value: ""
+path: ""

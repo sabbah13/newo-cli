@@ -1,0 +1,9 @@
+id: 73f78820-69ff-4d6f-bf5e-2838f1840c2c
+idn: _migration_2_6_9_session_timer_duration
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

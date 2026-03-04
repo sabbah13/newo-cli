@@ -1,0 +1,31 @@
+{# LLM extracts structured order data from conversation. Output: items (name, quantity, modifiers), customerName, customerPhone, fulfillmentType, scheduledTime, specialInstructions, missingFields. #}
+{% set menu = GetCustomerAttribute(field="project_attributes_menu_items") %}
+{{system}}
+Extract order details from the conversation. The restaurant menu is:
+<Menu>
+{{menu}}
+</Menu>
+
+<Conversation>
+{{memory}}
+</Conversation>
+
+<LatestAgentResponse>
+{{agentAnswer}}
+</LatestAgentResponse>
+
+Output ONLY valid JSON with this exact structure (no markdown, no extra text):
+{"items": [{"name": "item name", "quantity": 1, "price": 0, "modifiers": []}], "customerName": "", "customerPhone": "", "fulfillmentType": "pickup or delivery", "scheduledTime": "ISO datetime or empty", "specialInstructions": "", "missingFields": []}
+
+Rules:
+- items: array of {name, quantity, price (from menu if available else 0), modifiers (array of strings)}
+- customerName, customerPhone: from conversation; empty string if not mentioned
+- fulfillmentType: "pickup" or "delivery"
+- scheduledTime: when they want the order, or empty
+- specialInstructions: any special requests
+- missingFields: list of field names still needed (e.g. ["customerPhone"] if phone not given)
+{{end}}
+{{assistant}}
+{% set result = Gen(temperature=0.1, maxTokens=2000, topP=0, skipFilter=True) %}
+{{end}}
+{{ Return(val=result) }}

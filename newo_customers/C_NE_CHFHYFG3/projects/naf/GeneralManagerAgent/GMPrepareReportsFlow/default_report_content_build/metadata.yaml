@@ -1,0 +1,12 @@
+id: 909e5e8d-f176-453c-aa2f-3c60cb17b06c
+idn: default_report_content_build
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: 66e1ccbc-d23f-4fbf-b5e8-40a4845ba26f
+    name: intentName
+    default_value: ""
+path: ""

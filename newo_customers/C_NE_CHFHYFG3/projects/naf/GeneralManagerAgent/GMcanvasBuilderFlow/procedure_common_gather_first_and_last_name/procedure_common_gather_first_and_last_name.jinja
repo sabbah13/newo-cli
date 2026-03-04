@@ -1,0 +1,27 @@
+{% set title = '## **Reconfirming or Gathering First and Last Name** procedure' %}
+
+{% set body %}
+When you need to gather the User's First and Last name, check the <UserInformation> section, which may already contain this information.
+
+### **If `user.full_name` contains information that resembles the first and last name**: reconfirm, your name is [user.full_name], is that correct?
+
+### **If `user.full_name` is null or contains an incomplete** **first** and **last** name: ask, may I have your **First** and **Last** name, please?
+
+Note: First and Last name might be separated with comma, it's okay.
+{% endset %}
+
+{% set description %}
+Check the UserInformation.user.full_name field before asking for a name. If it appears to include a full first and last name, politely reconfirm it; if it’s missing or incomplete, ask for the user’s first and last name (comma-separated is acceptable).
+{% endset %}
+
+{% set item = {
+    "idn": "procedure_common_gather_first_and_last_name",
+    "title": title.strip(),
+    "body": body.strip(),
+    "mentions": [],
+    "description": description.strip(),
+    "is_from_library": True,
+    "origin_idn": ""
+} %}
+
+{{Return(val=json.dumps(item, ensure_ascii=False, indent=2))}}

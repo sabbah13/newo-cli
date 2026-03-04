@@ -1,0 +1,9 @@
+id: 286137d0-0a16-45cd-adc8-d319d19b781f
+idn: scenario_catering_regular_transfer
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

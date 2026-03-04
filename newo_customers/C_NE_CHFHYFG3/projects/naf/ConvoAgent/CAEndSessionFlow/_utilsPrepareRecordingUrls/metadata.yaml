@@ -1,0 +1,12 @@
+id: bac58197-5001-4abe-ab21-4637370de0c7
+idn: _utilsPrepareRecordingUrls
+title: ""
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: 0cdb85c7-3c42-4366-80a3-b48a8a6a37a9
+    name: recordingUrls
+    default_value: " "
+path: ""

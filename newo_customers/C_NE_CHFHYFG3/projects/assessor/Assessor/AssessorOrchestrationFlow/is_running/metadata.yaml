@@ -1,0 +1,9 @@
+id: db078534-ce48-40a0-9b4f-6389819b4f18
+idn: is_running
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

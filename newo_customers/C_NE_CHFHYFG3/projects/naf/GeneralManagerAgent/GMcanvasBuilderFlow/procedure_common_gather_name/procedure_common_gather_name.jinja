@@ -1,0 +1,29 @@
+{% set title %}
+## **Reconfirming or Gathering User Name** procedure
+{% endset %}
+
+{% set body %}
+When you need to gather the User's name, check the <UserInformation> section, which may already contain this information.
+
+### **If `user.full_name` contains information that resembles the name**: reconfirm, your name is [user.full_name], is that correct?
+
+### **If `user.full_name` is either not set or null**: ask, may I have your name, please?
+
+Note: It's ok if the user has provided first name only.
+{% endset %}
+
+{% set description %}
+When you need a user’s name, first check the <UserInformation> user.full_name field. If it looks like a name, politely confirm it; if it’s missing or null, ask for their name—first name alone is acceptable.
+{% endset %}
+
+{% set item = {
+    "idn": "procedure_common_gather_name",
+    "title": title.strip(),
+    "body": body.strip(),
+    "mentions": [],
+    "description": description.strip(),
+    "is_from_library": True,
+    "origin_idn": ""
+} %}
+
+{{Return(val=json.dumps(item, ensure_ascii=False, indent=2))}}

@@ -1,0 +1,12 @@
+id: c5b5f5ac-f669-49a7-b4b2-cfd5c8f557e0
+idn: _utilsSendDebugLogSkill
+title: ""
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: 5e72930e-7052-4fb0-97c5-e9218a80a1b5
+    name: message
+    default_value: ""
+path: ""

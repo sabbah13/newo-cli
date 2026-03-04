@@ -1,0 +1,9 @@
+id: a0e957a0-cecd-4fe7-8924-b4232e739a6f
+idn: RagAppendWebSearchResponse
+title: RagAppendWebSearchResponse
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

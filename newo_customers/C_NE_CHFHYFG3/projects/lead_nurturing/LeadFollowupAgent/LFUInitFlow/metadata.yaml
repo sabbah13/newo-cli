@@ -1,0 +1,19 @@
+id: 334abff3-0e85-4367-a52d-7a621058113b
+idn: LFUInitFlow
+title: LFUInitFlow
+description: ""
+default_runner_type: guidance
+default_model:
+  provider_idn: google
+  model_idn: gemini25_flash
+events:
+  - id: 3ad71256-8ea1-4efb-95c0-d39d762e9433
+    description: null
+    idn: project_publish_finish
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: ProjectPublishSkill
+    state_idn: null
+    integration_idn: null
+    connector_idn: null
+state_fields: []

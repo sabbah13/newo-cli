@@ -1,0 +1,15 @@
+id: ce3dd9d6-8274-4940-9092-2134d00e487f
+idn: session_get_conversation_channel
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: 4889808d-172b-4341-b48c-f7b3f06801c3
+    name: user_id
+    default_value: ""
+  - id: 5b88d34f-ea59-485b-a4b5-12db8552bb24
+    name: integration_idn
+    default_value: ""
+path: ""

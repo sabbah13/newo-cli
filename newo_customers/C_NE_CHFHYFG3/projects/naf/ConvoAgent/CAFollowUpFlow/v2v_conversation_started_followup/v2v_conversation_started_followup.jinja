@@ -1,0 +1,15 @@
+{# To avoid a dumb agent, we set follow up here #}
+{# Setting follow up timer in case the first generation was not triggered #}
+
+{# Applied only for V2V mode #}
+{% if not GetCustomerAttribute(field="project_attributes_setting_voice_integration_service_voice_mode") == "voice-to-voice" %}
+    {{Return()}}
+{% endif %}
+
+{{SendSystemEvent(
+    eventIdn="convoagent_update_followup",
+    connectorIdn="system",
+    interval=GetCustomerAttribute(field="project_attributes_setting_follow_up_timer_voice_interval_conversation_started_inbound"),
+    personaId=GetUser().id | string,
+    reason="conversation started"
+)}}

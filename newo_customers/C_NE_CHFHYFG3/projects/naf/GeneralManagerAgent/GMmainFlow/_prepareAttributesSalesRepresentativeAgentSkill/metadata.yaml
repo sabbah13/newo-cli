@@ -1,0 +1,9 @@
+id: 77df0e36-8ca4-4476-9be7-276e12c60e02
+idn: _prepareAttributesSalesRepresentativeAgentSkill
+title: _prepareAttributesSalesRepresentativeAgentSkill
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

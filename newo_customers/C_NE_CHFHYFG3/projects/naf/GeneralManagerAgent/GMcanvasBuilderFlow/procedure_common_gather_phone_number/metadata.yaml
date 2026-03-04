@@ -1,0 +1,9 @@
+id: fb617039-07e3-4464-b3b2-5dc8d7b3131e
+idn: procedure_common_gather_phone_number
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

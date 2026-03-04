@@ -1,0 +1,35 @@
+{{!-- All `sales` Customer Attributes must be specified here with default values --}}
+{{!-- (must be sorted alphabetically) --}}
+
+{{!-- Set of `sales` attributes from BOQ --}}
+
+
+{{_utilsCustomerAttributeSetIfEmptySkill(
+    field="project_attributes_sales_after_appointment_notes",
+    value="*(No specific notes provided. Proceed with the next step.)*"
+)}}
+
+
+{{_utilsCustomerAttributeSetIfEmptySkill(
+    field="project_attributes_sales_appointment_via_link_guidance_instruction",
+    value="*(No specific instruction provided. Just share the link and ask user to create their appointment.)*"
+)}}
+
+{{_utilsCustomerAttributeSetIfEmptySkill(field="project_attributes_sales_appointment_url", value=" ")}}
+
+{{_utilsCustomerAttributeSetIfEmptySkill(field="project_attributes_sales_pre_sale_questions", value="*(No questions provided. Just answer user's questions and proceed to the next step.)*")}}
+
+{{_utilsCustomerAttributeSetIfEmptySkill(
+    field="project_attributes_sales_qualifying_criteria",
+    value="*(No specific qualifying criteria provided. Proceed with scheduling steps. User is qualified automatically.)*"
+)}}
+
+{{_utilsCustomerAttributeSetIfEmptySkill(
+    field="project_attributes_sales_qualifying_criteria_fallback_action",
+    value="*(The user is always qualified.)*"
+)}}
+
+{{_utilsCustomerAttributeSetIfEmptySkill(
+    field="project_attributes_sales_qualifying_questions",
+    value="*(No questions provided.)*"
+)}}

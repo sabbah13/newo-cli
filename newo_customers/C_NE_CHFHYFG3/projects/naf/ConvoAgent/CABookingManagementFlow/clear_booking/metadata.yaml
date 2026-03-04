@@ -1,0 +1,18 @@
+id: e6bac9a7-00e0-477d-95a0-e8de8bae9125
+idn: clear_booking
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: 9f761125-4d90-4fd0-a96a-af957ffb30d0
+    name: bookings
+    default_value: ""
+  - id: 63727e44-05df-4cc9-ab39-f1004219da05
+    name: user_id
+    default_value: ""
+  - id: 8330e110-6c83-4bac-9bc7-bc53cf779676
+    name: booking_id
+    default_value: ""
+path: ""

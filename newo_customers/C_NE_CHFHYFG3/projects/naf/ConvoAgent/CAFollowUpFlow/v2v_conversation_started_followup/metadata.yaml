@@ -1,0 +1,9 @@
+id: 942047b6-9424-4a03-88ce-e76a4a071880
+idn: v2v_conversation_started_followup
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

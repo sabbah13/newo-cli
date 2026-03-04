@@ -1,0 +1,9 @@
+id: 1d44774f-ffdc-4051-a0a6-4d6a117ac0ff
+idn: _prepareAttributesRestaurantMetadataSkill
+title: _prepareAttributesRestaurantMetadataSkill
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

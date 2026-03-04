@@ -1,0 +1,12 @@
+id: 045c91a6-5589-4cd5-8217-b721fbcd569d
+idn: fix_scenario
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: e1566095-3241-4651-a5f8-bf46433bf532
+    name: request
+    default_value: ""
+path: ""

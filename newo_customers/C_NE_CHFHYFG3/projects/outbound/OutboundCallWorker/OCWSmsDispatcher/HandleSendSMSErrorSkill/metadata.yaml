@@ -1,0 +1,9 @@
+id: 5c83d634-91e7-4ea7-b473-2acb659fc256
+idn: HandleSendSMSErrorSkill
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

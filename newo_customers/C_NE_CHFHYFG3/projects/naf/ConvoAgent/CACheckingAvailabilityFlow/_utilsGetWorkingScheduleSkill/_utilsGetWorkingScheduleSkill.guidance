@@ -1,0 +1,22 @@
+{{Set(name="non_working_days", value=GetCustomerAttribute(field="project_attributes_private_dynamic_schedule_non_working_days"))}}
+{{Set(name="working_days_hours_exceptions", value=GetCustomerAttribute(field="project_attributes_private_dynamic_schedule_working_days_hours_exceptions"))}}
+{{Set(name="working_hours", value=GetCustomerAttribute(field="project_attributes_private_dynamic_schedule_working_hours"))}}
+{{Set(name="working_days", value=GetCustomerAttribute(field="project_attributes_private_dynamic_schedule_working_days"))}}
+
+{{#system~}}
+<WorkingSchedule alt="business working hours" role="context">{{#if not IsEmpty(text=non_working_days)}}
+**Non-working days:**
+- {{non_working_days}}
+{{/if}}
+**Working days:**
+- {{working_days}}
+
+**Working hours:**
+- {{working_hours}}
+{{#if not IsEmpty(text=working_days_hours_exceptions)}}
+**Working days and working hours exceptions:**
+- {{working_days_hours_exceptions}}{{/if}}
+</WorkingSchedule>
+{{~/system}}
+
+{{Return(val=GetCurrentPrompt())}}

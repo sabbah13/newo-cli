@@ -1,0 +1,7 @@
+{% set act = GetTriggeredAct() %}
+{% set user_id = GetUser().id | string %}
+{% if GetPersonaAttribute(id=user_id, field="assessor_chat_conversation_is_finished") == "True" %}
+    {{SendSystemEvent(eventIdn="convoagent_get_conversation", connectorIdn="system", requesterIdn=GetAgentPersona().name, levels='["conversation", "system"]', callbackArguments=user_id)}}
+{% else %}
+    {{reply(actor_id=GetActor().id, memory=act.arguments.memory)}}
+{% endif %}

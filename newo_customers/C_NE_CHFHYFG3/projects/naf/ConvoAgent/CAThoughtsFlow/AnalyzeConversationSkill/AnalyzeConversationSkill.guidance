@@ -1,0 +1,13 @@
+{{#if GetState(name="waiting_mode") == "activated"}}
+    {{Return()}}
+{{/if}}
+
+{{Set(name="user_id", value=GetUser(field="id"))}}
+{{Set(name="memory_without_latest_agent_answer", value=GetTriggeredAct(fields=["memoryWithoutLatestAgentAnswer"]))}}
+{{Set(name="latest_agent_answer", value=GetTriggeredAct(fields=["convoAgentAnswer"]))}}
+
+{{_genThoughtsSkill(
+  userId=user_id,
+  memory=memory_without_latest_agent_answer,
+  agentAnswer=latest_agent_answer
+)}}

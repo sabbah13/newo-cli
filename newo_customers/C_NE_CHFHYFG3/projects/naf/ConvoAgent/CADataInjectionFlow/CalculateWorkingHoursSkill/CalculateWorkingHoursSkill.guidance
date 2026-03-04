@@ -1,0 +1,21 @@
+{{Set(name="project_business_time_zone", value=GetCustomerAttribute(field="project_business_time_zone"))}}
+{{Set(name="project_business_working_hours", value=GetCustomerAttribute(field="project_business_working_hours"))}}
+{{Set(name="user_id", value=GetUser(field="id"))}}
+{{#system~}}
+Your goal is to decide whether the current time is within the business' working hours or not using <CurrentTimeMeta> and <WorkingSchedule> sections
+
+<CurrentTimeMeta role="context">
+current.date_day_of_week: {{GetDatetime(format="date", weekday=True, timezone=project_business_time_zone)}}
+current.time: {{GetDatetime(format="time", timezone=project_business_time_zone)}}
+</CurrentTimeMeta>
+
+<WorkingSchedule alt="business working hours" role="context">
+{{project_business_working_hours}}
+</WorkingSchedule>
+
+Is the business is currently opened (working)? Reply with one of the options:
+- true
+- false
+
+Reply: {{~/system}}{{#assistant~}}{{Set(name="working_hours_status", value=Gen(temperature=0.2, topP=0, skipFilter=True, thinkingBudget=425), expose=True)}}{{~/assistant}}
+{{SetPersonaAttribute(id=user_id, field="working_hours_status", value=working_hours_status)}}

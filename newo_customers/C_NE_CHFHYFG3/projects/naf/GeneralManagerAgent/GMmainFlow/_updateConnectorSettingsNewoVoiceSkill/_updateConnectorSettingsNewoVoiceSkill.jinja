@@ -1,0 +1,157 @@
+{% set voice_mode = GetCustomerAttribute(field="project_attributes_setting_voice_integration_service_voice_mode") %}
+{% set voice_to_voice_provider = GetCustomerAttribute(field="project_attributes_setting_voice_integration_service_voice_to_voice_provider") %}
+{% set genai_functions_enabled = GetCustomerAttribute(field="project_attributes_setting_voice_integration_service_voice_to_voice_provider_genai_functions_enabled") %}
+{% set genai_functions = GetCustomerAttribute(field="project_attributes_setting_voice_integration_service_voice_to_voice_provider_genai_functions") %}
+{% set genai_vertex_enabled = GetCustomerAttribute(field="project_attributes_setting_voice_integration_service_voice_to_voice_provider_genai_vertex_enabled") %}
+{% set genai_voice = GetCustomerAttribute(field="project_attributes_setting_voice_integration_service_voice_to_voice_provider_genai_voice") %}
+{% set openai_voice = GetCustomerAttribute(field="project_attributes_setting_voice_integration_service_voice_to_voice_provider_openai_voice") %}
+{% set bypass_phone_number = GetCustomerAttribute(field="project_attributes_setting_voice_integration_service_bypass_phone_number") %}
+
+{# Prepare `business_context` #}
+{% set business_context = GetCustomerAttribute(field="project_attributes_private_dynamic_business_context") %}
+{% set business_name_phonetic = GetCustomerAttribute(field="project_business_name_phonetic") %}
+{% if business_name_phonetic.strip() %}
+    {% set business_name = GetCustomerAttribute(field="project_business_name") %}
+    {% if business_name.strip() %}
+        {% set business_context = (business_context | replace(business_name, business_name_phonetic)) %}
+    {% endif %}
+{% endif %}
+
+{# Prepare `initial_prompt` #}
+{% set initial_prompt %}{{GetCustomerAttribute(field="project_attributes_private_dynamic_agent_persona")}}
+
+Even though you are {{GetCustomerAttribute(field="project_attributes_private_dynamic_agent_title")}}, maintain the speaking style described below in every response, without exception.
+```speaking style
+{{GetCustomerAttribute(field="project_representative_agent_voice_speaking_style")}}
+```
+
+---
+
+{{business_context}}
+
+---
+
+From time to time, during conversation, you will receive commands. These commands will instruct you on what to tell. These commands will start with `COMMAND: <instruction on what to tell goes here>`. At this moment avoid coming up with response, but strictly follow instructions mentioned in these commands.{% endset %}
+
+{# Prepare `shared_phone_numbers` #}
+{% set common_phone_numbers = GetCustomerAttribute(field="project_attributes_setting_common_phone_numbers") | default("[]", true) %}
+{% set common_phone_numbers = json.loads(common_phone_numbers) %}
+{% if common_phone_numbers is integer %}
+    {# It means the user set a single phone number in the attribute, so it is expected to be an integer. #}
+    {% set common_phone_numbers_to_connector = common_phone_numbers | string %}
+    {# Fix user's mistake #}
+    {{SetCustomerAttribute(field="project_attributes_setting_common_phone_numbers", value=json.dumps([common_phone_numbers_to_connector], ensure_ascii=False, indent=2))}}
+{% else %}
+    {# In all other cases the user can't set wrong value due to validation on UI. #}
+    {% set common_phone_numbers_to_connector = common_phone_numbers | join(",") %}
+{% endif %}
+
+{% for connector_idn in ["newo_voice_connector", "newo_voice_connector_web"] %}
+    {% set newo_voice_connector = GetConnectorInfo(integrationIdn="newo_voice", connectorIdn=connector_idn) %}
+    {# TODO: change to `continue` loop control statement once is available #}
+    {% if newo_voice_connector %}
+        {# Sync `voice_mode` Connector setting with Customer Attribute #}
+        {% if voice_mode.strip() and voice_mode != newo_voice_connector.settings.voice_mode %}
+            {{SetConnectorInfo(integrationIdn="newo_voice", connectorIdn=connector_idn, field="voice_mode", value=voice_mode)}}
+        {% endif %}
+
+        {# Sync `v2v_mode` Connector setting with Customer Attribute #}
+        {% if voice_to_voice_provider.strip() and voice_to_voice_provider != newo_voice_connector.settings.v2v_mode %}
+            {{SetConnectorInfo(integrationIdn="newo_voice", connectorIdn=connector_idn, field="v2v_mode", value=voice_to_voice_provider)}}
+        {% endif %}
+
+        {# Sync `genai_v2v_tools` Connector setting with Customer Attribute #}
+        {% if newo_voice_connector.settings.genai_v2v_tools %}
+            {% if genai_functions_enabled == "True" %}
+                {{SetConnectorInfo(integrationIdn="newo_voice", connectorIdn=connector_idn, field="genai_v2v_tools",value=genai_functions)}}
+            {% else %}
+                {{SetConnectorInfo(integrationIdn="newo_voice", connectorIdn=connector_idn, field="genai_v2v_tools", value="[]")}}
+            {% endif %}
+        {% endif %}
+
+        {# Sync `genai_v2v_use_vertexai` Connector setting with Customer Attribute #}
+        {% if genai_vertex_enabled.strip() and genai_vertex_enabled != newo_voice_connector.settings.genai_v2v_use_vertexai %}
+            {{SetConnectorInfo(integrationIdn="newo_voice", connectorIdn=connector_idn, field="genai_v2v_use_vertexai",value=genai_vertex_enabled)}}
+        {% endif %}
+
+        {# Sync `genai_v2v_voice` Connector setting with Customer Attribute #}
+        {% if newo_voice_connector.settings.genai_v2v_voice %}
+            {% if genai_voice.strip() %}
+                {% set genai_voice_map = {
+                    "Female Achernar - Soft": "Achernar",
+                    "Female Aoede - Breezy": "Aoede",
+                    "Female Autonoe - Bright": "Autonoe",
+                    "Female Callirrhoe - Easy-going": "Callirrhoe",
+                    "Female Despina - Smooth": "Despina",
+                    "Female Erinome - Clear": "Erinome",
+                    "Female Gacrux - Mature": "Gacrux",
+                    "Female Kore - Firm": "Kore",
+                    "Female Laomedeia - Upbeat": "Laomedeia",
+                    "Female Leda - Youthful": "Leda",
+                    "Female Pulcherrima - Forward": "Pulcherrima",
+                    "Female Sulafat - Warm": "Sulafat",
+                    "Female Vindemiatrix - Gentle": "Vindemiatrix",
+                    "Female Zephyr - Bright": "Zephyr",
+                    "Male Achird - Friendly": "Achird",
+                    "Male Algenib - Gravelly": "Algenib",
+                    "Male Algieba - Smooth": "Algieba",
+                    "Male Alnilam - Firm": "Alnilam",
+                    "Male Charon - Informative": "Charon",
+                    "Male Enceladus - Breathy": "Enceladus",
+                    "Male Fenrir - Excitable": "Fenrir",
+                    "Male Iapetus - Clear": "Iapetus",
+                    "Male Orus - Firm": "Orus",
+                    "Male Puck - Upbeat": "Puck",
+                    "Male Rasalgethi - Informative": "Rasalgethi",
+                    "Male Sadachbia - Lively": "Sadachbia",
+                    "Male Sadaltager - Knowledgeable": "Sadaltager",
+                    "Male Schedar - Even": "Schedar",
+                    "Male Umbriel - Easy-going": "Umbriel",
+                    "Male Zubenelgenubi - Casual": "Zubenelgenubi"
+                } %}
+                {% set mapped_genai_voice = genai_voice_map.get(genai_voice, "") %}
+                {% if mapped_genai_voice.strip() %}
+                    {{SetConnectorInfo(integrationIdn="newo_voice", connectorIdn=connector_idn, field="genai_v2v_voice", value=mapped_genai_voice)}}
+                {% endif %}
+            {% endif %}
+        {% endif %}
+
+        {# Sync `openai_v2v_voice` Connector setting with Customer Attribute #}
+        {% if newo_voice_connector.settings.openai_v2v_voice %}
+            {% if openai_voice.strip() %}
+                {% set openai_voice_map = {
+                    "Neutral - Alloy": "alloy",
+                    "Male - Ash": "ash",
+                    "Male - Ballad": "ballad",
+                    "Male - Cedar": "cedar",
+                    "Female - Coral": "coral",
+                    "Male - Echo": "echo",
+                    "Female - Marin": "marin",
+                    "Female - Sage": "sage",
+                    "Female - Shimmer": "shimmer",
+                    "Male - Verse": "verse"
+                } %}
+                {% set mapped_openai_voice = openai_voice_map.get(openai_voice, "") %}
+                {% if mapped_openai_voice.strip() %}
+                    {{SetConnectorInfo(integrationIdn="newo_voice", connectorIdn=connector_idn, field="openai_v2v_voice", value=mapped_openai_voice)}}
+                {% endif %}
+            {% endif %}
+        {% endif %}
+
+        {# Set `genai_v2v_initial_system_instruction` and `openai_v2v_initial_system_instruction` Connector settings #}
+        {{SetConnectorInfo(integrationIdn="newo_voice", connectorIdn=connector_idn, field="genai_v2v_initial_system_instruction", value=initial_prompt)}}
+        {{SetConnectorInfo(integrationIdn="newo_voice", connectorIdn=connector_idn, field="openai_v2v_initial_system_instruction", value=initial_prompt)}}
+
+        {# Set `emergency_phone_number` Connector setting #}
+        {% if not newo_voice_connector.settings.emergency_phone_number and bypass_phone_number.strip() %}
+            {{ SetConnectorInfo(integrationIdn="newo_voice", connectorIdn=connector_idn, field="emergency_phone_number", value=bypass_phone_number) }}
+        {% elif newo_voice_connector.settings.emergency_phone_number and newo_voice_connector.settings.emergency_phone_number != bypass_phone_number %}
+            {{ SetConnectorInfo(integrationIdn="newo_voice", connectorIdn=connector_idn, field="emergency_phone_number", value=bypass_phone_number) }}
+        {% endif %}
+
+        {{SetConnectorInfo(integrationIdn="newo_voice", connectorIdn=connector_idn, field="shared_phone_numbers", value=common_phone_numbers_to_connector)}}
+    {% endif %}
+{% endfor %}
+
+{# TODO: Remove, skill must not be set depending on state (reduced control and visibility) #}
+{{SendSystemEvent(eventIdn="switch_conversation_started_skill", connectorIdn="system", global="True")}}

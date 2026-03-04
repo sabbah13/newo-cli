@@ -1,0 +1,4 @@
+{% set command %}Greet the user and tell exactly this:
+> {{GetPersonaAttribute(id=user_id | string, field="greeting_phrase").strip() or GetCustomerAttribute(field="project_attributes_private_dynamic_voice_greeting_phrase")}}{% endset %}
+
+{{v2v_send_command(command=command, user_id=user_id, last_convo_actor_id=last_convo_actor_id)}}

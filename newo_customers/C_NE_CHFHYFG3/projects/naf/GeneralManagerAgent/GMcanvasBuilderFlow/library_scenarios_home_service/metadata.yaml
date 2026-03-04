@@ -1,0 +1,9 @@
+id: fcdbb026-edff-4617-9979-ab89755842fd
+idn: library_scenarios_home_service
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

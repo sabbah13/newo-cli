@@ -1,0 +1,9 @@
+id: 71a884eb-b3cb-418a-aab1-c6c8121a3849
+idn: _prepareAttributesDentalSMSContentSkill
+title: _prepareAttributesDentalSMSContentSkill
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

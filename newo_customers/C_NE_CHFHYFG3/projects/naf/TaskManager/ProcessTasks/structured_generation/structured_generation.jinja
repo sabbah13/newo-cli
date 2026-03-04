@@ -1,0 +1,3 @@
+{{system}}{{prompt.strip()}}{{end}}{{assistant}}{% set result_json = Gen(jsonSchema=schema, validateSchema="True", temperature=0.2, topP=0, maxTokens=4000, skipFilter=True, thinkingBudget=145) %}{{end}}
+
+{{Return(val=result_json)}}

@@ -1,0 +1,24 @@
+{{#system~}}
+Availability Data JSON:
+"""
+{{output}}
+"""
+
+Transform the following Availability Data JSON into a prompt-friendly structure by:
+1. **Extracting** the date and time
+2. **Grouping** the entries by **location** and sorting the times within each date in chronological order. **Note**: exclude any duplicate times within each date.
+3. **Presenting** the information in a clear, organized format that's easy to read and use in a prompt as in the example below.
+
+**Example Output Format:**
+
+For Wednesday (2025-04-09 02:00 PM) from 01:00 PM to 03:00 PM time slot availability is:
+"2025-04-09" - ["01:00 PM","01:15 PM","01:30 PM"]
+"2025-04-10" - ["01:00 PM","01:15 PM","01:30 PM","01:45 PM"]
+"2025-04-11" - [02:30 PM","02:45 PM","03:00 PM"]
+
+
+Result:{{~/system}}{{#assistant~}}{{Set(name="available_slots", value=Gen(temperature=0.65, topP=0, maxTokens=4000, skipFilter=True, thinkingBudget=425), expose=True)}}{{~/assistant}}
+
+{{SetPersonaAttribute(id=userId, field="booking_slots_availability_result", value=available_slots)}}
+
+{{Return(val=available_slots)}}

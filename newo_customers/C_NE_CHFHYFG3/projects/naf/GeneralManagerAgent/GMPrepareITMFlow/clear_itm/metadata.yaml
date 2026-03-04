@@ -1,0 +1,9 @@
+id: 74b0c4bc-ee90-4ca3-b063-c40ea7cf6dcd
+idn: clear_itm
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

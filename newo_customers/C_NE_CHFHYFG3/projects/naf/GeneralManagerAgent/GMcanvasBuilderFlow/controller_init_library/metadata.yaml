@@ -1,0 +1,9 @@
+id: 1cd760be-7574-44a4-b034-6b86e215ab72
+idn: controller_init_library
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

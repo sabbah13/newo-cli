@@ -1,0 +1,22 @@
+{{!-- Define email body --}}
+{{Set(name="email_body", value=_sendReportEmailBodyTextSkill(
+    transcript=transcript,
+    userId=userId,
+    fieldsToExtract=fieldsToExtract,
+    workingHourStatus=workingHourStatus,
+    reportType=reportType,
+    customSection=customSection
+))}}
+
+{{!-- Send email --}}
+{{SendSystemEvent(
+    eventIdn="email_worker_send_email",
+    connectorIdn="system",
+    email=email,
+    cc=cc,
+    subject=subject,
+    body=email_body,
+    ignore_opt_out="true"
+)}}
+
+{{_utilsSendSystemLogSkill(message=Concat("Report email is sent to ", email, " and cc to ", cc, "."))}}

@@ -1,0 +1,46 @@
+id: c4327f28-5ace-4b7d-bb3a-30bff4803537
+idn: AssessorChatFlow
+title: AssessorChatFlow
+description: ""
+default_runner_type: guidance
+default_model:
+  provider_idn: openai
+  model_idn: gpt4o
+events:
+  - id: a41813a9-e6f3-4ee7-b3f6-3a4de2aeab4e
+    description: null
+    idn: assessor_start_chat_internal
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: StartChat
+    state_idn: null
+    integration_idn: system
+    connector_idn: system
+  - id: f4f528a7-f6ff-48bb-a4e2-0ca9ec67e426
+    description: null
+    idn: convoagent_conversation_retrieved
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: ReceiveConversation
+    state_idn: null
+    integration_idn: system
+    connector_idn: system
+  - id: eb11d6f5-5416-4ac2-9045-5e3bf74836c4
+    description: null
+    idn: internal_conversation_retrieved
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: TransferContext
+    state_idn: null
+    integration_idn: system
+    connector_idn: system
+  - id: 488fb5ae-52cc-4c1c-87c1-8ba563208143
+    description: null
+    idn: send_external_reply
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: TransferReply
+    state_idn: null
+    integration_idn: system
+    connector_idn: system
+state_fields: []

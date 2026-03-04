@@ -1,0 +1,12 @@
+id: d76beb47-82ad-43e6-ab1f-0ca7142574f3
+idn: _utilsMakeBusinessNamePhoneticSkill
+title: _utilsMakeBusinessNamePhoneticSkill
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: 442af9b0-7a79-42d3-a7a2-d7789f310bc6
+    name: source
+    default_value: " "
+path: ""

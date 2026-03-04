@@ -1,0 +1,9 @@
+id: 998b0736-eeae-40b4-ba75-1bbce04cd22a
+idn: procedure_common_gather_availability_home_service
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

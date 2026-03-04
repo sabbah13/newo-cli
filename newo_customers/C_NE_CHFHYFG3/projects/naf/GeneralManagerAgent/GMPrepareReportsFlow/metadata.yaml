@@ -1,0 +1,33 @@
+id: 7bd94a95-a1a6-4d6c-8c8b-2e5bea8c5e7e
+idn: GMPrepareReportsFlow
+title: GMPrepareReportsFlow
+description: ""
+default_runner_type: guidance
+default_model:
+  provider_idn: google
+  model_idn: gemini25_flash
+events:
+  - id: 4cf134a9-6951-463a-8674-08e66aebc7cf
+    description: null
+    idn: gm_add_additional_report_criteria
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: prepare_additional_report_criteria
+    state_idn: null
+    integration_idn: system
+    connector_idn: system
+  - id: 696bcb9e-506a-4a8c-9fbd-f53c3cc5d291
+    description: null
+    idn: gm_itm_built
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: prepare_reports_build
+    state_idn: null
+    integration_idn: system
+    connector_idn: system
+state_fields:
+  - id: f0f2683b-5923-4d48-9b51-1aaee2edbccc
+    title: ""
+    idn: report_content_previous
+    default_value: ""
+    scope: agent

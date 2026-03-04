@@ -1,0 +1,9 @@
+id: 58eb8edb-ee2c-4dea-ba17-9e8b61453a0b
+idn: _prepareAttributesRestaurantEmailContentSkill
+title: _prepareAttributesRestaurantEmailContentSkill
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

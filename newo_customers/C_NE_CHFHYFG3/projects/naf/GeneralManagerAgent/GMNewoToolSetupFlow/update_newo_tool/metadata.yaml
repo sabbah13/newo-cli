@@ -1,0 +1,12 @@
+id: 5ea2c456-2e35-4977-8f7e-c923da4a2606
+idn: update_newo_tool
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: c3fff3db-3350-43b4-b1ee-cf01ad62efa5
+    name: tools
+    default_value: ""
+path: ""

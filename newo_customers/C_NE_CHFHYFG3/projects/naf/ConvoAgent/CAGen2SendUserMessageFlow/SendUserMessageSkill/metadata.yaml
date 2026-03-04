@@ -1,0 +1,9 @@
+id: c1f833fa-bf3a-4c54-a53b-9e28f2ea9917
+idn: SendUserMessageSkill
+title: ""
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

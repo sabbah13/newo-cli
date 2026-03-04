@@ -1,0 +1,16 @@
+{{#system~}}
+Your goal is to build JSON object with details about the customer (User) from <UserInformation> and <Conversation>.
+
+<UserInformation alt="user information" role="context">
+{{GetPersonaAttribute(id=userId, field="_private_dynamic_user_information")}}
+</UserInformation>
+
+<Conversation>
+{{memory}}
+ConvoAgent: {{agentAnswer}}
+</Conversation>
+
+{{~/system}}
+{{Set(name="details", value=Gen(jsonSchema=_orderKeeperSchemasSkill(customerInfo="True"), validateSchema="True", temperature=0.1))}}
+
+{{Return(val=details)}}

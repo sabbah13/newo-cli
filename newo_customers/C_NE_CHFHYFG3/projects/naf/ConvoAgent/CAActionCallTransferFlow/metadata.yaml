@@ -1,0 +1,19 @@
+id: 408cb4e0-0b33-449b-9b85-8b4d5ae607ef
+idn: CAActionCallTransferFlow
+title: CAActionCallTransferFlow
+description: ""
+default_runner_type: guidance
+default_model:
+  provider_idn: google
+  model_idn: gemini25_flash
+events:
+  - id: 96daaf10-93e2-411a-9d03-f14fe6108440
+    description: null
+    idn: transfer_call_tool
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: TransferCallToolSkill
+    state_idn: null
+    integration_idn: system
+    connector_idn: system
+state_fields: []

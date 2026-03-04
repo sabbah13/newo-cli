@@ -1,0 +1,6 @@
+id: f01f0a1e-abcc-4177-bd38-7ac9ff0bae24
+idn: GeneralManagerAgent
+title: GeneralManagerAgent
+description: >-
+  GeneralManagerAgent is a keeper of all Task Objects, Task Instructions,
+  Business Context, etc.

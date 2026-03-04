@@ -1,0 +1,18 @@
+id: 4c84e3fc-1993-4912-baf4-f3fa78a42ee5
+idn: _getTaskObjectSchemaSkill
+title: _getTaskObjectSchemaSkill
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: 7a19aa7e-bbd6-402d-9267-7464fa30c62f
+    name: industry
+    default_value: " "
+  - id: 7964f1d0-d628-4858-803e-cbba4d82e46c
+    name: taskIdn
+    default_value: " "
+  - id: 67e3925b-b49d-437a-9595-50eaaa811785
+    name: convoAgentPersonaId
+    default_value: " "
+path: ""

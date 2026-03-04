@@ -1,0 +1,3 @@
+{{system}}{{prompt.strip()}}{{end}}{{assistant}}{% set agent_answer = GenStream(interruptMode="interruptWindow", interruptWindow=0.7, temperature=0.2, topP=0.5, maxTokens=4000, skipFilter=True, sendTo="actors", actorIds=[actor_id], thinkingBudget=thinking_budget)%}{{end}}
+
+{{Return(val=agent_answer)}}

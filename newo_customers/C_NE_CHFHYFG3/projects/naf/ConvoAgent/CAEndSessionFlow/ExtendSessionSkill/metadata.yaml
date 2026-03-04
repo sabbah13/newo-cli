@@ -1,0 +1,9 @@
+id: f42e4e15-e98b-435f-a8be-e35286fddcd0
+idn: ExtendSessionSkill
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

@@ -1,0 +1,247 @@
+id: 4ae03bac-f1cf-4e0f-95dd-ae27ce96ea2b
+idn: CAFollowUpFlow
+title: CAFollowUpFlow
+description: ""
+default_runner_type: guidance
+default_model:
+  provider_idn: google
+  model_idn: gemini25_flash
+events:
+  - id: 80b91efe-b186-4a78-8cff-5e90a4635caf
+    description: null
+    idn: agent_speech_ended
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: SetFollowUpAgentSpeechEndedSkill
+    state_idn: null
+    integration_idn: newo_voice
+    connector_idn: newo_voice_connector
+  - id: 10a7a1d4-5616-47bc-9d45-3bd97724d61a
+    description: null
+    idn: agent_speech_ended
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: SetFollowUpAgentSpeechEndedSkill
+    state_idn: null
+    integration_idn: newo_voice
+    connector_idn: newo_voice_connector_web
+  - id: 63ffde24-89bd-47d6-81f4-75ebb6d9a0f9
+    description: null
+    idn: agent_speech_started
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: SetFollowUpAgentSpeechStartedSkill
+    state_idn: null
+    integration_idn: newo_voice
+    connector_idn: newo_voice_connector
+  - id: c5e3adad-ca66-47a3-99da-b70444bd52d9
+    description: null
+    idn: agent_speech_started
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: SetFollowUpAgentSpeechStartedSkill
+    state_idn: null
+    integration_idn: newo_voice
+    connector_idn: newo_voice_connector_web
+  - id: 233fa146-a7b3-4348-9576-70371f7d05a2
+    description: null
+    idn: conversation_started
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: v2v_conversation_started_followup
+    state_idn: null
+    integration_idn: newo_voice
+    connector_idn: newo_voice_connector
+  - id: 96f61c1d-e4a6-4913-a38b-64ed5e1c1b47
+    description: null
+    idn: conversation_started
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: v2v_conversation_started_followup
+    state_idn: null
+    integration_idn: newo_voice
+    connector_idn: newo_voice_connector_web
+  - id: 822ce6cb-be71-4757-89f3-4a566e031859
+    description: null
+    idn: convoagent_activate_waiting_mode
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: ActivateWaitingMode
+    state_idn: null
+    integration_idn: system
+    connector_idn: system
+  - id: ca652446-7785-412c-8283-84db20deea5e
+    description: null
+    idn: convoagent_disable_follow_up
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: DisableFollowUp
+    state_idn: null
+    integration_idn: system
+    connector_idn: system
+  - id: 1f2ea88f-296b-454a-a89e-6610aa1ace9f
+    description: null
+    idn: convoagent_enable_follow_up
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: EnableFollowUp
+    state_idn: null
+    integration_idn: system
+    connector_idn: system
+  - id: b5a1d8bf-46bf-4e21-ab45-aca470e6e352
+    description: null
+    idn: convoagent_update_followup
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: SetFollowupSkill
+    state_idn: null
+    integration_idn: system
+    connector_idn: system
+  - id: cae02873-90bb-46e5-9e1c-d128951115e4
+    description: null
+    idn: end_session
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: ResetFollowUpStateSkill
+    state_idn: null
+    integration_idn: system
+    connector_idn: system
+  - id: 16d4b5e6-d0e8-4306-b8a7-28919d855ea4
+    description: null
+    idn: follow_up_message
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: FollowUpMessageSkill
+    state_idn: null
+    integration_idn: program_timer
+    connector_idn: message_followup
+  - id: 9ef8e18a-799d-448c-be11-ceabad06af7e
+    description: null
+    idn: send_user_message
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: SetFollowUpUserSpeechStartedSkill
+    state_idn: null
+    integration_idn: newo_voice
+    connector_idn: newo_voice_connector
+  - id: f14e6378-cd64-43c9-a1a6-1f8f66c36de4
+    description: null
+    idn: send_user_message
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: SetFollowUpUserSpeechStartedSkill
+    state_idn: null
+    integration_idn: newo_voice
+    connector_idn: newo_voice_connector_web
+  - id: 0bbe7246-b680-4ebd-bc6e-34948384a0cf
+    description: null
+    idn: session_started
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: ResetFollowUpStateSkill
+    state_idn: null
+    integration_idn: null
+    connector_idn: null
+  - id: db8cc2a9-3fd2-4584-99d3-8e344b7f3b02
+    description: null
+    idn: urgent_message
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: UrgentMessage
+    state_idn: null
+    integration_idn: system
+    connector_idn: system
+  - id: 232c3aca-535f-4b2f-b883-cbe102c87ecc
+    description: null
+    idn: user_message_transcription_finished
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: SetFollowUpUserSpeechEndedSkill
+    state_idn: null
+    integration_idn: newo_voice
+    connector_idn: newo_voice_connector
+  - id: fb18448d-32f9-4da1-8a53-c0f5eb7b874d
+    description: null
+    idn: user_message_transcription_finished
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: SetFollowUpUserSpeechEndedSkill
+    state_idn: null
+    integration_idn: newo_voice
+    connector_idn: newo_voice_connector_web
+  - id: a51a21bd-5c59-447f-b649-28cc60fae6b1
+    description: null
+    idn: user_speech_ended
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: SetFollowUpUserSpeechEndedSkill
+    state_idn: null
+    integration_idn: newo_voice
+    connector_idn: newo_voice_connector
+  - id: 38de95f0-1c0e-4743-9e19-fd95b8e4c32c
+    description: null
+    idn: user_speech_ended
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: SetFollowUpUserSpeechEndedSkill
+    state_idn: null
+    integration_idn: newo_voice
+    connector_idn: newo_voice_connector_web
+  - id: 31bd5802-23aa-443d-ba92-795204d37034
+    description: null
+    idn: user_speech_started
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: SetFollowUpUserSpeechStartedSkill
+    state_idn: null
+    integration_idn: newo_voice
+    connector_idn: newo_voice_connector
+  - id: 3f84b63d-2b37-4d05-b9e4-02e9b0d4944a
+    description: null
+    idn: user_speech_started
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: SetFollowUpUserSpeechStartedSkill
+    state_idn: null
+    integration_idn: newo_voice
+    connector_idn: newo_voice_connector_web
+  - id: b5025ed3-bb86-471c-9323-64403ce9ebca
+    description: null
+    idn: waiting_mode_fallback
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: EnableFollowUp
+    state_idn: null
+    integration_idn: program_timer
+    connector_idn: waiting_mode_fallback
+state_fields:
+  - id: b10650d5-ff84-4d63-bb28-246c40163179
+    title: ""
+    idn: chat_lifecycle_state
+    default_value: Silence
+    scope: user
+  - id: 9f7991ee-1524-4cc2-b5d4-10fb2b147ccb
+    title: ""
+    idn: event_block
+    default_value: "False"
+    scope: user
+  - id: 7f5d4774-c80d-4482-b89a-480f5af8ac6e
+    title: ""
+    idn: followup_counter
+    default_value: "0"
+    scope: user
+  - id: 28d174b1-3e0d-4af7-b7ce-24c026078002
+    title: ""
+    idn: follow_up_state
+    default_value: ""
+    scope: user
+  - id: fabf25a2-fcff-4b4b-b65b-fbf0137620b4
+    title: ""
+    idn: message_queue
+    default_value: "[]"
+    scope: user
+  - id: 95ea8206-0e14-4138-84a3-3706423b22d4
+    title: ""
+    idn: user_interrupt
+    default_value: "False"
+    scope: user

@@ -1,0 +1,9 @@
+id: 599cf5ad-7999-4095-b28a-c84b0f2c21f4
+idn: procedure_common_asking_about_services
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

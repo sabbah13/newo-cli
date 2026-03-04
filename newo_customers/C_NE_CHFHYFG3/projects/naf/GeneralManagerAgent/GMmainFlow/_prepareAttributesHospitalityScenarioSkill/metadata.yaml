@@ -1,0 +1,9 @@
+id: ce92375c-5478-4784-894a-2c178ee97051
+idn: _prepareAttributesHospitalityScenarioSkill
+title: _prepareAttributesHospitalityScenarioSkill
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

@@ -1,0 +1,19 @@
+{% set act = GetTriggeredAct() %}
+{% set user_id = GetUser().id | string %}
+{% set intent_id = GetPersonaAttribute(id=user_id, field="assessor_intent_id") %}
+{% if not intent_id %}
+    {{Return()}}
+{% endif %}
+{% set agent_persona_id = GetAgentPersona().id | string %}
+{% set intents = json.loads(GetPersonaAttribute(id=agent_persona_id, field="intents")) %}
+{% set found_intent = {} %}
+{% for intent in intents %}
+    {% if intent.intentId == intent_id %}
+        {% set found_intent = intent %}
+    {% endif %}
+{% endfor %}
+{% if not found_intent.intentId %}
+    {{Return()}}
+{% endif %}
+{{found_intent.update({"sessionId": act.arguments.session_id})}}
+{{SetPersonaAttribute(id=agent_persona_id, field="intents", value=json.dumps(intents, ensure_ascii=False, indent=2))}}

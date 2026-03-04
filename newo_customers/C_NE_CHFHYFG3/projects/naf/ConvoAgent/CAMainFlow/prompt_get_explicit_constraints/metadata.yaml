@@ -1,0 +1,18 @@
+id: ef6d5ab5-2449-4f18-b5ed-a8c7a9f06d4a
+idn: prompt_get_explicit_constraints
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: d3d90122-c4e9-4e5f-b76f-979175188e21
+    name: v2v_enabled
+    default_value: ""
+  - id: fd50809b-d46c-49bd-95a0-4a765b83a76d
+    name: conversation_channel
+    default_value: ""
+  - id: 25377407-a45b-4e7d-b740-431c59fa4e66
+    name: working_hours
+    default_value: ""
+path: ""

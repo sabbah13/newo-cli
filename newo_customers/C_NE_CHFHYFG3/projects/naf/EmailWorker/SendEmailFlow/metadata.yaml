@@ -1,0 +1,19 @@
+id: e32c7639-1525-43be-becf-7a87d2a7b0d3
+idn: SendEmailFlow
+title: SendEmailFlow
+description: ""
+default_runner_type: guidance
+default_model:
+  provider_idn: google
+  model_idn: gemini25_flash
+events:
+  - id: b1be0ee7-22bf-42e2-b3bb-ecbb13952eef
+    description: null
+    idn: email_worker_send_email
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: SendEmailSkill
+    state_idn: null
+    integration_idn: system
+    connector_idn: system
+state_fields: []

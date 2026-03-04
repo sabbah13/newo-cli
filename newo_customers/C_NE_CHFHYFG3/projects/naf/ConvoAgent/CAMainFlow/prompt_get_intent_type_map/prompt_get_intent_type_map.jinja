@@ -1,0 +1,7 @@
+{% if working_hours %}
+    {{Return(val=GetCustomerAttribute(field="project_attributes_private_dynamic_itm_working_hours_compiled"))}}
+{% else %}
+    {{Return(val=GetCustomerAttribute(field="project_attributes_private_dynamic_itm_non_working_hours_compiled"))}}
+{% endif %}
+
+{{Return(val=intent_type_map)}}

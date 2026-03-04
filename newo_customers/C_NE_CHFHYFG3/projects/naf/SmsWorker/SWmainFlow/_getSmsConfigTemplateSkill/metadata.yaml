@@ -1,0 +1,18 @@
+id: dd8debc7-b450-492c-82b8-edf7ae3a252c
+idn: _getSmsConfigTemplateSkill
+title: _getSmsConfigTemplateSkill
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: d9fcefe1-a20d-4ba1-b9a5-de9cbf7942a1
+    name: industry
+    default_value: " "
+  - id: b069f412-69ac-40c1-bc65-4265a59d6a95
+    name: taskIdn
+    default_value: " "
+  - id: 5c5a2da6-5a77-4298-8521-d90a9f5a6d80
+    name: convoAgentPersonaId
+    default_value: " "
+path: ""

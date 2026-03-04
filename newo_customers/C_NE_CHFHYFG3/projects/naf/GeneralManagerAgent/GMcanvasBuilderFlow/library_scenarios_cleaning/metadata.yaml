@@ -1,0 +1,9 @@
+id: 38dd4bba-ec20-4e16-acc2-624df80a0a21
+idn: library_scenarios_cleaning
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

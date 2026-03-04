@@ -1,0 +1,9 @@
+id: ec7773a1-e462-4c15-9264-4cb9050923e2
+idn: CalculateWorkingHoursSkill
+title: CalculateWorkingHoursSkill
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

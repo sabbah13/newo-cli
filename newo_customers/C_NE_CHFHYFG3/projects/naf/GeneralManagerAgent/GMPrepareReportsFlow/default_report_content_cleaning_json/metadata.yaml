@@ -1,0 +1,9 @@
+id: 205915d6-e3ce-4e93-a981-9438bc6fabd3
+idn: default_report_content_cleaning_json
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

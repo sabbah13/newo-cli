@@ -1,0 +1,9 @@
+id: bdf13936-c358-4eec-af50-f5a0c2f2ded8
+idn: MWworkerMessageInboxSkill
+title: ""
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

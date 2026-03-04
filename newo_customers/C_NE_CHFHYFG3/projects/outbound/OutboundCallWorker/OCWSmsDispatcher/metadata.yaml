@@ -1,0 +1,65 @@
+id: e130b8a5-561f-4ac8-8b3b-9d5ab3adc188
+idn: OCWSmsDispatcher
+title: OCWSmsDispatcher
+description: ""
+default_runner_type: guidance
+default_model:
+  provider_idn: google
+  model_idn: gemini25_flash
+events:
+  - id: a07b8faf-58f5-43a7-b92b-d1a267307c54
+    description: null
+    idn: custom_session_ended
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: AnalyzeConversationSkill
+    state_idn: null
+    integration_idn: system
+    connector_idn: system
+  - id: b0f9991b-ba8c-4464-afb2-059482217e0d
+    description: null
+    idn: outbound_send_sms_from_person
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: SendSMSSkill
+    state_idn: null
+    integration_idn: system
+    connector_idn: system
+  - id: 3550b148-8e67-4741-a519-0e6a3e4847c2
+    description: null
+    idn: send_sms_error
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: HandleSendSMSErrorSkill
+    state_idn: null
+    integration_idn: twilio_messenger
+    connector_idn: sms_connector
+  - id: e1e17632-bf0a-49c9-b08f-d66bc5610611
+    description: null
+    idn: smsback_tool
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: SMSBackSkill
+    state_idn: null
+    integration_idn: system
+    connector_idn: system
+  - id: e9289c5f-167f-456a-8122-1c6fd9675fb1
+    description: null
+    idn: task_manager_execute_task
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: ReceiveTaskSkill
+    state_idn: null
+    integration_idn: system
+    connector_idn: system
+state_fields:
+  - id: f55ac23a-0170-4ecd-8ea8-b911e67ff4e7
+    title: ""
+    idn: error_occurred
+    default_value: ""
+    scope: user
+  - id: 8027af33-908c-4459-a8fb-2299761bbe94
+    title: ""
+    idn: task_id
+    default_value: ""
+    scope: user

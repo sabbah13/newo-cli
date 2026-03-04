@@ -1,0 +1,9 @@
+id: a2e44aee-a279-4cae-836e-2cc2c4a39496
+idn: _getContactDetailsSkill
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

@@ -1,0 +1,9 @@
+id: 1b070a88-fda4-40b4-a50e-7844f010ce20
+idn: FollowUpMessageSkill
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

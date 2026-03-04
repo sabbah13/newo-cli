@@ -1,0 +1,9 @@
+id: e3e42ca7-c26c-4972-8c50-db0f27f0c15c
+idn: _migration_2_6_0_connectors
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

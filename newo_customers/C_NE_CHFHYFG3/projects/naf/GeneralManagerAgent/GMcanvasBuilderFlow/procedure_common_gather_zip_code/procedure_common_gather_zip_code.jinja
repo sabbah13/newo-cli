@@ -1,0 +1,25 @@
+{% set title = '## **Reconfirming or Gathering ZIP code** procedure' %}
+
+{% set body %}
+When you need to gather the User's ZIP code, check the **conversation**, which may already contain this information.
+
+- If you see the ZIP code, reconfirm it - e.g.: "Your ZIP code is [user's ZIP code]. Is that correct?"
+- Otherwise ask - e.g.: "Could you please provide your ZIP code so we can confirm whether we service your area?"
+{% endset %}
+
+{% set description %}
+When you need a ZIP code, first review the conversation to see if the user has already provided it. If it’s there, reconfirm it (e.g., “Your ZIP code is 12345. Is that correct?”); if not, politely request it to verify service availability.
+{% endset %}
+
+
+{% set item = {
+    "idn": "procedure_common_gather_zip_code",
+    "title": title.strip(),
+    "body": body.strip(),
+    "mentions": [],
+    "description": description.strip(),
+    "is_from_library": True,
+    "origin_idn": ""
+} %}
+
+{{Return(val=json.dumps(item, ensure_ascii=False, indent=2))}}

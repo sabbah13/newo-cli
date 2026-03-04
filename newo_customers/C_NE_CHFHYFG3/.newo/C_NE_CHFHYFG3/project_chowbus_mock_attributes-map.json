@@ -1,0 +1,6 @@
+{
+  "place_order_webhook_url": "9061aec3-9118-4624-97f5-ee10cf8cc73f",
+  "send_menu_to_webhook": "f2fb1c37-7cd6-4eec-8f6b-8966f2a219a6",
+  "send_order_completion_to": "77ed2f25-0d6a-4234-8408-bcb3a68f6530",
+  "send_order_creation_to": "1f49414e-d497-456e-90a6-488b25cb6489"
+}

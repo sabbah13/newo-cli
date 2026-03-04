@@ -1,0 +1,18 @@
+id: cc062a55-efd4-4ebd-9a65-d4d23fd14593
+idn: _callbackAfterCallAbort
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: 678ad317-4c1c-4aeb-a3df-98ad7ba0fc40
+    name: connectorIdn
+    default_value: " "
+  - id: 0ba797a3-d89f-4b8b-b6ff-c087f59a1457
+    name: integrationIdn
+    default_value: " "
+  - id: 8df224bd-36cb-469a-aea9-ffdb3bfc98da
+    name: phoneNumber
+    default_value: " "
+path: ""

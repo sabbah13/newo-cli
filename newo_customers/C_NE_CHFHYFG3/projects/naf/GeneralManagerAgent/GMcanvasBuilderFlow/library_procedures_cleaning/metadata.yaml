@@ -1,0 +1,9 @@
+id: 7f5f2b90-61e9-43e3-a148-ff141fe78f48
+idn: library_procedures_cleaning
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

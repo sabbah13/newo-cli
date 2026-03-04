@@ -1,0 +1,9 @@
+id: 488731cc-5a10-40a0-9aae-21a3845f2199
+idn: procedure_common_gather_language
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

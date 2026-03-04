@@ -1,0 +1,16 @@
+{{Set(name="form_url", value=GetTriggeredAct(fields=["formUrl"]))}}
+{{Set(name="user_actor_id", value=GetTriggeredAct(fields=["userActorId"]))}}
+{{Set(name="user_id", value=GetActor(field="personaId", id=user_actor_id))}}
+{{Set(name="phone_number", value=GetPersonaAttribute(id=user_id, field="provided_phone_number_with_country_code"))}}
+
+{{Set(name="existing_sms_actor", value=Stringify(GetActors(externalId=phone_number, integrationIdn="twilio_messenger", connectorIdn="sms_connector")))}}
+{{#if IsEmpty(text=existing_sms_actor)}}
+    {{Set(name="existing_sms_actor", value=CreateActor(integrationIdn="twilio_messenger", connectorIdn="sms_connector", externalId=phone_number, personaId=user_id))}}
+{{/if}}
+
+{{SendMessage(message=Concat("Please complete your order by using this link: ", form_url), actorIds=existing_sms_actor)}}
+
+{{SendSystemEvent(eventIdn="urgent_message", connectorIdn="system", baseInstruction="Say that you just received the message from the system that the user's order was created. Also say that you have just sent them the SMS with a form to complete the order - confirm delivery address and pay if the payment method is credit card.", uninterruptible="True",
+    callAnalyzeConversationSkill="False",
+    callManageTaskSkill="False",
+    callUserIsWaitingSkill="False")}}

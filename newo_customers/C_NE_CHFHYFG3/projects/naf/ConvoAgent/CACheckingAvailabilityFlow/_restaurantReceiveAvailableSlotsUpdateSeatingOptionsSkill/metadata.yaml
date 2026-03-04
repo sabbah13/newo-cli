@@ -1,0 +1,15 @@
+id: 9241e97c-9a5e-495b-a4bc-2136ccb746ea
+idn: _restaurantReceiveAvailableSlotsUpdateSeatingOptionsSkill
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: 3937b23a-c562-4518-9ab0-c660a2831270
+    name: userId
+    default_value: " "
+  - id: 8f21f190-e866-457c-9b17-3a1494f08987
+    name: inputJson
+    default_value: " "
+path: ""

@@ -1,0 +1,18 @@
+id: a2351990-9291-4820-afc3-faeaccbc0c59
+idn: prepare_additional_report_schema
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: 423fd469-3def-40e9-b6c7-a9dc00b5e8fe
+    name: criteria_key
+    default_value: ""
+  - id: 7f186325-ae96-4f1e-ab27-a0a8fbf04ad8
+    name: title
+    default_value: ""
+  - id: db1ba86b-cce8-45f0-ba4c-a0729470c2d2
+    name: schema
+    default_value: ""
+path: ""

@@ -1,0 +1,12 @@
+id: 133b4e48-ce86-4fa5-a056-9fe0f71e990f
+idn: check_for_headers_llm
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: 3383d4b0-9115-4642-b70d-8db12d009fe5
+    name: row
+    default_value: ""
+path: ""

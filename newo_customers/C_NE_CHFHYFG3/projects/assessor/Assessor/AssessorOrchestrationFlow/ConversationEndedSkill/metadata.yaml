@@ -1,0 +1,9 @@
+id: 69a1431a-0ad6-4590-8edc-01bb6abe952f
+idn: ConversationEndedSkill
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

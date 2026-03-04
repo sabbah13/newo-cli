@@ -1,0 +1,12 @@
+id: 90260d30-f0c4-4ce4-916e-1a5da48db1d1
+idn: filter_intents_for_qa
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: 9b5b9954-8c35-4eb6-b0bd-cb7030457acd
+    name: intents
+    default_value: ""
+path: ""

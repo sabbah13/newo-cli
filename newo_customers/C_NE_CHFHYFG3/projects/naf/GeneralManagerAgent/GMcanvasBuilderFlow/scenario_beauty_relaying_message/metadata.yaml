@@ -1,0 +1,9 @@
+id: 7719f554-a773-40d5-9ea9-c440e861d0d9
+idn: scenario_beauty_relaying_message
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

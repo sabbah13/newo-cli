@@ -1,0 +1,11 @@
+{% set agent_persona_id = GetAgentPersona().id | string %}
+{% set current_intents = json.loads(GetPersonaAttribute(id=agent_persona_id, field="intents")) %}
+{% set filtered_intents = [] %}
+{% for intent in current_intents %}
+    {% if intent.assessment %}
+        {{filtered_intents.append(intent)}}
+    {% endif %}
+{% endfor %}
+{{SetPersonaAttribute(id=agent_persona_id, field="intents", value=json.dumps(filtered_intents, ensure_ascii=False, indent=2))}}
+
+{{ReevaluateIntentsSkill()}}

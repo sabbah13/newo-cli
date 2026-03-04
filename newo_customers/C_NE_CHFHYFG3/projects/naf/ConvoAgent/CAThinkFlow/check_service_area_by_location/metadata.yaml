@@ -1,0 +1,15 @@
+id: a7b64a9a-7ea3-40e0-85ee-917279b2c647
+idn: check_service_area_by_location
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: 15b9e1e6-758f-4dab-9bbc-29af11628035
+    name: memory_conversation
+    default_value: ""
+  - id: 00cea79c-d363-4f7e-bae9-739771e2981a
+    name: served_area
+    default_value: ""
+path: ""

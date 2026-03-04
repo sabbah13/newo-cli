@@ -1,0 +1,15 @@
+id: a305ffda-01d2-4893-95c5-8a4fb5aa646f
+idn: _getExplicitConstraintsCallTransferringSkill
+title: _getExplicitConstraintsCallTransferringSkill
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: 7a15cd07-ef7f-48ac-aa4e-1b1248518f41
+    name: userId
+    default_value: " "
+  - id: 174c931a-b22a-40fb-8550-ac0e523dba6f
+    name: conversation_channel
+    default_value: ""
+path: ""

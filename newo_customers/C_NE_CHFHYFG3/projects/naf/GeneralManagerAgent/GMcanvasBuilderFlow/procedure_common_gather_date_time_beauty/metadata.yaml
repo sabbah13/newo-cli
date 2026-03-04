@@ -1,0 +1,9 @@
+id: d920c8eb-3899-4207-950c-8c22d2a89343
+idn: procedure_common_gather_date_time_beauty
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

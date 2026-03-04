@@ -1,0 +1,9 @@
+id: 26bdea9a-ba31-4f52-bce9-ecee78dcc31d
+idn: _updateConnectorSettingsNewoChatSkill
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

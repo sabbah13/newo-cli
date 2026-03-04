@@ -1,0 +1,9 @@
+id: c634e6e1-e211-46ce-b30a-a673d9e9ab37
+idn: _migration_2_6_2_voice_integration_service
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

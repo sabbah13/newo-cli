@@ -1,0 +1,9 @@
+id: 1fd9c1fd-837f-4c43-b6b0-69d7d7808250
+idn: RequestFullAssessment
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

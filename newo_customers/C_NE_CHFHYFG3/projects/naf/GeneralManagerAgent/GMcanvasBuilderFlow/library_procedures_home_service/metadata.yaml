@@ -1,0 +1,9 @@
+id: af22de59-d3e5-4f2d-a084-2e70983ef128
+idn: library_procedures_home_service
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

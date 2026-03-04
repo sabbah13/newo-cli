@@ -1,0 +1,21 @@
+id: eef4f33b-5917-4875-a45e-74876eed0e1c
+idn: prompt_fast_compile
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: fff4e511-febb-41a4-9ba7-e842089f41ae
+    name: base_instruction
+    default_value: ""
+  - id: d5e0d1f3-0b85-4a21-b8c3-13b6e22c91ad
+    name: conversation_channel
+    default_value: ""
+  - id: 56236a32-b702-4a8b-8c5b-5b299a6b5828
+    name: user_id
+    default_value: ""
+  - id: bf405a01-0459-47cf-8e8e-16f3b551828b
+    name: order
+    default_value: ""
+path: ""

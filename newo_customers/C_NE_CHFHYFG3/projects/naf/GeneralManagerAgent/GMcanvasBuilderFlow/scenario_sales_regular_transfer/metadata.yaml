@@ -1,0 +1,9 @@
+id: 8dd0c788-f13b-4920-8ddc-7612bad226dd
+idn: scenario_sales_regular_transfer
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

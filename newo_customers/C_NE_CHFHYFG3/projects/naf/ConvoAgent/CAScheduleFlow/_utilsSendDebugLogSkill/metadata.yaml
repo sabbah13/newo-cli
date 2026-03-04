@@ -1,0 +1,12 @@
+id: 8ffaf007-83a8-4703-b5a2-15cebc8ee5ef
+idn: _utilsSendDebugLogSkill
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: 0be62450-78c9-4b90-bb85-39c4874c2fa8
+    name: message
+    default_value: ""
+path: ""

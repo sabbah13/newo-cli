@@ -1,0 +1,64 @@
+attributes:
+  - idn: project_attributes_chat_link_demo
+    value: >-
+      https://www.minghincuisine.com/,
+      https://portal.newo.ai/?mode=chat&client=35fca482-feec-4b70-ad1a-d16a18203288
+    title: 6-01. Chat - Demo Link (URL) [B]
+    description: >-
+      Link to the Chat widget (demo mode).
+
+
+      **Note:** Attribute is being set by `Agent Creator` during the account
+      creation process. Does not
+
+      have any functionality after the account is created.
+    group: 6. Support
+    is_hidden: false
+    possible_values: []
+    value_type: !enum "AttributeValueTypes.string"
+  - idn: project_attributes_setting_init_on_auto_update_enabled
+    value: "True"
+    title: Project - Init - Initialization Process On Auto-Update - Enabled [C]
+    description: >-
+      This setting controls whether the initialization process will take place
+      during automatic updates.
+
+
+      Typically, this should be set to `True` to ensure that all necessary
+      initialization steps are
+
+      performed during updates.
+
+
+      Value is being set to `False` when new version released which does not
+      require initialization
+
+      process to be run.
+    group: 8. System
+    is_hidden: true
+    possible_values: []
+    value_type: !enum "AttributeValueTypes.bool"
+  - idn: project_attributes_setting_init_attributes_metadata_enabled
+    value: "False"
+    title: Project - Init - Setting-Up Attributes Metadata - Enabled [C]
+    description: >-
+      Metadata for one-time initialization of Attributes Metadata.
+
+
+      This attribute controls the initial setup of attribute metadata. Since
+      this process requires
+
+      significant resources, the attribute automatically switches to `False`
+      after the first
+
+      initialization.
+
+
+      If you need to update the attribute metadata, you must manually set it to
+      `True` and press the
+
+      `Publish` button.
+    group: 8. System
+    is_hidden: true
+    possible_values: []
+    value_type: !enum "AttributeValueTypes.bool"

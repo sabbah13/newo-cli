@@ -1,0 +1,12 @@
+id: 34f383bb-b990-40e2-81ef-7b5078dacf45
+idn: _getWorkingHoursStatusSkill
+title: ""
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: 5e68b3b9-d2ab-4d39-92fa-5715c4009260
+    name: userId
+    default_value: " "
+path: ""

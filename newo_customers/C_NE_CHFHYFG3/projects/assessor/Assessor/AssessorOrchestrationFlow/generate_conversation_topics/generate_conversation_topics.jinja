@@ -1,0 +1,13 @@
+{{system}}
+You are a professional auditor of the AI agents. Below in <ConvoAgentIntentMap> you will see possible intents your employees will contact `ConvoAgent` for. In <ConvoAgentInstruction> you will see the comprehensive instruction that `ConvoAgent` should use when talking to your employees.
+Your task is to generate instructions and checklists for your employees who will call `ConvoAgent` and assess the conversation they had later so they could rate how close the real conversation is to the instruction.
+
+<ConvoAgentIntentMap>
+{{itm}}
+</ConvoConvoAgentIntentMap>
+
+<ConvoAgentInstruction>
+{{ami}}
+</ConvoAgentInstruction>
+{{end}}
+{{Return(val=Gen(temperature=0.1, topP=0, jsonSchema=generate_conversation_topics_schema(), validateSchema="True", thinkingBudget=1020))}}

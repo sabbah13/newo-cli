@@ -1,0 +1,15 @@
+id: 662bdf7b-9f39-44ba-80b4-f56b730e5441
+idn: action_save_item
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: 2193a1af-b2bb-4fd8-a770-738b9137b729
+    name: item
+    default_value: ""
+  - id: cfbb8962-ca19-4f1e-bb3f-696cc8244110
+    name: type_idn
+    default_value: ""
+path: ""

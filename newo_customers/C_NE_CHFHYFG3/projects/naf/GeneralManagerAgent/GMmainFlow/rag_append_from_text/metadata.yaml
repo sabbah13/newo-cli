@@ -1,0 +1,9 @@
+id: ce793ef1-a4c3-49bc-b58d-9102a3e9e3a1
+idn: rag_append_from_text
+title: rag_append_from_text
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

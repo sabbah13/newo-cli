@@ -1,0 +1,12 @@
+id: 42b126f2-129c-4215-92dc-3a7f6bf1f4a9
+idn: get_user_email
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: 497655d5-f3f1-4992-8782-765eb7e0b172
+    name: user_id
+    default_value: ""
+path: ""

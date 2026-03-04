@@ -1,0 +1,24 @@
+id: 5df221fc-73e0-4376-bf29-8c3be998ba86
+idn: utils_structured_generation
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: f52f9fe5-d218-4737-8842-63526e7f37eb
+    name: thinking_budget
+    default_value: ""
+  - id: a6cafa61-de07-4924-a163-d34c13df81e9
+    name: prompt
+    default_value: ""
+  - id: b5189edb-68e2-454e-9258-6f0c01e378a5
+    name: top_p
+    default_value: ""
+  - id: 6d21b26e-0102-48a1-adc1-5101a9e59535
+    name: temperature
+    default_value: ""
+  - id: 3f9ce3ce-e51e-4154-9235-1c6b14206f71
+    name: schema
+    default_value: ""
+path: ""

@@ -1,0 +1,18 @@
+id: 9a2def71-f897-4b80-9886-465316ab4599
+idn: v2v_update_current_prompt_openai
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: 8680418e-9afc-4662-a4a9-ced480ff5344
+    name: inject_thoughts
+    default_value: ""
+  - id: b566b487-06e8-4d1b-a4ab-97ea736e9723
+    name: footer_instruction
+    default_value: ""
+  - id: e164030c-3490-4b34-8c96-7c2b2a20743d
+    name: user_id
+    default_value: ""
+path: ""

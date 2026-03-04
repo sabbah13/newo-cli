@@ -1,0 +1,15 @@
+id: fe4584a4-e2c2-4d7e-bcde-c9968fa98485
+idn: v2v_greet_user
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: 87d2b322-9045-413b-8b00-a04628f51a9f
+    name: user_id
+    default_value: ""
+  - id: 07b5268c-8faa-41be-b544-568c84fb6357
+    name: last_convo_actor_id
+    default_value: ""
+path: ""

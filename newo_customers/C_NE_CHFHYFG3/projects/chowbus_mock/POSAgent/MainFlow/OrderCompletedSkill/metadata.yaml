@@ -1,0 +1,9 @@
+id: 09da6532-4035-49f1-9807-d9dbcd347673
+idn: OrderCompletedSkill
+title: ""
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

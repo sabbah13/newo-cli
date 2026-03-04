@@ -1,0 +1,9 @@
+id: 5b6aef01-488c-42f5-b872-d20b76122aba
+idn: scenario_restaurant_canceling_reservation
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

@@ -1,0 +1,15 @@
+id: 7dffe1f0-f5f3-454a-a105-52336d35370c
+idn: _updateCustomUserDataSkill
+title: _updateCustomUserDataSkill
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: ba79d99d-1d1b-426c-a9f8-aa82d00062c1
+    name: sectionValue
+    default_value: ""
+  - id: daafc6d3-c3bc-47a8-8c45-e6e092a469e0
+    name: sectionName
+    default_value: ""
+path: ""

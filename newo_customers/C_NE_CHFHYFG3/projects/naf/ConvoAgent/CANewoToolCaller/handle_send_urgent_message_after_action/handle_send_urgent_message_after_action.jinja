@@ -1,0 +1,21 @@
+{% set after_action_options = {
+    'prefix': ''
+} %}
+{% if after_action.options %}
+    {{after_action_options.update(after_action.options)}}
+{% endif %}
+{% if after_action_options.prefix %}
+    {% set input = after_action_options.prefix ~ ":
+" ~ input %}
+{% endif %}
+{{utils_send_system_log(message="```
+" ~ input ~ "
+``` was sent as urgent message")}}
+{{SendSystemEvent(
+    eventIdn="urgent_message",
+    connectorIdn="system",
+    baseInstruction=input,
+    uninterruptible=after_action_options.uninterruptible or 'True',
+    callAnalyzeConversationSkill=after_action_options.call_analyze_conversation_skill or 'False',
+    callManageTaskSkill=after_action_options.call_manage_task_skill or 'False'
+)}}

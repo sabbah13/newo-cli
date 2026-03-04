@@ -1,0 +1,9 @@
+id: f3eefcac-b40c-4389-92c9-ad5be323f72e
+idn: procedure_beauty_pricing
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

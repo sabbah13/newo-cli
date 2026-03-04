@@ -1,0 +1,9 @@
+id: 089c81af-7683-47ba-aa94-91589927adf1
+idn: prompt_get_memories
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

@@ -1,0 +1,9 @@
+id: 45bae360-ee4e-4129-ae70-4f1a86e1c1ea
+idn: _getVersion
+title: ""
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

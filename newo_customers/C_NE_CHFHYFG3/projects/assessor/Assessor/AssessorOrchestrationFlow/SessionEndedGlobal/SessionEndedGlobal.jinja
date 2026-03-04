@@ -1,0 +1,42 @@
+{% set agent_persona_id = GetAgentPersona().id | string %}
+{% set act = GetTriggeredAct() %}
+{% set ami = GetPersonaAttribute(id=agent_persona_id, field="current_ami") %}
+{% set intents = json.loads(GetPersonaAttribute(id=agent_persona_id, field="intents")) %}
+{% set found_intent = {} %}
+{% for intent in intents %}
+    {% if intent.intentId == act.arguments.intent_id %}
+        {% set found_intent = intent %}
+    {% endif %}
+{% endfor %}
+{% if not found_intent.intentId %}
+    {{Return()}}
+{% endif %}
+
+{% set assessment = json.loads(generate_assessment(outcome=found_intent.outcome, transcript=act.arguments.transcript, ami=ami)) %}
+
+{{found_intent.update({"status": act.arguments.status, "assessment": assessment, "transcript": act.arguments.transcript})}}
+{% set recording_urls = json.loads(act.arguments.recording_urls) %}
+{% if recording_urls is string and recording_urls.strip() %}
+    {% set recording_urls = json.loads(recording_urls) %}
+{% endif %}
+{% if recording_urls | length > 0 %}
+    {{found_intent.update({"recordingUrl": recording_urls[0]})}}
+{% endif %}
+
+{% if found_intent.channel == "phone" and found_intent.assessor_connector %}
+    {{SendCommand(
+        commandIdn="send_connector_event",
+        integrationIdn="customer_intercom",
+        connectorIdn="assessor_server",
+        userPersonaId=agent_persona_id,
+        eventIdn="release_phone_number",
+        eventArguments=json.dumps({
+            "connector_name": found_intent.assessor_connector
+        }, ensure_ascii=False, indent=2)
+    )}}
+{% endif %}
+
+{{SetPersonaAttribute(id=agent_persona_id, field="intents", value=json.dumps(intents, ensure_ascii=False, indent=2))}}
+{{DUMMY(intents)}}
+
+{{ReevaluateIntentsSkill()}}

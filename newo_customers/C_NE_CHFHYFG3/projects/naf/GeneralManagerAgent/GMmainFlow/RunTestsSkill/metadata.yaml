@@ -1,0 +1,9 @@
+id: da49cbb9-86a8-430a-b6d1-e783e8c50ed9
+idn: RunTestsSkill
+title: RunTestsSkill
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

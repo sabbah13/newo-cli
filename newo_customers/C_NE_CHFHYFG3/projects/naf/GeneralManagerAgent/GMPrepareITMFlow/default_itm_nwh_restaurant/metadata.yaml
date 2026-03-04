@@ -1,0 +1,9 @@
+id: e32bb114-8f04-4a61-a65a-f553315d119c
+idn: default_itm_nwh_restaurant
+title: ""
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

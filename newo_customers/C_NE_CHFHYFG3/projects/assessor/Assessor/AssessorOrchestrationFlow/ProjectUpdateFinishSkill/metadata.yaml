@@ -1,0 +1,9 @@
+id: 6db16d94-2a59-4693-972a-5e03ab8b4df5
+idn: ProjectUpdateFinishSkill
+title: ProjectUpdateFinishSkill
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

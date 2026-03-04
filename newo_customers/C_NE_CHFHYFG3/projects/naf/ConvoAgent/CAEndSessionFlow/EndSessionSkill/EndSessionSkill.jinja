@@ -1,0 +1,109 @@
+{% set user_id = GetUser().id | string %}
+
+{{SendSystemEvent(
+    eventIdn="convoagent_update_followup",
+    connectorIdn="system",
+    interval="-1",
+    personaId=user_id,
+    reason="end session"
+)}}
+
+{% set arguments = GetTriggeredAct().arguments %}
+{% set transcript = arguments.transcript %}
+
+{% set last_session_date_time = GetPersonaAttribute(id=user_id, field="last_session_ended_datetime_utc") %}
+
+{% set conversation_values = {} %}
+
+{% set transcript_empty = not transcript.strip() or (GetUser().name ~ ":" not in transcript) %}
+
+{% if not transcript_empty %}
+    {% set conversation_values =  json.loads(_getValuesFromConversationSkill(transcript=transcript, userId=user_id)) %}
+{% endif %}
+
+{# For all those who want to handle session-ended themselves (e.g., send custom webhooks, etc.) #}
+{# Argument `memory` is deprecated and will be removed soon #}
+{{SendSystemEvent(
+    eventIdn="custom_session_ended",
+    connectorIdn="system",
+    memory=transcript,
+    transcript=transcript,
+    conversationValues=json.dumps(conversation_values, ensure_ascii=False, indent=2),
+    sessionIntegrationIdn=GetPersonaAttribute(id=user_id, field="integrationIdn"),
+    sessionConnectorIdn=GetPersonaAttribute(id=user_id, field="connectorIdn")
+)}}
+
+{% if transcript_empty %}
+    {{_utilsSendSystemLogSkill(message="Memory is empty, skipping collecting metrics.")}}
+    {% set integration_idn = GetPersonaAttribute(id=user_id, field="integrationIdn") %}
+    {% set is_outbound_call = _utilsPersonaAttributeGetWithDefaultsSkill(id=user_id, field="outbound_call", defaultValue="False") %}
+
+    {% set url_params = GetPersonaAttribute(id=user_id, field="url_params") %}
+    {% if not url_params.strip() %}
+        {% set url_params = "[]" %}
+    {% endif %}
+
+    {# TODO: Use Platform Action to get list of all modules and their versions when it will be implemented #}
+    {% set modules = json.dumps({"naf": GetCustomerAttribute(field="project_attributes_private_sa_version").strip()}, ensure_ascii=False, indent=2) %}
+
+    {{SendSystemEvent(
+        eventIdn="session_ended",
+        connectorIdn="system",
+        summary=summary_prefix ~ "No conversation took place.",
+        recordingUrls=_utilsGetPhoneCallRecordingsSkill(userId=user_id),
+        workingHours=_defineConversationWorkingHoursStatusSkill(),
+        utms=url_params,
+        integrationIdn=integration_idn,
+        connector=GetPersonaAttribute(id=user_id, field="connectorIdn"),
+        userActor=GetPersonaAttribute(id=user_id, field="actorId"),
+        externalActorId=GetPersonaAttribute(id=user_id, field="externalActorId"),
+        channel=_getConversationChannelSkill(userId=user_id, outboundCall=is_outbound_call),
+        modules=modules
+    )}}
+    {{_utilsResetPersonaAttributesSkill(userId=user_id)}}
+    {{Return()}}
+{% endif %}
+
+{% set semaphore = json.loads(arguments.semaphore) %}
+{% set quality_metrics = json.loads(arguments.quality_metrics) %}
+{% set metrics = json.loads(_collectMetricsSkill(transcript=transcript, semaphore=semaphore, userId=user_id)) %}
+{{_setSpamLimitSkill(userId=user_id, semaphore=semaphore)}}
+
+{{_sendPromotionalSMSSkill(userId=user_id)}}
+
+{# -- Remember facts about the user -- #}
+{% set actor_id = GetActors(personaId=user_id)[0].id | string %}
+{% if not GetCustomerAttribute(field="project_attributes_setting_session_ended_reset_persona_attributes") == "True" %}
+    {% set latest_interaction = summarize_memories_skill(memory=transcript, user_id=user_id) %}
+    {{SendSystemEvent(
+        eventIdn="convoagent_update_user_memories",
+        connectorIdn="system",
+        actorIds=[actor_id],
+        latest_interaction=latest_interaction
+    )}}
+{% endif %}
+
+{{_sendEndSessionEventSkill(userId=user_id, conversationValues=conversation_values, metrics=metrics, transcript=transcript, semaphore=semaphore, quality_metrics=quality_metrics)}}
+
+{% set summary = metrics.summary %}
+{% set potential_revenue = metrics.potential_revenue %}
+
+{% set end_session_summary %}
+The session has ended, here is the summary:
+
+- Conversation summary:
+{{summary}}
+
+- Potential revenue: {{potential_revenue}}
+
+- Semaphore analysis:
+{% for key, value in semaphore.items() %}
+{{key}}: {{value}}
+{% endfor %}
+{% endset %}
+
+{{_utilsSendSystemLogSkill(message=end_session_summary)}}
+
+{# -- Cleanup persona temp attributes -- #}
+{% set common_values = json.dumps(conversation_values.common_values, ensure_ascii=False, indent=2) %}
+{{_utilsResetPersonaAttributesSkill(userId=user_id, commonValues=common_values, summary=summary)}}

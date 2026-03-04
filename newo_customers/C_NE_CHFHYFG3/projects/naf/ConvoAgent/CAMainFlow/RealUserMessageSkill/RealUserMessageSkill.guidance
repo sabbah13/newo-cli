@@ -1,0 +1,36 @@
+{{StartNotInterruptibleBlock()}}
+
+{{Set(name="sms_memory", value=GetTriggeredAct(fields=["sms_memory"]))}}
+
+{{Set(name="user_id", value=GetUser(field="id"))}}
+
+{{!-- Define integration IDN --}}
+{{Set(name="integration_idn", value=session_get_current_integration_idn(user_id=user_id))}}
+
+{{Set(name="real_message_actor_id", value=_getRealMessageActorIdSkill(userId=user_id))}}
+
+{{!-- TODO: Refactor when `GetMemory` aliasing will be implemented --}}
+{{Set(name="user_actor_name", value=GetActor(field="name"))}}
+
+{{Set(name="message", value=Concat("I've just received the message from ", user_actor_name, " with the following content: ", sms_memory))}}
+
+{{SendMessage(message=message, actorIds=real_message_actor_id)}}
+
+{{!-- TODO: This is not used since `0d04efb6a401c3c37575b403271c917429a44b52` --}}
+{{!-- Should it be passed as baseInstruction? --}}
+{{!-- Must be consistent with `UserSMSReplySkill` --}}
+{{#system~}}
+You've just received the following SMS message from the user:
+"{{sms_memory}}".
+
+Say that you got their message and thank them. Proceed further.
+{{~/system}}
+
+{{_userMessageFastReplySkill(
+  callAnalyzeConversationSkill="True",
+  callManageTaskSkill="True",
+  userId=user_id,
+  integrationIdn=integration_idn
+)}}
+
+{{StopNotInterruptibleBlock()}}

@@ -1,0 +1,9 @@
+id: ab48b16e-35c5-4133-b280-8ff8e9585705
+idn: _prepareAttributesBeautyScenarioSkill
+title: _prepareAttributesBeautyScenarioSkill
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

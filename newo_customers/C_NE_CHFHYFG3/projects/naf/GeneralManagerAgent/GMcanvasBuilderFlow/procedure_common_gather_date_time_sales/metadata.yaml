@@ -1,0 +1,9 @@
+id: f94c15dd-cc7b-4736-9281-1405b4ee2ce6
+idn: procedure_common_gather_date_time_sales
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

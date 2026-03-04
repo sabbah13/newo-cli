@@ -1,0 +1,12 @@
+id: 0b45c55c-1bfc-436b-a9c3-9463338724e1
+idn: _memoryCorrection
+title: ""
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: b3634f35-4932-4cf8-a46f-1d89151cd27f
+    name: userId
+    default_value: " "
+path: ""

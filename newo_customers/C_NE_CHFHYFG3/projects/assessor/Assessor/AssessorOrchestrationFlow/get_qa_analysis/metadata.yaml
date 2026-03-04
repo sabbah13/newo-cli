@@ -1,0 +1,15 @@
+id: 5ea819cd-4f9b-4e87-9ace-9704f2209e07
+idn: get_qa_analysis
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_pro
+parameters:
+  - id: eacd1f8a-563a-4a50-b787-c2ceabc1fef1
+    name: itm
+    default_value: ""
+  - id: 6c199f9f-ecc8-4634-9604-d5c66ef4688c
+    name: intents
+    default_value: ""
+path: ""

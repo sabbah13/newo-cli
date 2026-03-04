@@ -1,0 +1,12 @@
+id: cb434c07-1868-498c-879b-8fc8e2742565
+idn: prompt_get_output_format_by_channel
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: c633b570-e7f7-4b57-b645-27a21cf83ae5
+    name: conversation_channel
+    default_value: ""
+path: ""

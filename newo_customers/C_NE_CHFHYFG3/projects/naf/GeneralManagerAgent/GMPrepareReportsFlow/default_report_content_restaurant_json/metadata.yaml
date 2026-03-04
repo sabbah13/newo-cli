@@ -1,0 +1,9 @@
+id: bdc0d44a-3ce5-4028-b483-bb946c1277ae
+idn: default_report_content_restaurant_json
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

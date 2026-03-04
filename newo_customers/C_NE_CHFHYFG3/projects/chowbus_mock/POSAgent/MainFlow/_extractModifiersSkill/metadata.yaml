@@ -1,0 +1,18 @@
+id: d4597f30-a39e-4ff9-8d43-8dd80b15ab06
+idn: _extractModifiersSkill
+title: ""
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: 31a7bee7-df32-4407-bfff-63b96572a047
+    name: schema
+    default_value: " "
+  - id: 22e54d8d-e658-4004-8455-22a2a7aee862
+    name: agentAnswer
+    default_value: " "
+  - id: 380f28ff-3c5e-46ca-8981-07c70547c8e5
+    name: memory
+    default_value: " "
+path: ""

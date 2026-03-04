@@ -1,0 +1,70 @@
+{% set canvas = json.loads(GetCustomerAttribute(field="project_attributes_private_dynamic_workflow_builder_canvas")) %}
+
+{% set intent_type_items = json.loads(utils_find_object_by_key_value(value="intent_types", obj=canvas.types, key="idn"))["items"] %}
+
+{% set itm %}{% for intent_type in intent_type_items %}
+{{intent_type.title}}
+{{intent_type.body}}
+{% endfor %}
+{% endset %}
+
+{{SetCustomerAttribute(field="project_attributes_private_dynamic_itm_template", value=remove_mentions(text=itm.strip()))}}
+
+{{utils_compile_customer_attribute(template_attribute_name="project_attributes_private_dynamic_itm_template", compiled_attribute_name="project_attributes_private_dynamic_itm_compiled")}}
+
+{{SendSystemEvent(eventIdn="gm_prepare_itm", connectorIdn="system", global="True")}}
+
+{% set procedure_items = json.loads(utils_find_object_by_key_value(value="procedures", obj=canvas.types, key="idn"))["items"] %}
+
+{# TODO: Handle when there is no introduction scenario #}
+{% set introduction_scenarios = json.loads(utils_find_object_by_key_value(value="introduction", obj=canvas.types, key="idn"))["items"] %}
+
+{% if not introduction_scenarios %}
+    {% set introduction = {"title": '## **Scenario 0:** "Introduction"', "body": "### **Step 0.1:** Know the user's needs and move directly to the scenario that matches the user's request per the `<IntentTypeMap>`."} %}
+{% else %}
+    {% set introduction = introduction_scenarios[0] %}
+{% endif %}
+
+{% set scenario_items = json.loads(utils_find_object_by_key_value(value="scenarios", obj=canvas.types, key="idn"))["items"] %}
+
+{% set ami_header %}**ConvoAgent** starts conversation from **Introduction** scenario.
+
+ConvoAgent MUST skip any step that requires gathering information that was already provided by the User in **conversation**. For example, if the user has provided the number of guests, don't ask for it again.{% endset %}
+
+{# Ensure that "Switch Language" procedure is always included. If custom language switch procedure is not found, add the default one. #}
+{% set custom_language_switch_procedure = utils_find_object_by_key_value(value="procedure_common_gather_language", key="origin_idn", obj=procedure_items) %}
+{% if not custom_language_switch_procedure %}
+    {{ procedure_items.append(json.loads(procedure_common_gather_language())) }}
+{% endif %}
+
+{% set ami %}{{ami_header}}
+
+---
+
+# **Procedures**
+{% for procedure in procedure_items %}
+{{procedure.title}}
+
+{{procedure.body}}
+
+---
+{% endfor %}
+# **Scenarios**
+
+{{introduction.title}}
+
+{{introduction.body}}
+
+---
+{% for scenario in scenario_items %}
+{{scenario.title}}
+
+{{scenario.body}}
+
+---
+{% endfor %}
+{% endset %}
+
+{{SetCustomerAttribute(field="project_attributes_private_dynamic_ami_template", value=remove_mentions(text=ami.strip().removesuffix('---').rstrip()))}}
+
+{{utils_compile_customer_attribute(template_attribute_name="project_attributes_private_dynamic_ami_template", compiled_attribute_name="project_attributes_private_dynamic_ami_compiled")}}

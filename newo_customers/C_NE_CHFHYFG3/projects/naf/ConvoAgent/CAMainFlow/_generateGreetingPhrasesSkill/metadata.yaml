@@ -1,0 +1,15 @@
+id: 70c38b1d-505a-4ba4-b86c-e268509eb424
+idn: _generateGreetingPhrasesSkill
+title: ""
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: abaf3b27-4700-41c3-a171-9a4c416d56e2
+    name: reason
+    default_value: " "
+  - id: 00af6467-b94d-4d24-bdb7-4848c9de5575
+    name: userId
+    default_value: " "
+path: ""

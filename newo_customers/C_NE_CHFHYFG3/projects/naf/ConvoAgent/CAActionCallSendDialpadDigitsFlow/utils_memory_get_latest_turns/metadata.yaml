@@ -1,0 +1,15 @@
+id: eebe6861-61d7-404f-8afe-0599838bc135
+idn: utils_memory_get_latest_turns
+title: utils_memory_get_latest_turns
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: feb26712-3151-4df6-a6ed-91daa67c5937
+    name: memory
+    default_value: " "
+  - id: d4c1f010-7c62-4314-bc7c-9f500b3d3636
+    name: amount_of_turns
+    default_value: "20"
+path: ""

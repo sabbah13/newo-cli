@@ -1,0 +1,9 @@
+id: 19280af0-1b41-4036-9ec3-28af9f58a3c3
+idn: default_report_content_dental
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

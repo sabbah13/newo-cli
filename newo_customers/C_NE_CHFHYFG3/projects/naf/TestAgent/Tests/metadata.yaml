@@ -1,0 +1,19 @@
+id: 0b5599f3-bed2-4a09-8ca6-94a9a08f4e3f
+idn: Tests
+title: Tests
+description: ""
+default_runner_type: guidance
+default_model:
+  provider_idn: google
+  model_idn: gemini25_flash
+events:
+  - id: 5c1f738e-4275-4833-bb38-5420a816e21f
+    description: null
+    idn: user_message
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: TestSkill
+    state_idn: null
+    integration_idn: sandbox
+    connector_idn: test_agent_sandbox
+state_fields: []

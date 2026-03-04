@@ -1,0 +1,9 @@
+id: 45f7a55e-d70d-4944-a061-6287e3fd4662
+idn: _prepareAttributesRestaurantSkill
+title: _prepareAttributesRestaurantSkill
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

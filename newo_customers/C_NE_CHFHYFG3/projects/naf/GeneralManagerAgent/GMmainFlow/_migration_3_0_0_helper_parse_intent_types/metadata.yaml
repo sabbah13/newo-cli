@@ -1,0 +1,12 @@
+id: 9544fcf2-1e19-4576-8597-f9ece12a3264
+idn: _migration_3_0_0_helper_parse_intent_types
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: 8e180ac6-ff27-422e-89eb-5cb6d6d0793f
+    name: intent_types
+    default_value: ""
+path: ""

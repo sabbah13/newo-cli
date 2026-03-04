@@ -1,0 +1,12 @@
+id: a1dc6c99-e51b-4e75-81fd-289c16fefe88
+idn: _getExternalIdsFromInputTasksSkill
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: 9f9f48a5-88b5-4e3a-a596-1e48f480ba02
+    name: inputTasks
+    default_value: " "
+path: ""

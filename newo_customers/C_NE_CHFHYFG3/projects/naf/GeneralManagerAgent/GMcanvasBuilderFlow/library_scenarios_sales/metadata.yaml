@@ -1,0 +1,9 @@
+id: 8f05ce15-eb4a-4d25-99ce-d0f3264b8da6
+idn: library_scenarios_sales
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

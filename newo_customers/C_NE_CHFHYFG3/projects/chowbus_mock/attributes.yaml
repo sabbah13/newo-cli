@@ -1,0 +1,33 @@
+attributes:
+  - idn: place_order_webhook_url
+    value: " "
+    title: ""
+    description: ""
+    group: ""
+    is_hidden: false
+    possible_values: []
+    value_type: !enum "AttributeValueTypes.string"
+  - idn: send_menu_to_webhook
+    value: https://hooks.newo.ai/fQTEQ-lFvZSZ66K7Q_xVpA
+    title: ""
+    description: ""
+    group: ""
+    is_hidden: false
+    possible_values: []
+    value_type: !enum "AttributeValueTypes.string"
+  - idn: send_order_completion_to
+    value: https://hooks.newo.ai/FNs4SBG8-xrlBINvZLuc9A
+    title: ""
+    description: ""
+    group: ""
+    is_hidden: false
+    possible_values: []
+    value_type: !enum "AttributeValueTypes.string"
+  - idn: send_order_creation_to
+    value: https://hooks.newo.ai/qu-yXgcLT6PWRTNhJmUxFg
+    title: ""
+    description: ""
+    group: ""
+    is_hidden: false
+    possible_values: []
+    value_type: !enum "AttributeValueTypes.string"

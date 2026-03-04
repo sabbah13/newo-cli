@@ -1,0 +1,12 @@
+id: 268e3f81-2685-4cdc-972b-c8f90da4f84d
+idn: _utilsGetConversationMetaSkill
+title: ""
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: 8d932424-8655-48a6-91d4-631caf31eaf1
+    name: userId
+    default_value: ""
+path: ""

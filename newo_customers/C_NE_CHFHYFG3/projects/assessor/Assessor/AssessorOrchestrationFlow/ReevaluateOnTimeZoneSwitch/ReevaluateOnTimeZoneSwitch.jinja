@@ -1,0 +1,7 @@
+{% set time_zone_switch_state = GetState(name="time_zone_switch_state") %}
+{% if time_zone_switch_state != "in_progress" %}
+    {{Return()}}
+{% endif %}
+
+{{SetState(name="time_zone_switch_state", value=" ")}}
+{{ReevaluateIntentsSkill()}}

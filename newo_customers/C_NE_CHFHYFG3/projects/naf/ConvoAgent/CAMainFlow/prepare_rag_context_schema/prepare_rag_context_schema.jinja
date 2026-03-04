@@ -1,0 +1,34 @@
+{% set schema =
+{
+  "type": "object",
+  "properties": {
+    "search_result": {
+      "type": "object",
+      "properties": {
+        "article_id_1": {
+          "type": "string",
+          "description": "First most relevant article id or \"none\"."
+        },
+        "article_id_2": {
+          "type": "string",
+          "description": "Second most relevant article id or \"none\"."
+        },
+        "article_id_3": {
+          "type": "string",
+          "description": "Third most relevant article id or \"none\"."
+        }
+      },
+      "required": [
+        "article_id_1",
+        "article_id_2",
+        "article_id_3"
+      ]
+    }
+  },
+  "required": [
+    "search_result"
+  ]
+}
+%}
+
+{{Return(val=json.dumps(schema, ensure_ascii=False, indent=2))}}

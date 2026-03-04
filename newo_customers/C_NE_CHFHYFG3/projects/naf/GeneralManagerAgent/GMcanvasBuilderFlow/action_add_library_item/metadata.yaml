@@ -1,0 +1,15 @@
+id: bfca6dba-8e0f-4eba-b60a-df364f208e23
+idn: action_add_library_item
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: 94031f54-2421-44ce-b1d1-3b2948c3645e
+    name: item
+    default_value: ""
+  - id: fabb20fa-7178-445c-aa68-0936005315c9
+    name: type_idn
+    default_value: ""
+path: ""

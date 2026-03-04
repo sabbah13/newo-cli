@@ -1,0 +1,18 @@
+id: eb5ed65c-5c5c-4559-a2e8-8b2cb7b67700
+idn: _orderKeeperInitialCheckSkill
+title: ""
+runner_type: guidance
+model:
+  provider_idn: openai
+  model_idn: gpt4o_structured_output_latest
+parameters:
+  - id: 6b54e8ce-183e-478b-b29f-d926ba9b74e4
+    name: memory
+    default_value: " "
+  - id: 352b2a5b-d1bb-4c48-905f-2c80d6b8de15
+    name: agentAnswer
+    default_value: " "
+  - id: fd0884b3-45f8-456d-9627-0ea65320c990
+    name: userId
+    default_value: " "
+path: ""

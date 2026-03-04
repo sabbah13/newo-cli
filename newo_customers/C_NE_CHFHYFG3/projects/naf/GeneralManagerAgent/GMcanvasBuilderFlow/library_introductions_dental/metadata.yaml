@@ -1,0 +1,9 @@
+id: bf00197a-cde4-4b3f-b543-b0a7a7872d37
+idn: library_introductions_dental
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

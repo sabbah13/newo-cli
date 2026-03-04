@@ -1,0 +1,9 @@
+id: c2fb35a4-31e5-4e82-b629-81254384622b
+idn: SetFollowUpUserSpeechStartedSkill
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

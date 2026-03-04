@@ -1,0 +1,6 @@
+{% set act = GetTriggeredAct() %}
+{% set message = act.text %}
+{% if message == "assessor" %}
+    {{SetPersonaAttribute(id=GetAgentPersona().id | string, field="intents", value="[]")}}
+    {{ProjectUpdateFinishSkill()}}
+{% endif %}

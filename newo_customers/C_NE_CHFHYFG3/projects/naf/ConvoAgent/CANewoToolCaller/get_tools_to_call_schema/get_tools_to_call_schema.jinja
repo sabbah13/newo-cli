@@ -1,0 +1,44 @@
+{% set tool_list = json.loads(keys) %}
+{% if ranking == "True" %}
+  {% set schema =
+  {
+    "type": "object",
+    "properties": {
+      "analysis": {
+        "type": "string",
+        "description": "Briefly explain your choice."
+      },
+      "toolToCall": {
+        "type": "string",
+        "description": "The name of a tool that meets all conditions (most relevant).",
+        "enum": tool_list
+      }
+    },
+    "required": ["analysis", "toolToCall"]
+  }
+  %}
+  {{Return(val=json.dumps(schema, ensure_ascii=False, indent=2))}}
+{% endif %}
+{% set schema =
+{
+  "type": "object",
+  "properties": {
+    "analysis": {
+      "type": "string",
+      "description": "Briefly explain your choice."
+    },
+    "toolsToCall": {
+      "type": "array",
+      "description": "From all the `tools`, find tools that meets all conditions and put their names (property name) here. Meeting all requirements means that all internal tool conditions are set to `true`. If none of tools met all conditions, set this field to an empty array.",
+      "items": {
+        "type": "string",
+        "description": "The name of a tool that meets all conditions.",
+        "enum": tool_list
+      }
+    }
+  },
+  "required": ["analysis", "toolsToCall"]
+}
+%}
+
+{{Return(val=json.dumps(schema, ensure_ascii=False, indent=2))}}

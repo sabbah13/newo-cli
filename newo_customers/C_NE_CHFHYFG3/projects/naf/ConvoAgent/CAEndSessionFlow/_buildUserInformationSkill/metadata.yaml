@@ -1,0 +1,15 @@
+id: 1b2de390-f0b2-41ab-9043-9d473da4b209
+idn: _buildUserInformationSkill
+title: _buildUserInformationSkill
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: 54098024-caf9-4024-8eb0-7748848dc76b
+    name: isOutboundCall
+    default_value: "False"
+  - id: 2bc8f4db-3443-4a2c-a476-054673566ee9
+    name: userId
+    default_value: " "
+path: ""

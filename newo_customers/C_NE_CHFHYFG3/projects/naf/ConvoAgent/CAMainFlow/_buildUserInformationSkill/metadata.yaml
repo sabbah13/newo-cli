@@ -1,0 +1,12 @@
+id: 040f137f-4fd8-407a-af6b-a2ecc4f5102e
+idn: _buildUserInformationSkill
+title: _buildUserInformationSkill
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: cdfecae7-1a65-4cec-a4d1-28cc17ab155a
+    name: userId
+    default_value: " "
+path: ""

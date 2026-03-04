@@ -1,0 +1,9 @@
+id: ee01be58-1458-48e2-814d-7b283d2ae3d9
+idn: scenario_restaurant_regular_reservation_default
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

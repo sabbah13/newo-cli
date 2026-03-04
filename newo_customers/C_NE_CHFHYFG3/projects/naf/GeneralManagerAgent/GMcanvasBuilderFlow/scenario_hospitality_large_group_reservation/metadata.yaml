@@ -1,0 +1,9 @@
+id: 269ad221-63b6-403d-8207-ce85c10e4cfc
+idn: scenario_hospitality_large_group_reservation
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

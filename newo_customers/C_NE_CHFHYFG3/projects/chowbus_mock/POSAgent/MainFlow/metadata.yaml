@@ -1,0 +1,91 @@
+id: a323e92c-b0c0-497f-a713-524230ead8fa
+idn: MainFlow
+title: MainFlow
+description: ""
+default_runner_type: guidance
+default_model:
+  provider_idn: openai
+  model_idn: gpt4o
+events:
+  - id: 6c4ce9b2-3bee-468f-aaca-759bc6133e3c
+    description: ""
+    idn: broadcast_analyze_conversation
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: AnalyzeConversationSkill
+    state_idn: null
+    integration_idn: null
+    connector_idn: null
+  - id: d7b86d03-c605-4b66-b853-6f8a6756ac7d
+    description: ""
+    idn: custom_session_ended
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: EndSessionSkill
+    state_idn: null
+    integration_idn: null
+    connector_idn: null
+  - id: 8e486c0d-fdbd-43fd-88b0-f56b624271d3
+    description: ""
+    idn: menu_update_received
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: UpdateMenuNSLSkill
+    state_idn: null
+    integration_idn: api
+    connector_idn: pos_integration
+  - id: ace588d3-7996-43a9-98d3-cf32cdc04551
+    description: ""
+    idn: order_completed
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: OrderCompletedSkill
+    state_idn: null
+    integration_idn: api
+    connector_idn: pos_integration
+  - id: 9e55d8f1-1eea-46bb-985c-25c44a5c316c
+    description: ""
+    idn: order_completed_internal
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: _orderCompletedInternalSkill
+    state_idn: null
+    integration_idn: null
+    connector_idn: null
+  - id: 667de85d-599e-48ce-a3ae-e1236da1db2a
+    description: ""
+    idn: order_created
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: OrderCreatedSkill
+    state_idn: null
+    integration_idn: api
+    connector_idn: pos_integration
+  - id: caf09035-e355-45fc-a93b-280580e87fb8
+    description: ""
+    idn: order_created_internal
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: _orderCreatedInternalSkill
+    state_idn: null
+    integration_idn: null
+    connector_idn: null
+  - id: a006b6ee-054c-4972-ad1a-cb7f112b94f8
+    description: ""
+    idn: project_import_finish
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: InitSkill
+    state_idn: null
+    integration_idn: system
+    connector_idn: customer
+  - id: c804bb62-9264-45ed-a6a0-6632afabe453
+    description: ""
+    idn: project_publish_finish
+    skill_selector: skill_idn
+    interrupt_mode: queue
+    skill_idn: InitSkill
+    state_idn: null
+    integration_idn: system
+    connector_idn: project
+state_fields: []

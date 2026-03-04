@@ -1,0 +1,9 @@
+id: 98b72793-009c-49ac-89f8-c1823049728b
+idn: _prepareAttributesCateringPrivateDynamicEmailVariablesSkill
+title: _prepareAttributesCateringPrivateDynamicEmailVariablesSkill
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

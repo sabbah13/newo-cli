@@ -1,0 +1,36 @@
+id: 3c4b74ca-bfdf-4b55-b66b-92a7830f853c
+idn: _receiveAvailableSlotsBuildAvailabilityContextDefaultSkill
+title: ""
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: 03ad4e2a-400a-4cff-9676-9b30a0330e6c
+    name: output
+    default_value: ""
+  - id: 081a71de-ec50-4f9d-8781-d92501db30ea
+    name: partySize
+    default_value: " "
+  - id: fedf050e-c2e4-4f4a-bd43-f109d72f2ac8
+    name: slotsOutput
+    default_value: ""
+  - id: 18056699-d12e-4549-8b4d-fa300ae44800
+    name: timeRange
+    default_value: " "
+  - id: 095b083e-2fbd-4f95-b0b4-16f9e764f864
+    name: availability
+    default_value: ""
+  - id: 9e62e21f-7671-4334-bbd5-9453f35bfa79
+    name: userId
+    default_value: " "
+  - id: 169c99cf-ff99-4f2b-9c63-58845a676f71
+    name: userRequestedTime
+    default_value: " "
+  - id: 35ec1c22-4e9c-46c7-bf82-d2e7e19fd3ba
+    name: userRequestedDatetime
+    default_value: " "
+  - id: f0bb3b36-6c9c-42ae-8bc5-99103fc4bcbe
+    name: userRequestedSlot
+    default_value: " "
+path: ""

@@ -1,0 +1,9 @@
+id: 9c8610e7-7088-43bb-85f1-0feb5570e11f
+idn: library_scenarios_restaurant
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

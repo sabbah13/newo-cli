@@ -1,0 +1,9 @@
+id: ac254e35-14d0-4df1-aa4c-137f60345353
+idn: _validateRetryCountSkill
+title: _validateRetryCountSkill
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

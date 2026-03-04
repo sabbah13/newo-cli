@@ -1,0 +1,9 @@
+id: 4cdc967a-2a33-4b32-be30-5fcc5c8020f6
+idn: EnableFollowUp
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

@@ -1,0 +1,9 @@
+id: e691dec0-e488-4289-919e-d851372c571a
+idn: _prepareAttributesCommonPrivateDynamicBookingSchemasSkill
+title: _prepareAttributesCommonPrivateDynamicBookingSchemasSkill
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

@@ -1,0 +1,133 @@
+{{Set(name="is_first_init_done", value=GetCustomerAttribute(field="project_attributes_private_account_initialized_first_time"))}}
+{{!-- All `representative agent` common Customer Attributes must be specified here with default values --}}
+{{!-- (must be sorted alphabetically) --}}
+
+{{! Is being set in each industry independently }}
+{{_utilsCustomerAttributeSetIfEmptySkill(field="project_representative_agent_chat_greeting_phrase", value=" ")}}
+
+{{set_customer_attribute_from_ac_if_first_init_and_empty(is_first_init_done=is_first_init_done, naf_field="project_representative_agent_name", ac_field="agent_creator_agent_info_name")}}
+
+{{_utilsCustomerAttributeSetIfEmptySkill(field="project_representative_agent_chat_formatting_style", value="- Do not use any lists (numbered or bulleted) when communicating information.
+- Summarize all details in a single sentence where appropriate.
+- Do not use markdown formatting.
+- Do not use hashtags.
+- Do not use emojis.")}}
+
+{{_utilsCustomerAttributeSetIfEmptySkill(field="project_representative_agent_chat_speaking_style", value="Friendly professional, super welcoming.")}}
+
+{{_utilsCustomerAttributeSetIfEmptySkill(field="project_representative_agent_providing_prices_explicit_constraint", value=" ")}}
+
+{{_utilsCustomerAttributeSetIfEmptySkill(field="project_representative_agent_voicemail_detection_behavior_instruction", value="Leave a clear, meaningful message. State your name, company, the reason for your call, and what you need from them. Then explicitly say goodbye. Keep it brief but clear.")}}
+
+{{_utilsCustomerAttributeSetIfEmptySkill(field="project_representative_agent_voice_speaking_style", value=_prepareAgentStyleSkill())}}
+
+{{set_customer_attribute_from_ac_if_first_init_and_empty(is_first_init_done=is_first_init_done, naf_field="project_representative_agent_title", ac_field="agent_creator_agent_info_title")}}
+
+{{!-- TODO: Potentially, translate disclaimer phrase in `agent_creator_voice_channel_disclaimer_phrase` (on the Agent Creator side) --}}
+{{Set(name="language_primary", value=GetCustomerAttribute(field="project_business_language_primary"))}}
+{{utils_customer_attribute_set_if_empty_depending_on_language(
+    attribute_idn="project_representative_agent_voice_disclaimer_phrase",
+    input_text="This call may be recorded.",
+    input_text_language="English",
+    target_language=language_primary
+)}}
+
+{{Set(name="agent_gender", value=_prepareAgentGenderSkill())}}
+{{_utilsCustomerAttributeSetIfEmptySkill(field="project_representative_agent_gender", value=agent_gender)}}
+
+{{!-- TODO: Refactor --}}
+{{#if agent_gender == "auto" }}
+  {{_utilsCustomerAttributeSetIfEmptySkill(field="project_attributes_setting_voice_integration_service_voice_to_voice_provider_genai_voice", value="Female Despina - Smooth")}}
+  {{_utilsCustomerAttributeSetIfEmptySkill(field="project_attributes_setting_voice_integration_service_voice_to_voice_provider_openai_voice", value="Neutral - Alloy")}}
+{{/if}}
+{{#if agent_gender == "female" }}
+  {{_utilsCustomerAttributeSetIfEmptySkill(field="project_attributes_setting_voice_integration_service_voice_to_voice_provider_genai_voice", value="Female Despina - Smooth")}}
+  {{_utilsCustomerAttributeSetIfEmptySkill(field="project_attributes_setting_voice_integration_service_voice_to_voice_provider_openai_voice", value="Female - Sage")}}
+{{/if}}
+{{#if agent_gender == "male" }}
+  {{_utilsCustomerAttributeSetIfEmptySkill(field="project_attributes_setting_voice_integration_service_voice_to_voice_provider_genai_voice", value="Male Iapetus - Clear")}}
+  {{_utilsCustomerAttributeSetIfEmptySkill(field="project_attributes_setting_voice_integration_service_voice_to_voice_provider_openai_voice", value="Male - Cedar")}}
+{{/if}}
+
+{{! Is being set in each industry independently }}
+{{_utilsCustomerAttributeSetIfEmptySkill(field="project_representative_agent_voice_greeting_phrase", value=" ")}}
+
+{{_utilsCustomerAttributeSetIfEmptySkill(field="project_representative_agent_voice_greeting_phrase_later_returning", value=" ")}}
+{{_utilsCustomerAttributeSetIfEmptySkill(field="project_representative_agent_voice_greeting_phrase_recent_returning", value=" ")}}
+
+{{! JSON object - example: `{'area_code': '650', 'country_code': 'US', 'fallback_area_code': '408'}` or `{'country_code': 'NL'}` }}
+{{!-- TODO: Remove temporal fix with replacing single quotes to double --}}
+{{Set(name="agent_creator_voice_channel_phone", value=GetCustomerAttribute(field="agent_creator_voice_channel_phone"))}}
+{{Set(name="agent_creator_voice_channel_phone", value=agent_creator_voice_channel_phone.replace("'", '"'))}}
+
+{{Set(name="area_code", value=GetValueJSON(obj=agent_creator_voice_channel_phone, key="area_code"))}}
+{{Set(name="area_code", value=area_code.replace('"', " "))}}
+{{Set(name="area_code", value=area_code.strip())}}
+{{_utilsCustomerAttributeSetIfEmptySkill(field="project_representative_agent_voice_phone_area_code", value=area_code)}}
+
+{{Set(name="country_code", value=GetValueJSON(obj=agent_creator_voice_channel_phone, key="country_code"))}}
+{{#if not IsEmpty(text=country_code)}}
+  {{Set(name="country_code", value=country_code.replace('"', " "))}}
+  {{Set(name="country_code", value=country_code.strip())}}
+  {{_utilsCustomerAttributeSetIfEmptySkill(
+    field="project_representative_agent_voice_phone_alpha2_code",
+    value=country_code
+  )}}
+{{else}}
+  {{_utilsCustomerAttributeSetIfEmptySkill(
+    field="project_representative_agent_voice_phone_alpha2_code",
+    value="null"
+  )}}
+{{/if}}
+
+{{Set(name="fallback_area_code", value=GetValueJSON(obj=agent_creator_voice_channel_phone, key="fallback_area_code"))}}
+{{Set(name="fallback_area_code", value=fallback_area_code.replace('"', " "))}}
+{{Set(name="fallback_area_code", value=fallback_area_code.strip())}}
+{{_utilsCustomerAttributeSetIfEmptySkill(field="project_representative_agent_voice_phone_fallback_area_code", value=fallback_area_code)}}
+
+{{_utilsCustomerAttributeSetIfEmptySkill(field="project_representative_agent_voice_phone_country_code", value=" ")}}
+
+{{_utilsCustomerAttributeSetIfEmptySkill(field="project_representative_agent_voice_stt_model_id", value=" ")}}
+
+{{_utilsCustomerAttributeSetIfEmptySkill(field="project_representative_agent_voice_stt_provider_id", value=" ")}}
+
+{{_utilsCustomerAttributeSetIfEmptySkill(field="project_representative_agent_voice_transcriber_language", value=" ")}}
+
+{{_utilsCustomerAttributeSetIfEmptySkill(field="project_representative_agent_voice_tts_model_id", value=" ")}}
+
+{{_utilsCustomerAttributeSetIfEmptySkill(field="project_representative_agent_voice_tts_provider_id", value=" ")}}
+
+
+{{!-- TODO: Verify potential timing issues (will the Connector be available with phone number during this `init` step?) --}}
+{{Set(name="voice_integration_service", value=GetCustomerAttribute(field="project_attributes_setting_voice_integration_service"))}}
+{{!-- TODO: Refactor --}}
+{{Set(name="agent_phone_number", value=" ")}}
+{{#if voice_integration_service == "VAPI Integration"}}
+  {{Set(
+    name="agent_phone_number",
+    value=Stringify(
+      GetActors(
+        personaId=GetAgentPersona(field="id"),
+        integrationIdn="vapi",
+        connectorIdn="vapi_caller",
+        fields="externalId"
+      )
+    )
+  )}}
+{{/if}}
+{{#if voice_integration_service == "NEWO Voice Integration"}}
+  {{Set(
+    name="agent_phone_number",
+    value=Stringify(
+        GetConnectorInfo(
+          integrationIdn="newo_voice",
+          connectorIdn="newo_voice_connector",
+          field="agent_phone_number"
+        )
+    )
+  )}}
+{{/if}}
+{{#if IsEmpty(text=agent_phone_number)}}
+  {{Set(name="agent_phone_number", value="null")}}
+{{/if}}
+{{SetCustomerAttribute(field="project_representative_agent_voice_phone_number", value=agent_phone_number)}}

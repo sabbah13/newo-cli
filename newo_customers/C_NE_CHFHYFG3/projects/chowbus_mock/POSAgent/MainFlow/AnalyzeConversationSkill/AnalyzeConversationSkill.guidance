@@ -1,0 +1,14 @@
+{{Set(name="user_id", value=GetUser(field="id"))}}
+
+{{Set(name="memory", value=GetTriggeredAct(fields=["memory"]))}}
+{{Set(name="memory_with_salt", value=Concat(memory, "%DELETE_ME%"))}}
+{{Set(name="latest_agent_answer", value=GetTriggeredAct(fields=["convoAgentAnswer"]))}}
+{{Set(name="latest_agent_answer_with_salt", value=Concat(latest_agent_answer, "%DELETE_ME%"))}}
+{{#if memory_with_salt.__contains__(latest_agent_answer_with_salt)}}
+    {{Set(name="memory_without_latest_agent_answer", value=memory_with_salt.replace(Concat("ConvoAgent: ", latest_agent_answer_with_salt), " "))}}
+{{else}}
+    {{Set(name="memory_without_latest_agent_answer", value=memory)}}
+{{/if}}
+
+{{_orderKeeperInitialCheckSkill(userId=user_id, memory=memory_without_latest_agent_answer, agentAnswer=latest_agent_answer)}}
+

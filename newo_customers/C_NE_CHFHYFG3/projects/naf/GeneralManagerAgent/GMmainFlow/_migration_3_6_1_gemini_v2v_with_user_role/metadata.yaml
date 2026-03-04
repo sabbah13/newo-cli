@@ -1,0 +1,9 @@
+id: 8b6fc0e6-4137-4997-85e8-f12ca93ba8d6
+idn: _migration_3_6_1_gemini_v2v_with_user_role
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

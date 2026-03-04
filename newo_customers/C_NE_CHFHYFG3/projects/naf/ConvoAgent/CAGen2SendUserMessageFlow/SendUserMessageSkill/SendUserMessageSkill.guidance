@@ -1,0 +1,14 @@
+{{Set(name="message", value=GetTriggeredAct(fields="transcript"))}}
+{{#if IsEmpty(text=message)}}
+    {{_utilsSendSystemLogSkill(message="User message is empty, skipping sending.")}}
+    {{Return()}}
+{{/if}}
+
+{{Set(name="user_id", value=GetUser(field="id"))}}
+{{Set(name="actor_id", value=_utilsGetOrSetLastConvoActorId(userId=user_id))}}
+{{CreateMessageAct(text=message, from="user", userActorId=actor_id)}}
+
+{{SendSystemEvent(
+    eventIdn="extend_session",
+    connectorIdn="system"
+)}}

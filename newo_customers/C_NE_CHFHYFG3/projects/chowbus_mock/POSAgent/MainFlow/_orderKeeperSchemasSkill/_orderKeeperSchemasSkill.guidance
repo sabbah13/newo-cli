@@ -1,0 +1,166 @@
+{{#if promise == "True"}}
+{{#system~}}
+{
+  "type": "object",
+  "properties": {
+    "promised": {
+      "type": "boolean",
+      "description": "Set to `true` if the agent explicitly states they themselves are going to check (confirm) the order is correctly built / submit the order now. Otherwise, set to `false`."
+    },
+    "promiseTarget": {
+        "type": "string",
+        "description": "What exactly the agent promised.",
+        "enum": ["submit_order", "enter_order", "nothing"]
+    },
+    "askedToWait": {
+        "type": "boolean",
+        "description": "Set to true if agent explicitly asked user to wait, like `Wait, I will get back shortly`. Set to `false` if the agent continued the conversation with a question and just let the user know he is working on it."
+    }
+  },
+  "required": ["promised", "promiseTarget", "askedToWait"]
+}
+{{~/system}}
+  {{Return(val=GetCurrentPrompt())}}
+{{/if}}
+{{#if extract == "True"}}
+{{#system~}}
+{
+  "type": "object",
+  "properties": {
+    "order_items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "item_name": {
+            "type": "string",
+            "description": "The name of the item to be added to the order.",
+            "enum": {{indexes}}
+          },
+          "item_quantity": {
+              "type": "integer",
+              "description": "Quantity of the specified item."
+          },
+          "item_modifiers": {
+              "type": "string",
+              "description": "The modifiers for that item. If there are few items with the same name and different modifiers, they must be different elements of `order_items`. Leave empty string if no modifiers for this piece(s)" 
+          }
+        },
+        "required": ["item_name", "item_quantity", "item_modifiers"]
+      },
+      "description": "Each item must be unique combination of item name and item modifiers, i.e if the same item is registered with one modifier, but another item with the same name with other modifier, it must be different array elements."
+    }
+  },
+  "required": ["order_items"]
+}
+{{~/system}}
+  {{Return(val=GetCurrentPrompt())}}
+{{/if}}
+
+{{#if customerInfo == "True"}}
+{{#system~}}
+{
+  "type": "object",
+  "properties": {
+    "customer": {
+      "type": "object",
+      "properties": {
+        "firstName": {
+          "type": "string",
+          "description": "User's first name"
+        },
+        "lastName": {
+          "type": "string",
+          "description": "User's last name"
+        },
+        "phone": {
+          "type": "string",
+          "description": "User's phone number in E.164 format, for example +12345671234"
+        },
+        "phonePin": {
+          "type": "string",
+          "const": "",
+          "description": "empty string"
+        }
+      },
+      "required": ["firstName", "lastName", "phone", "phonePin"]
+    },
+    "payments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Payment method.",
+            "enum": ["CARD", "CASH"]
+          }
+        },
+        "required": ["name"]
+      }
+    },
+    "fulfillmentType": {
+      "type": "string",
+      "description": "Fulfillment type",
+      "enum": ["DELIVERY", "PICKUP"]
+    },
+    "address": {
+      "type": "object",
+      "properties": {
+        "zipCode": {
+          "type": "string",
+          "description": "User's confirmed zip code. In case of PICKUP order or if not provided, set to one whitespace string: ' '."
+        },
+        "state": {
+          "type": "string",
+          "description": "User's address state code. In case of PICKUP order or if not provided, set to one whitespace string: ' '.",
+          "enum": [
+            "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA",
+            "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD",
+            "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ",
+            "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC",
+            "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY", " "
+          ]
+        },
+        "city": {
+          "type": "string",
+          "description": "User's provided city. In case of PICKUP order or if not provided, set to one whitespace string: ' '."
+        },
+        "address": {
+          "type": "string",
+          "description": "User's provided address line(s). Include as is from user's prompt without unit number. In case of PICKUP order or if not provided, set to one whitespace string: ' '"
+        },
+        "unit_number": {
+          "type": "string",
+          "description": "Separately include unit number from the user specified address, leave empty string (' ') if unknown."
+        }
+      },
+      "required": ["zipCode", "state", "city", "address", "unit_number"]
+    }
+  },
+  "required": ["customer", "payments", "fulfillmentType", "address"]
+}
+{{~/system}}
+  {{Return(val=GetCurrentPrompt())}}
+{{/if}}
+
+
+{{#if extractModifiers == "True"}}
+{{#system~}}
+{
+  "type": "object",
+  "properties": {
+    "modifiers": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": {{availableModifiers}}
+      },
+      "minItems": 0
+    }
+  },
+  "required": ["modifiers"]
+}
+{{~/system}}
+  {{Return(val=GetCurrentPrompt())}}
+{{/if}}

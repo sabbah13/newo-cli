@@ -1,0 +1,9 @@
+id: 09979d44-c038-4934-a650-3eec79e137a5
+idn: SendMessage
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

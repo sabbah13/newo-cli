@@ -1,0 +1,12 @@
+id: 00698d70-3fbc-40ac-a72a-0deb9cd909b0
+idn: prompt_get_tool_functions
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: 4c3937e5-b79d-465f-a75e-348943941b10
+    name: v2v_enabled
+    default_value: ""
+path: ""

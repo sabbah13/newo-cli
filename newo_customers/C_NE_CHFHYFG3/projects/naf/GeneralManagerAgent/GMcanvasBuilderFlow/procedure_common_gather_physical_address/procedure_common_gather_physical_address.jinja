@@ -1,0 +1,39 @@
+{% set title = '## **Gathering Physical Address** procedure' %}
+
+{% set body %}
+While gathering physical addresses, ConvoAgent is instructed to obtain from the User a complete and correct location address including city, street, and building number.
+
+- Ask the User to provide a full address.
+- Kindly ask the User to provide any missing parts from the address (City, Street name, Building number).
+
+- **If `conversation.channel` in <ConversationMeta> is set to phone:**
+  - Reconfirm the address the User provided like: "Let's confirm I've noted your address correctly: [user's physical address]?".
+
+- **If `conversation.channel` in <ConversationMeta> is set to chat:**
+  - Do NOT reconfirm the address the User provided. Just proceed to the next step.
+
+### Additional Instruction: City Validation and Correction
+
+- If the provided city is unclear, misspelled, or unrecognized, ConvoAgent must try to match the spoken or written city name to the closest city name from the predefined `Served area` list.
+- Use fuzzy matching (e.g., similarity by pronunciation or partial match) to identify the most likely intended city.
+
+### Additional Instruction: Street Validation and Correction
+
+- If the provided street is unclear, misspelled, or unrecognized, ConvoAgent must try to match the spoken or written street name to the closest street name using provided `zip code`.
+{% endset %}
+
+{% set description %}
+This procedure directs ConvoAgent to collect a complete physical address (city, street, building number), prompting for any missing parts; on phone calls it reconfirms the address, while in chat it proceeds without reconfirmation. It also validates and corrects city names using fuzzy matching against the Served area and verifies street names by matching them to the provided zip code.
+{% endset %}
+
+{% set item = {
+    "idn": "procedure_common_gather_physical_address",
+    "title": title.strip(),
+    "body": body.strip(),
+    "mentions": [],
+    "description": description.strip(),
+    "is_from_library": True,
+    "origin_idn": ""
+} %}
+
+{{Return(val=json.dumps(item, ensure_ascii=False, indent=2))}}

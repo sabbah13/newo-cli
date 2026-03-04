@@ -1,0 +1,9 @@
+id: bd760bf4-3560-4c7d-b462-27ce32fb01fc
+idn: _prepareAttributesCommonPrivateDynamicReportsSkill
+title: _prepareAttributesCommonPrivateDynamicReportsSkill
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

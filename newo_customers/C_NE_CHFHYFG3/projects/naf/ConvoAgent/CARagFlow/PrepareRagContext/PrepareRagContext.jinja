@@ -1,0 +1,91 @@
+{% set general_manager_agent_persona = GetAgent(idn="GeneralManagerAgent").persona_id %}
+{% set user_id = GetUser().id|string %}
+
+{% set rag_context_topics = SearchFuzzyAkb(
+    query="",
+    searchFields=["name"],
+    numberTopics=300,
+    scoreThreshold=0,
+    filterByPersonaIds=[general_manager_agent_persona],
+    labels=["rag_context"]
+) %}
+
+{% if not rag_context_topics %}
+    {{SetPersonaAttribute(field="rag", value="", id=user_id)}}
+    {{Return(val="")}}
+{% endif %}
+
+{% set rag_context_topics = rag_context_topics | sort(attribute='updatedAt', reverse=True) %}
+
+{% set rag_context_topics_string = "" %}
+{% for topic in rag_context_topics %}
+    {% set rag_context_topics_string = rag_context_topics_string + "article_title: " + topic.topic + "\n" + "article_facts: [" + ", ".join(topic.facts) + "]\n" + "article_last_updated: " + topic.updatedAt|string + "\n" + "article_id: " + topic.source + "\n\n---\n\n" %}
+{% endfor %}
+{% set rag_context_topics_string = rag_context_topics_string.strip("\n\n---\n\n") %}
+
+{% set prompt %}You are the search assistant.
+
+**Use:**
+- <ConversationHistory>
+- <KnowledgeBaseArticles> (formatted per <KnowledgeBaseArticleFormat>)
+- <ConversationMeta> (optional context)
+
+**Task:**
+Find the 1-3 articles from <KnowledgeBaseArticles> that are the best semantic match for the user's topics in the **entire** <ConversationHistory>.
+
+**CRITICAL RULES:**
+1. In your final result, matches for the **last user message** are the most important and MUST be listed first. Then, add matches for earlier messages.
+2. If multiple articles cover the same topic, select only the most recent one (check `article_last_updated`).
+3. Provide up to three relevant article IDs. If you select fewer than three, set each unused ID field to "none" (as a string).
+
+**Output:**
+Return JSON only per <LLMPromptJSONSchema>.
+
+<ConversationMeta>
+{{GetPersonaAttribute(id=user_id, field="conversation_meta")}}
+</ConversationMeta>
+
+<ConversationHistory>
+{{get_memory(count=20, user_id=user_id)}}
+</ConversationHistory>
+
+<KnowledgeBaseArticleFormat>
+article_title: `article_title`
+article_facts: [`article_facts`]
+article_last_updated: `article_last_updated`
+article_id: `article_id`
+</KnowledgeBaseArticleFormat>
+
+<KnowledgeBaseArticles>
+{{rag_context_topics_string}}
+</KnowledgeBaseArticles>
+{% endset %}
+
+{% set schema = json.loads(prepare_rag_context_schema()) %}
+
+{% set search_result_str = structured_generation(prompt=prompt, schema=schema) %}
+
+{% set search_results = json.loads(search_result_str).search_result.values() %}
+{% set rag_topics = [] %}
+{% set used_indexes = [] %}
+{% for index in search_results %}
+    {% if (index != "none") and (not index in used_indexes) %}
+        {% set rag_topics = rag_topics + SearchFuzzyAkb(
+            query=index,
+            searchFields=["source"],
+            numberTopics=1,
+            scoreThreshold=1.0,
+            filterByPersonaIds=[general_manager_agent_persona],
+            labels=["rag_context"]
+        ) %}
+        {% set used_indexes = used_indexes + [index] %}
+    {% endif %}
+{% endfor %}
+
+{% set rag = "" %}
+{% for topic in rag_topics %}
+    {% set rag = rag + topic.topic + "\n" + topic.summary + "\n\n---\n\n" %}
+{% endfor %}
+{% set rag = rag.strip("\n\n---\n\n") %}
+
+{{SetPersonaAttribute(field="rag", value=rag, id=user_id)}}

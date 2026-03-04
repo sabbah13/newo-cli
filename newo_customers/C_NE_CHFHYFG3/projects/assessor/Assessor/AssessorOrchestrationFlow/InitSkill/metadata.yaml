@@ -1,0 +1,9 @@
+id: efd4e3c4-829a-4a69-86ef-c94f37ac06ff
+idn: InitSkill
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

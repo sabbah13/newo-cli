@@ -1,0 +1,9 @@
+id: 8661bf82-32cc-4249-8947-f04bd51665a4
+idn: library_intent_types_home_service
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

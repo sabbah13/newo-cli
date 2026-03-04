@@ -1,0 +1,18 @@
+id: 121ab67a-7ce9-4579-a23e-6b287f2bbbe9
+idn: v2v_add_context
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: fee61632-e342-42c1-bfe0-01d27c72f92b
+    name: turn
+    default_value: ""
+  - id: 473d72c4-1f43-41eb-a9d9-30f9c03c5e23
+    name: last_convo_actor_id
+    default_value: ""
+  - id: 8d342a69-4d22-4194-b8b7-84b82bbe8bd8
+    name: user_id
+    default_value: ""
+path: ""

@@ -1,0 +1,33 @@
+id: 3b297706-9dfd-4b20-b3e5-d908bda2bb6d
+idn: _utilsAkbTopicCreateSkill
+title: _utilsAkbTopicCreateSkill
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: acf8aac9-e1ed-4a07-8f37-0d0c595bc26a
+    name: summary
+    default_value: " "
+  - id: 07c8ad4b-042e-43e6-989f-ef57e3ddf037
+    name: confidence
+    default_value: "100"
+  - id: 00520a78-cff2-497c-b5d8-36b921be8c3b
+    name: source
+    default_value: " "
+  - id: 515b846e-742e-4839-a044-0dc324765e47
+    name: personaId
+    default_value: " "
+  - id: 11729bf2-f1c6-4ce6-bacf-c712523741ba
+    name: overwrite
+    default_value: "False"
+  - id: df13a1ce-8458-47d7-a7e2-46de61b13b32
+    name: name
+    default_value: " "
+  - id: d8448541-25b9-4b29-a1a0-9dd0b280092a
+    name: labels
+    default_value: " "
+  - id: 5b133913-3318-4306-8633-e2c9b6e29fd6
+    name: facts
+    default_value: " "
+path: ""

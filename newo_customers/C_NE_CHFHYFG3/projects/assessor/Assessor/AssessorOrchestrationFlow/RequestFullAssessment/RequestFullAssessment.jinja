@@ -1,0 +1,64 @@
+{# check if we need both wh intents #}
+{% set agent_persona_id = GetAgentPersona().id | string %}
+{% set run_both_wh = GetPersonaAttribute(id=agent_persona_id, field="run_both_wh") %}
+{% if not run_both_wh.strip() %}
+    {% set run_both_wh = "False" %}
+{% endif %}
+
+{% set itm_nwh = GetCustomerAttribute(field="project_attributes_private_dynamic_itm_non_working_hours_compiled") %}
+{% set itm_wh = GetCustomerAttribute(field="project_attributes_private_dynamic_itm_working_hours_compiled") %}
+{% set full_itm = GetCustomerAttribute(field="project_attributes_private_dynamic_itm_compiled") %}
+{% set ami = GetCustomerAttribute(field="project_attributes_private_dynamic_ami_compiled") %}
+{{SetPersonaAttribute(id=agent_persona_id, field="current_itm_nwh", value=itm_nwh)}}
+{{SetPersonaAttribute(id=agent_persona_id, field="current_itm_wh", value=itm_wh)}}
+{{SetPersonaAttribute(id=agent_persona_id, field="current_itm", value=full_itm)}}
+{{SetPersonaAttribute(id=agent_persona_id, field="current_ami", value=ami)}}
+{% set working_hours_status = get_working_hours_status() %}
+{% set execution_id = uuid.uuid4() | string %}
+{% set act = GetTriggeredAct() %}
+{% set channels = ['phone'] %}
+{% if act.arguments.channels %}
+    {% set channels = json.loads(act.arguments.channels) %}
+{% endif %}
+{% set intents = [] %}
+{% if run_both_wh == "True" %}
+    {% set intents_wh = json.loads(generate_conversation_topics(itm=itm_wh, ami=ami)) %}
+    {% set intents_nwh = json.loads(generate_conversation_topics(itm=itm_nwh, ami=ami)) %}
+    {% for channel in channels %}
+        {% for intent in intents_wh.intents %}
+            {% set intent = intent.copy() %}
+            {{intent.update({"working_hours_state": "working_hours", "channel": channel})}}
+            {{intents.append(intent)}}
+        {% endfor %}
+        {% for intent in intents_nwh.intents %}
+            {% set intent = intent.copy() %}
+            {{intent.update({"working_hours_state": "non_working_hours", "channel": channel})}}
+            {{intents.append(intent)}}
+        {% endfor %}
+    {% endfor %}
+{% else %}
+    {% set intent_temp = {} %}
+    {% if working_hours_status == "working_hours" %}
+        {% set intent_temp = json.loads(generate_conversation_topics(itm=itm_wh, ami=ami)) %}
+    {% else %}
+        {% set intent_temp = json.loads(generate_conversation_topics(itm=itm_nwh, ami=ami)) %}
+    {% endif %}
+    {% for channel in channels %}
+        {% for intent in intent_temp.intents %}
+            {% set intent = intent.copy() %}
+            {{intent.update({"working_hours_state": working_hours_status, "channel": channel})}}
+            {{intents.append(intent)}}
+        {% endfor %}
+    {% endfor %}
+{% endif %}
+
+{% for intent in intents %}
+    {% set intent_id = uuid.uuid4() | string %}
+    {{intent.update({"executionId": execution_id, "intentId": intent_id})}}
+{% endfor %}
+
+{{DUMMY(intents)}}
+
+{{SetPersonaAttribute(id=agent_persona_id, field="intents", value=json.dumps(intents, ensure_ascii=False, indent=2))}}
+
+{{ReevaluateIntentsSkill()}}

@@ -1,0 +1,9 @@
+id: 54477a80-dfd7-4f12-960c-19a9c3e4edbc
+idn: MakeCallErrorSkill
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

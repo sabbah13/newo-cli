@@ -1,0 +1,15 @@
+id: a8e6bf22-8934-41b6-b4aa-7061cdb835e6
+idn: _handleSkill
+title: _handleSkill
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: 7eb23b39-55e0-42fb-b773-70f2841ce1c2
+    name: taskContext
+    default_value: " "
+  - id: 3ab67fbc-8377-4272-90e0-3e982e7e184b
+    name: taskIdn
+    default_value: " "
+path: ""

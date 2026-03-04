@@ -1,0 +1,9 @@
+id: 08ac5e9e-bad8-4106-8a91-363b2cbea895
+idn: library_introductions_beauty
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

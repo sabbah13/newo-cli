@@ -1,0 +1,12 @@
+id: 49cae141-d628-4ec6-9420-6be3c555a1bc
+idn: _sendNotificationSkill
+title: _sendNotificationSkill
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: 60066407-bb05-43a6-b037-f9cb64061ab2
+    name: success
+    default_value: ""
+path: ""

@@ -1,0 +1,12 @@
+id: eb2a7c16-a4ab-41fb-87df-d6871e6cbe3c
+idn: _utilsGetPhoneCallRecordingsSkill
+title: ""
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: 8f34c7d6-7cb2-4d13-b88b-feca74dc512e
+    name: userId
+    default_value: " "
+path: ""

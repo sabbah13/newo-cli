@@ -1,0 +1,9 @@
+id: 6e84f8f9-c105-412f-bde0-0ffc65e00219
+idn: _prepareAttributesDentalEmailContentSkill
+title: _prepareAttributesDentalEmailContentSkill
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

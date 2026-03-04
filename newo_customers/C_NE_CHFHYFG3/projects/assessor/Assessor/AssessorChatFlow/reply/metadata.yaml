@@ -1,0 +1,15 @@
+id: cb26bbd2-dde2-4db5-a904-32552de75b58
+idn: reply
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: 836e2b49-5251-4011-aa1b-7e438bb25d4c
+    name: memory
+    default_value: ""
+  - id: 9b9526d8-431c-49e6-9e10-100142f61add
+    name: actor_id
+    default_value: ""
+path: ""

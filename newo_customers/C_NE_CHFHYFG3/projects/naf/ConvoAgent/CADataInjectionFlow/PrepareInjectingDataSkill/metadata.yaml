@@ -1,0 +1,9 @@
+id: 8a2fb45f-1159-4111-a991-bedcffa8514c
+idn: PrepareInjectingDataSkill
+title: PrepareInjectingDataSkill
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

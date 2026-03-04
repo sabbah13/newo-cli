@@ -1,0 +1,9 @@
+id: e3834ac8-6a69-4757-9acc-a22ae685b2a8
+idn: _prepareAttributesDentalPrivateDynamicBusinessContextSkill
+title: _prepareAttributesDentalPrivateDynamicBusinessContextSkill
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

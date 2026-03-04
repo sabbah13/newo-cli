@@ -1,0 +1,9 @@
+id: 324a8787-df88-4afa-8c82-5cf535b842a5
+idn: scenario_catering_relaying_message
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

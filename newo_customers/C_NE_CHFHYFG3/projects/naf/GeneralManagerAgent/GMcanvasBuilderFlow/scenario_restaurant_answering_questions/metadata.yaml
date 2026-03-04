@@ -1,0 +1,9 @@
+id: 07949347-b152-4377-aa58-cba28f366f29
+idn: scenario_restaurant_answering_questions
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

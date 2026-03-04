@@ -1,0 +1,9 @@
+id: fdb8773f-6357-4c34-a065-f704f89aa87a
+idn: scenario_catering_order_default
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

@@ -1,0 +1,18 @@
+id: 41d4480e-84e3-4ee7-ba0e-342197dce6bc
+idn: _genThoughtsSkill
+title: ""
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: 321235d8-e3be-471d-b9e9-d3edd6904593
+    name: agentAnswer
+    default_value: " "
+  - id: a862345b-8caf-432d-9596-789221ade80d
+    name: userId
+    default_value: " "
+  - id: 220d9907-1d12-4187-857c-5a77f6428ca5
+    name: memory
+    default_value: " "
+path: ""

@@ -1,0 +1,15 @@
+id: 3edd7478-16f3-425d-b8b1-c3086b3f2f4a
+idn: _utilsPublishTaskSkill
+title: ""
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: c5f65613-322c-42c2-ba25-34812e89f29a
+    name: taskObject
+    default_value: " "
+  - id: 8cd493cd-d49b-4f37-a33b-20c32434fe03
+    name: userId
+    default_value: " "
+path: ""

@@ -1,0 +1,9 @@
+id: a1c0a10d-4f3d-48fe-80d0-5ce620b78c8e
+idn: PlaceOrderToolSkill
+title: PlaceOrderToolSkill
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

@@ -1,0 +1,9 @@
+id: 2a1fc988-6c3d-4be7-bf18-998cfbb9dc33
+idn: _migration_3_0_6_persona_id_attributes
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

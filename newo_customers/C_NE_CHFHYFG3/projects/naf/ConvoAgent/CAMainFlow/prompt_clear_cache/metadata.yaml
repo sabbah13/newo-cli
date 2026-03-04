@@ -1,0 +1,9 @@
+id: f80ca3cf-1ba1-4cda-818e-5e49e8bdd43f
+idn: prompt_clear_cache
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

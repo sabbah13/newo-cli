@@ -1,0 +1,9 @@
+id: a53deadb-6366-4405-806d-0f784e661741
+idn: scenario_cleaning_relay_message
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

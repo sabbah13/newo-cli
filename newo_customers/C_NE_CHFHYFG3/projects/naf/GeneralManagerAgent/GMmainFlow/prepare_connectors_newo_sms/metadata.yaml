@@ -1,0 +1,9 @@
+id: 7489edde-06fc-4694-a814-ba33b51c8722
+idn: prepare_connectors_newo_sms
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

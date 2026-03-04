@@ -1,0 +1,22 @@
+{{system}}
+Your goal is to build JSON object with details based on provided <Conversation>. All fields must be filled strictly based on the <Conversation>. Do not input any random values into any field.
+
+<UserInformation alt="user information" role="context">
+{{GetPersonaAttribute(id=user_id, field="_private_dynamic_user_information")}}
+{{GetPersonaAttribute(id=user_id, field="custom_user_data")}}
+</UserInformation>
+
+{{utils_get_conversation_meta(user_id=user_id)}}
+
+<Calendar>
+{{GetCustomerAttribute(field="project_attributes_private_dynamic_prompt_calendar")}}
+<Calendar>
+
+<Conversation>
+{{memory_without_latest_agent_answer}}
+ConvoAgent: {{latest_agent_answer}}
+</Conversation>
+
+{{end}}
+
+{{Return(val=Gen(jsonSchema=schema, validateSchema="True", temperature=0.2, topP=0, thinkingBudget=425))}}

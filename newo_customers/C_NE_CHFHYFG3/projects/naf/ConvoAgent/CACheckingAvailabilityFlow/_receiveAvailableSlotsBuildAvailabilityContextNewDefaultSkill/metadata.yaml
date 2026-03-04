@@ -1,0 +1,12 @@
+id: 3da12e86-116b-470f-bfe7-cec84d0f3605
+idn: _receiveAvailableSlotsBuildAvailabilityContextNewDefaultSkill
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: f12492ba-fb6f-42cd-804e-865901568313
+    name: availability
+    default_value: " "
+path: ""

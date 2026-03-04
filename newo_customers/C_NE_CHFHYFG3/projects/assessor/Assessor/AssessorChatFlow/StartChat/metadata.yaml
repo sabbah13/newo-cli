@@ -1,0 +1,9 @@
+id: 3321ef23-6d64-4c6d-8e7e-33c9a24f03bd
+idn: StartChat
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

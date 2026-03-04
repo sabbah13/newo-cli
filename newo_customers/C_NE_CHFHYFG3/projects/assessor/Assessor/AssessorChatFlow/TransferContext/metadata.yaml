@@ -1,0 +1,9 @@
+id: 4ee685a2-0325-4043-8855-785e974e8c5b
+idn: TransferContext
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

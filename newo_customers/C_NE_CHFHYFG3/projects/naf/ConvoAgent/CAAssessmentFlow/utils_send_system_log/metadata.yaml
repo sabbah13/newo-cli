@@ -1,0 +1,12 @@
+id: e6c00f7c-06f9-422c-ad7a-b27baa723a33
+idn: utils_send_system_log
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: fd7deddb-1b3c-47a1-8d35-db9ec1512be0
+    name: message
+    default_value: ""
+path: ""

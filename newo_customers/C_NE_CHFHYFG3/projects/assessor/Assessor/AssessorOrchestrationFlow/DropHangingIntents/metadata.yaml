@@ -1,0 +1,9 @@
+id: f7969616-2bdc-4371-8928-85341d23fc05
+idn: DropHangingIntents
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

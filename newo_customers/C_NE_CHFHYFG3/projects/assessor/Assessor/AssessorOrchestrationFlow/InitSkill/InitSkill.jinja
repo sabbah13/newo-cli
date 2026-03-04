@@ -1,0 +1,94 @@
+{% set agent_persona_id = GetAgentPersona().id | string %}
+
+{% set intents = GetPersonaAttribute(id=agent_persona_id, field="intents") %}
+{% if not intents %}
+    {{SetPersonaAttribute(id=agent_persona_id, field="intents", value='[]')}}
+{% endif %}
+
+{% set run_on_update = GetPersonaAttribute(id=agent_persona_id, field="run_on_update") %}
+{% if not run_on_update.strip() %}
+    {{SetPersonaAttribute(id=agent_persona_id, field="run_on_update", value='False')}}
+{% endif %}
+
+{% set run_both_wh = GetPersonaAttribute(id=agent_persona_id, field="run_both_wh") %}
+{% if not run_both_wh.strip() %}
+    {{SetPersonaAttribute(id=agent_persona_id, field="run_both_wh", value='False')}}
+{% endif %}
+
+
+{% if not GetConnectorInfo(integrationIdn="api", connectorIdn="assessor") %}
+    {{CreateConnector(
+        integrationIdn="api",
+        title="Assessor",
+        connectorIdn="assessor",
+        settings={},
+        start=True
+    )}}
+{% endif %}
+
+{% if not GetConnectorInfo(integrationIdn="api", connectorIdn="assessor_chat") %}
+    {{CreateConnector(
+        integrationIdn="api",
+        title="Assessor Chat",
+        connectorIdn="assessor_chat",
+        settings={"channel": "text"},
+        start=True
+    )}}
+{% endif %}
+
+{% if not GetWebhook(webhookIdn="assessor_result_url", webhookType="outgoing") %}
+    {{CreateWebhook(
+        idn="assessor_result_url",
+        connectorIdn="assessor",
+        webhookType="outgoing",
+        description="Assessment result is sent to this webhook",
+        url="https://hook.us1.make.com/dpbrdgi8g3gcsak3m0hwirye25e9c76c",
+        commandIdns=["send_assessment_result"]
+    )}}
+{% endif %}
+
+{% set server_api_key = GetProjectAttribute(field="project_attributes_setting_assessor_server_api_key") %}
+{% if not server_api_key.strip() %}
+    {{DUMMY("`project_attributes_setting_assessor_server_api_key` IS NOT SET")}}
+    {{Return()}}
+{% endif %}
+
+{% if not GetConnectorInfo(integrationIdn="customer_intercom", connectorIdn="assessor_server") %}
+    {% set assessor_id = uuid.uuid4() | string %}
+    {{SetPersonaAttribute(id=agent_persona_id, field="assessor_id", value=assessor_id)}}
+    {% set server_webhook = GetWebhook(webhookIdn="assessor_server_webhook", webhookType="incoming") %}
+    {% if not server_webhook %}
+        {% set server_webhook = CreateWebhook(
+            idn = "assessor_server_webhook",
+            connectorIdn = "assessor",
+            webhookType = "incoming",
+            description = "Assessor - Assessor RX",
+            commandIdns = [],
+            eventIdns = ["hold_phone_number_success"]
+        ) %}
+    {% endif %}
+
+    {{CreateConnector(
+        integrationIdn = "customer_intercom",
+        connectorIdn = "assessor_server",
+        title = "Assessor Server",
+        settings = {
+            "api_key_of_customer": server_api_key
+        },
+        start = True
+    )}}
+
+    {{SendCommand(
+        commandIdn="send_connector_event",
+        integrationIdn="customer_intercom",
+        connectorIdn="assessor_server",
+        userPersonaId=GetAgentPersona().id | string,
+        eventIdn="register_assessor",
+        eventArguments=json.dumps({
+            "id": assessor_id,
+            "feedback_url": server_webhook.url | string
+        }, ensure_ascii=False, indent=2)
+    )}}
+{% endif %}
+
+{{apply_migrations()}}

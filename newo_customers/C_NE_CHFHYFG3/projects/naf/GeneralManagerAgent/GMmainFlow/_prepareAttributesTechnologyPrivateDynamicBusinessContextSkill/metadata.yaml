@@ -1,0 +1,9 @@
+id: 13fb9fd7-fd7f-4cec-b99f-ab9d0ed983c5
+idn: _prepareAttributesTechnologyPrivateDynamicBusinessContextSkill
+title: _prepareAttributesTechnologyPrivateDynamicBusinessContextSkill
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

@@ -1,0 +1,26 @@
+{{!-- Submit order to Mock POS via HTTP POST. Reads order from persona temp_order_payload to avoid parameter validation. Store pending state; SendCommand with targetAction=place_order for callback correlation. --}}
+{{Set(name="userId", value=GetUser(field="id"))}}
+{{Set(name="order_payload", value=GetPersonaAttribute(id=userId, field="temp_order_payload"))}}
+{{Set(name="pos_url", value=GetCustomerAttribute(field="project_attributes_pos_api_endpoint"))}}
+{{Set(name="url", value=Concat(pos_url, "/api/orders"))}}
+{{!-- Headers: use customer attribute if set (project_attributes_pos_request_headers = {"Content-Type": "application/json"}), else build via Concat to avoid parse issues with escaped quotes --}}
+{{Set(name="req_headers", value=GetCustomerAttribute(field="project_attributes_pos_request_headers"))}}
+{{#if IsEmpty(text=req_headers)}}
+    {{Set(name="req_headers", value=Concat("{", AsStringJSON(val="Content-Type"), ": ", AsStringJSON(val="application/json"), "}"))}}
+{{/if}}
+
+{{!-- Store pending request state for callback --}}
+{{SetPersonaAttribute(id=userId, field="order_request_pending", value="True")}}
+{{SetPersonaAttribute(id=userId, field="current_order", value=order_payload)}}
+
+{{SendCommand(
+    commandIdn="send_request",
+    integrationIdn="http",
+    connectorIdn="http_connector",
+    userPersonaId=userId,
+    method="POST",
+    url=url,
+    headers=req_headers,
+    body=order_payload,
+    targetAction="place_order"
+)}}

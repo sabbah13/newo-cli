@@ -1,0 +1,9 @@
+id: 1b91f25f-853f-42f9-bd23-3012ee1159ac
+idn: prompt_get_language_instructions
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

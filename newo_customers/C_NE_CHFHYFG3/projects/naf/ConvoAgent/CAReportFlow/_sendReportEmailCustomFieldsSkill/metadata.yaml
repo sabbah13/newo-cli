@@ -1,0 +1,24 @@
+id: 8fa516dd-731b-482c-9839-5f677907c007
+idn: _sendReportEmailCustomFieldsSkill
+title: ""
+runner_type: guidance
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: ac0a1075-df1a-4194-876f-681b8c2c3274
+    name: transcript
+    default_value: " "
+  - id: 55b1b935-ed28-43b9-a1d8-9905d275e834
+    name: currentDateTime
+    default_value: " "
+  - id: 114b4228-9179-4ddc-8db8-4cfae80e4e88
+    name: fieldsToExtract
+    default_value: " "
+  - id: 3aa8ac1b-3816-4b2e-a4af-05062f2523ef
+    name: hipaaEnabled
+    default_value: "False"
+  - id: aa6482d5-a69f-4fd3-9314-f2f8410868cc
+    name: userId
+    default_value: " "
+path: ""

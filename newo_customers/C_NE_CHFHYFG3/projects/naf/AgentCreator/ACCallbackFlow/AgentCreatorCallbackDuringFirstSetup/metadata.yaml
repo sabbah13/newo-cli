@@ -1,0 +1,9 @@
+id: ff1c1b53-25bc-448d-bce3-37342a690a5e
+idn: AgentCreatorCallbackDuringFirstSetup
+title: AgentCreatorCallbackDuringFirstSetup
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters: []
+path: ""

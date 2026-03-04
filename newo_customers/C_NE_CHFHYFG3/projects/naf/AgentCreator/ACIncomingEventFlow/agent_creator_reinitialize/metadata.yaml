@@ -1,0 +1,12 @@
+id: be54aea3-df43-4e6d-ac61-9bb49a285e7a
+idn: agent_creator_reinitialize
+title: agent_creator_reinitialize
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: 07ae1f3b-a477-4b07-b863-8982e70e2321
+    name: agent_creator_attributes
+    default_value: ""
+path: ""

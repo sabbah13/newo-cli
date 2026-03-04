@@ -1,0 +1,29 @@
+{{Set(name="is_first_init_done", value=GetCustomerAttribute(field="project_attributes_private_account_initialized_first_time"))}}
+{{!-- All `catering` Customer Attributes must be specified here with default values --}}
+{{!-- (must be sorted alphabetically) --}}
+
+{{_utilsCustomerAttributeSetIfEmptySkill(field="project_attributes_catering_deposit", value="700")}}
+
+{{_utilsCustomerAttributeSetIfEmptySkill(field="project_attributes_catering_deposit_covered_number_of_people", value="40")}}
+
+{{set_customer_attribute_from_ac_if_first_init_and_empty(is_first_init_done=is_first_init_done, naf_field="project_attributes_catering_email", ac_field="project_business_manager_email")}}
+
+{{_utilsCustomerAttributeSetIfEmptySkill(field="project_attributes_catering_googlemaps_url", value=" ")}}
+
+{{set_customer_attribute_from_ac_if_first_init_and_empty(is_first_init_done=is_first_init_done, naf_field="project_attributes_catering_menu", ac_field="agent_creator_catering_menu")}}
+
+{{_utilsCustomerAttributeSetIfEmptySkill(field="project_attributes_catering_menu_overview", value=" ")}}
+
+{{set_customer_attribute_from_ac_if_first_init_and_empty(is_first_init_done=is_first_init_done, naf_field="project_attributes_catering_menu_url", ac_field="agent_creator_catering_menu_url")}}
+
+{{_utilsCustomerAttributeSetIfEmptySkill(field="project_attributes_catering_opentable_url", value=" ")}}
+
+{{_utilsCustomerAttributeSetIfEmptySkill(field="project_attributes_catering_order_minimum_days_in_advance", value="3")}}
+
+{{_utilsCustomerAttributeSetIfEmptySkill(field="project_attributes_catering_service_details", value=" ")}}
+
+{{_utilsCustomerAttributeSetIfEmptySkill(field="project_attributes_catering_signature_dishes", value=" ")}}
+
+{{_utilsCustomerAttributeSetIfEmptySkill(field="project_attributes_catering_questions", value="*(No additional questions were provided.)*")}}
+
+{{_utilsCustomerAttributeSetIfEmptySkill(field="project_attributes_catering_yelp_url", value=" ")}}

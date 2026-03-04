@@ -1,0 +1,12 @@
+id: eb6c5407-2812-4137-ad72-835f9b09551c
+idn: prepare_library_introduction_items
+title: ""
+runner_type: nsl
+model:
+  provider_idn: google
+  model_idn: gemini25_flash
+parameters:
+  - id: 3ff4da45-f240-48a6-b520-c62e36abfa18
+    name: industry
+    default_value: ""
+path: ""
