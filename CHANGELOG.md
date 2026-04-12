@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.4.2] - 2026-04-12
+
+### Added
+
+- **`newo update-attribute` command**: Update existing customer attributes by IDN. Supports `--value`, `--title`, `--description`, `--group`, `--hidden`, `--value-type`, and `--possible-values` flags. Only explicitly provided fields are overridden; unspecified fields retain their current values.
+
+### Fixed
+
+- **`create-attribute --value 0`**: Fixed a bug where numeric zero values passed via `--value 0` were incorrectly rejected as "value required". The minimist argument parser returns numeric `0` which was treated as falsy by the `||` operator. Now uses explicit `undefined` check.
+
 ## [3.4.1] - 2026-04-12
 
 ### Fixed
