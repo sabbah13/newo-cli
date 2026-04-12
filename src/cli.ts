@@ -29,6 +29,7 @@ import { handleCreateStateCommand } from './cli/commands/create-state.js';
 import { handleCreateParameterCommand } from './cli/commands/create-parameter.js';
 import { handleCreatePersonaCommand } from './cli/commands/create-persona.js';
 import { handleCreateAttributeCommand } from './cli/commands/create-attribute.js';
+import { handleUpdateAttributeCommand } from './cli/commands/update-attribute.js';
 import { handleSandboxCommand } from './cli/commands/sandbox.js';
 import { handlePullIntegrationsCommand } from './cli/commands/pull-integrations.js';
 import { handlePushIntegrationsCommand } from './cli/commands/push-integrations.js';
@@ -180,6 +181,10 @@ async function main(): Promise<void> {
 
       case 'create-attribute':
         await handleCreateAttributeCommand(customerConfig, args, verbose);
+        break;
+
+      case 'update-attribute':
+        await handleUpdateAttributeCommand(customerConfig, args, verbose);
         break;
 
       case 'pull-integrations':

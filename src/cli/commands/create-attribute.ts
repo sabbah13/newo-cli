@@ -16,7 +16,7 @@ export async function handleCreateAttributeCommand(
 
     // Parse arguments
     const idn = args._[1] as string;
-    const value = args.value as string || '';
+    const value = args.value !== undefined ? String(args.value) : '';
     const title = args.title as string || idn;
     const description = args.description as string || '';
     const group = args.group as string || 'General';
