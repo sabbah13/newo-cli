@@ -110,7 +110,7 @@ export async function makeClient(verbose: boolean = false, token?: string): Prom
       // Use per-request retry tracking to avoid shared state issues
       const config = error.config as InternalAxiosRequestConfig & { [RETRY_SYMBOL]?: boolean };
       
-      if (status === 401 && !config?.[RETRY_SYMBOL]) {
+      if ((status === 401 || status === 403) && !config?.[RETRY_SYMBOL]) {
         if (config) {
           config[RETRY_SYMBOL] = true;
           if (verbose) console.log('🔄 Retrying with fresh token...');

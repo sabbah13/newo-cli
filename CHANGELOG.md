@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.4.1] - 2026-04-12
+
+### Fixed
+
+- **Token refresh on 403 responses**: The HTTP client interceptor now handles both 401 and 403 status codes when retrying with a fresh token. Previously, only 401 triggered automatic token re-authentication, but the NEWO API returns 403 ("Invalid token or expired token") for expired JWTs. This caused long-running operations like `newo conversations --all` to fail mid-download on accounts with large datasets (50,000+ conversations) where pagination exceeds the 15-minute token lifetime.
+
 ## [3.4.0] - 2025-12-25
 
 ### Added
