@@ -219,18 +219,20 @@ async function migrateProjectStructure(
 
           // Handle "pending-sync" response - re-fetch to get actual flow ID
           if (flowResponse.id === 'pending-sync' || !flowResponse.id.match(/^[0-9a-f-]{36}$/i)) {
-            // Wait briefly for sync
-            await new Promise(resolve => setTimeout(resolve, 1000));
-
-            // Re-fetch agent to get actual flow ID
-            const refreshedAgents = await listAgents(destClient, projectId);
-            const refreshedAgent = refreshedAgents.find(a => a.id === agentId);
-            const createdFlow = refreshedAgent?.flows?.find(f => f.idn === sourceFlow.idn);
+            // Retry with increasing wait times
+            let createdFlow: any = null;
+            for (const waitMs of [1500, 3000, 5000]) {
+              await new Promise(resolve => setTimeout(resolve, waitMs));
+              const refreshedAgents = await listAgents(destClient, projectId);
+              const refreshedAgent = refreshedAgents.find(a => a.id === agentId);
+              createdFlow = refreshedAgent?.flows?.find(f => f.idn === sourceFlow.idn);
+              if (createdFlow) break;
+            }
 
             if (createdFlow) {
               flowId = createdFlow.id;
             } else {
-              if (verbose) console.error(`   ⚠️  Flow ${sourceFlow.idn} created but could not retrieve ID`);
+              if (verbose) console.error(`   ⚠️  Flow ${sourceFlow.idn} created but could not retrieve ID after retries`);
               continue; // Skip this flow
             }
           } else {
@@ -255,7 +257,13 @@ async function migrateProjectStructure(
             : {};
 
           // Create skills by reading skill subdirectories
-          const destSkills = await listFlowSkills(destClient, flowId);
+          let destSkills: any[];
+          try {
+            destSkills = await listFlowSkills(destClient, flowId);
+          } catch (err: any) {
+            if (verbose) console.error(`   ⚠️  Failed to list skills for flow ${sourceFlow.idn} (${flowId}): ${err.message}`);
+            continue; // Skip this flow if we can't list skills
+          }
           const destSkillMap = new Map(destSkills.map(s => [s.idn, s]));
 
           // Get all subdirectories in flow directory (these are skills)
