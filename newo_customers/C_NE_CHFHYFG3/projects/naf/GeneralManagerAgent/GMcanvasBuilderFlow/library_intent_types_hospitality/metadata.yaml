@@ -1,9 +1,0 @@
-id: 82bf388c-4652-4e27-86ef-6ccbf2deb2e8
-idn: library_intent_types_hospitality
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

@@ -1,9 +1,0 @@
-id: 9379efe9-b5eb-408d-a527-022332195600
-idn: library_introductions_restaurant
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

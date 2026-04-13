@@ -1,4 +1,0 @@
-{% set user_id = user_id or GetUser().id | string %}
-{% set current_connector_idn = GetPersonaAttribute(id=user_id, field="current_connector_idn") %}
-
-{{Return(val=current_connector_idn)}}

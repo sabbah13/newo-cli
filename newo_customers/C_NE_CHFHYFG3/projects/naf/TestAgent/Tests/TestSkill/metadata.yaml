@@ -1,9 +1,0 @@
-id: 48c5dced-ea68-4dbf-be0a-1324d6c2b11c
-idn: TestSkill
-title: TestSkill
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

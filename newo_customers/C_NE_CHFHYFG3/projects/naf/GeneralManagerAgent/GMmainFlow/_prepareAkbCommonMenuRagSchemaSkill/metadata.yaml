@@ -1,9 +1,0 @@
-id: 0af7b80d-5c91-4de3-9d2c-0637824d8091
-idn: _prepareAkbCommonMenuRagSchemaSkill
-title: _prepareAkbCommonMenuRagSchemaSkill
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

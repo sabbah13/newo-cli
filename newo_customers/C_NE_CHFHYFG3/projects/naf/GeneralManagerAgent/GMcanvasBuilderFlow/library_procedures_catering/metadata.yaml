@@ -1,9 +1,0 @@
-id: a21c74b8-1072-4d6b-ad3c-b1033e532927
-idn: library_procedures_catering
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

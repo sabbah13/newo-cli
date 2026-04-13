@@ -1,9 +1,0 @@
-id: 78ad49c3-7f0b-4a10-95a1-78aa7b635374
-idn: generate_assessment_schema
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

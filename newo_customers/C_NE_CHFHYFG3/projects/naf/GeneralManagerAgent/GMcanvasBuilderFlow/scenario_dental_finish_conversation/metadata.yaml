@@ -1,9 +1,0 @@
-id: e42df17e-d800-4e28-ade9-5aeca4dfd91e
-idn: scenario_dental_finish_conversation
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

@@ -1,9 +1,0 @@
-id: 8486df58-bac5-4ee4-a5cb-dfafbd394965
-idn: _prepareAttributesSalesTransferCallSkill
-title: _prepareAttributesSalesTransferCallSkill
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

@@ -1,9 +1,0 @@
-id: 371bb0fe-d904-429d-936f-b0c69458fc0d
-idn: generate_conversation_topics_schema
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

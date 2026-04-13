@@ -1,8 +1,0 @@
-{# Formats a friendly order completion message for the customer with pickup/delivery ETA and total. #}
-{% set eta_str = eta | default('soon') %}
-{% set total_str = orderTotal | default('') %}
-{% if total_str %}
-{{ Return(val="Your order is complete. Pickup/delivery ETA: " ~ eta_str ~ ". Order total: " ~ total_str ~ ". Thank you!") }}
-{% else %}
-{{ Return(val="Your order is complete. Pickup/delivery ETA: " ~ eta_str ~ ". Thank you!") }}
-{% endif %}

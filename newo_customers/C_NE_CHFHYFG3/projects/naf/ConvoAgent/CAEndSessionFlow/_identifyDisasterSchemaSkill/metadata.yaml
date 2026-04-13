@@ -1,9 +1,0 @@
-id: b462d130-c52a-408e-98a0-efcac1e9678f
-idn: _identifyDisasterSchemaSkill
-title: ""
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

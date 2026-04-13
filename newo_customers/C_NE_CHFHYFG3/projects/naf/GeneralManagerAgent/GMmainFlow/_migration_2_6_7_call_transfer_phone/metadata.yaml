@@ -1,9 +1,0 @@
-id: f0597560-eff9-4c6d-9972-4f608d420e38
-idn: _migration_2_6_7_call_transfer_phone
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

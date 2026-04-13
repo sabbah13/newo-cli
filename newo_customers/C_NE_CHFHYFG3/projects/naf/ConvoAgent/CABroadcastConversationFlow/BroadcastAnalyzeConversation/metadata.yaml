@@ -1,9 +1,0 @@
-id: 91da307a-74b9-4491-8d39-10f45bc64823
-idn: BroadcastAnalyzeConversation
-title: BroadcastAnalyzeConversation
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

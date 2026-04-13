@@ -1,9 +1,0 @@
-id: 30320a70-3641-494f-bb53-a2fdfdebd2dd
-idn: default_report_content_beauty
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

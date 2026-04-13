@@ -1,9 +1,0 @@
-id: c6cb7583-0e58-4389-8df2-bab992ba6080
-idn: _migration_2_6_7_spam
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

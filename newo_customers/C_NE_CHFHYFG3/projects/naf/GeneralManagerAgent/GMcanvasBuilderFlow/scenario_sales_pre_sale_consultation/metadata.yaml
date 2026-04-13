@@ -1,9 +1,0 @@
-id: 3a2d156f-2692-4589-ac11-93091a9c8009
-idn: scenario_sales_pre_sale_consultation
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

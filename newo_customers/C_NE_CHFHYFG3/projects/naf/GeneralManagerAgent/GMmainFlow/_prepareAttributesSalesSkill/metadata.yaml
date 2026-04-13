@@ -1,9 +1,0 @@
-id: 1ee2e2bd-2048-49fc-8414-45a1966b267d
-idn: _prepareAttributesSalesSkill
-title: _prepareAttributesSalesSkill
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

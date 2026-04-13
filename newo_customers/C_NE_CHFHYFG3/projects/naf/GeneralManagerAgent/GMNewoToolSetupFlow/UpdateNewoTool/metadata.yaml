@@ -1,9 +1,0 @@
-id: 1069a8d6-77fc-426e-aa70-7fa27d4b36d6
-idn: UpdateNewoTool
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

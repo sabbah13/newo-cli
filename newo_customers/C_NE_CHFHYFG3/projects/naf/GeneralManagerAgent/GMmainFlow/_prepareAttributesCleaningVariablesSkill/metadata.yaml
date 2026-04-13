@@ -1,9 +1,0 @@
-id: 26f27420-5ada-4bc8-9af2-91e882ef1695
-idn: _prepareAttributesCleaningVariablesSkill
-title: _prepareAttributesCleaningVariablesSkill
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

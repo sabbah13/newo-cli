@@ -1,9 +1,0 @@
-id: 6e221999-4c1a-4650-bcb4-e951d42c00ee
-idn: procedure_common_gather_name
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

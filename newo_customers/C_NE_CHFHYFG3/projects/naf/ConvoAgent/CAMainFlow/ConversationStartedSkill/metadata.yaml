@@ -1,9 +1,0 @@
-id: 6aacb29b-d426-4104-83a6-ec6cd95c8b4d
-idn: ConversationStartedSkill
-title: ""
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

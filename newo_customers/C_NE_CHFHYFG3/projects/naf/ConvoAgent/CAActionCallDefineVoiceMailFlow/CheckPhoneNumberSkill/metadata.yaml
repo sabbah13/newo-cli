@@ -1,9 +1,0 @@
-id: 5cf3227d-74d6-49b1-98f4-8135467042d3
-idn: CheckPhoneNumberSkill
-title: ""
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

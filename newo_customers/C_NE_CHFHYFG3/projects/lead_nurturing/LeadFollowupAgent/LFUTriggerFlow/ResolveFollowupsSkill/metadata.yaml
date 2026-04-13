@@ -1,9 +1,0 @@
-id: 63097ed6-969a-45e1-a257-7b51018b72a3
-idn: ResolveFollowupsSkill
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

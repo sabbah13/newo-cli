@@ -1,9 +1,0 @@
-id: 96619953-e6cf-4a21-8c68-9264fc513110
-idn: UpdateCustomUserDataSkill
-title: UpdateCustomUserDataSkill
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

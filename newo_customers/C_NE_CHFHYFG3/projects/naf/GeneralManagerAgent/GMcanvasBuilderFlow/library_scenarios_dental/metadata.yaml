@@ -1,9 +1,0 @@
-id: 5edbae6b-eb39-4d3b-afcb-052c07afcf56
-idn: library_scenarios_dental
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

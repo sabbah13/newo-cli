@@ -1,9 +1,0 @@
-id: 98cde3ab-43b9-4ac7-a0bd-677b7a7c53a1
-idn: _prepareAkbCateringMenuRagSkill
-title: _prepareAkbCateringMenuRagSkill
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

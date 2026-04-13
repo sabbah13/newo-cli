@@ -1,9 +1,0 @@
-id: a17e1a5c-a8ee-4225-b5e4-6937d327b90a
-idn: default_itm_nwh_sales
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

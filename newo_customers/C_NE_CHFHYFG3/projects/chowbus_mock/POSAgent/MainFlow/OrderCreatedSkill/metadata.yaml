@@ -1,9 +1,0 @@
-id: 5694bdc6-e9aa-43e1-8f10-6889621f6cf0
-idn: OrderCreatedSkill
-title: ""
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

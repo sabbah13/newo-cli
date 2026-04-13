@@ -1,9 +1,0 @@
-id: e1611fba-2795-44cf-8246-99ee59cd7d40
-idn: GetConversation
-title: GetConversation
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

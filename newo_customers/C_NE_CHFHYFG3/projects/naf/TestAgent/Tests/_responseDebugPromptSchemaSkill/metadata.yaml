@@ -1,9 +1,0 @@
-id: e4e6bdf7-0f65-4469-868a-aca5b03623ef
-idn: _responseDebugPromptSchemaSkill
-title: _responseDebugPromptSchemaSkill
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

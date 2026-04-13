@@ -1,9 +1,0 @@
-id: 03300247-0785-417f-a619-ed46d5763637
-idn: _magicBrowserTaskGetRandomUUIDSkill
-title: _magicBrowserTaskGetRandomUUIDSkill
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

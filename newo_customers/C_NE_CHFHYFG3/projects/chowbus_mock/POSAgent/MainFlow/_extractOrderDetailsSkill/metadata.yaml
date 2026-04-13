@@ -1,9 +1,0 @@
-id: 01513997-a848-49a1-9fc2-549a16cd4c80
-idn: _extractOrderDetailsSkill
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

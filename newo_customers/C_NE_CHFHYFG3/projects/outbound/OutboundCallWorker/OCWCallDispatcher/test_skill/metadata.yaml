@@ -1,9 +1,0 @@
-id: 9f260b5f-894f-44a0-aa8e-f1ec53b59155
-idn: test_skill
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

@@ -1,9 +1,0 @@
-id: 8d35baff-2290-42c0-afbc-4e0d0107e5a8
-idn: _migration_3_0_6_v2v_model_and_voices
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

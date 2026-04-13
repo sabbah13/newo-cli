@@ -1,9 +1,0 @@
-id: 316fcf03-afc3-4178-881b-b3907d41bdd5
-idn: SendSMSSkill
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

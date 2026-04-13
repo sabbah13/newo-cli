@@ -1,9 +1,0 @@
-id: 75310bed-03bd-46e1-81b4-d8edbc1108b5
-idn: get_working_hours_status
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

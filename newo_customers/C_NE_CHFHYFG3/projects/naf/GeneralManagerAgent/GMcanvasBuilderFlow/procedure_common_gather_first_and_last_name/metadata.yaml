@@ -1,9 +1,0 @@
-id: 25e38e76-794a-439c-b9a9-ac9221109007
-idn: procedure_common_gather_first_and_last_name
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

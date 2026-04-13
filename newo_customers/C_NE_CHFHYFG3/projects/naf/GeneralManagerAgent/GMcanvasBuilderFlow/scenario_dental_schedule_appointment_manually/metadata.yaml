@@ -1,9 +1,0 @@
-id: 573884d9-57cf-40bb-847a-dd649f8c7392
-idn: scenario_dental_schedule_appointment_manually
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

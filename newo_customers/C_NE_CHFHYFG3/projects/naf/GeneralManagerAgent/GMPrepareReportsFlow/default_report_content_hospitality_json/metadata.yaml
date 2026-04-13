@@ -1,9 +1,0 @@
-id: 349b768b-c5b6-400f-a2f2-4a92214d4f94
-idn: default_report_content_hospitality_json
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

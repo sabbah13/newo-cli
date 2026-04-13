@@ -1,9 +1,0 @@
-id: 7f14d6b7-ebb2-498c-a8b1-31b7377c4bb7
-idn: _prepareAttributesRestaurantScenarioSkill
-title: _prepareAttributesRestaurantScenarioSkill
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

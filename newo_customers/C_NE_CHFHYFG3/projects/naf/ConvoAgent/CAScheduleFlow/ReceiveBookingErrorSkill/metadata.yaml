@@ -1,9 +1,0 @@
-id: 8ac29811-eb4e-48db-bd2e-2d4ed0d257a4
-idn: ReceiveBookingErrorSkill
-title: ""
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

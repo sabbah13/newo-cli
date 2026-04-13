@@ -1,9 +1,0 @@
-id: e8675ac2-c752-4ef4-8787-6c5415dcd751
-idn: _getCustomerTenantSkill
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

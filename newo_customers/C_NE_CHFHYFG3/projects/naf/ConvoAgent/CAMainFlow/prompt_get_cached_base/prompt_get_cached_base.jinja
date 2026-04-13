@@ -1,8 +1,0 @@
-{# Build cached prompt in case it doesn't exist #}
-{% set cached_prompt = GetState(name="cached_base_prompt") %}
-{% if not cached_prompt.strip() %}
-    {% set cached_prompt = prompt_build_base(user_id=user_id) %}
-    {{SetState(name="cached_base_prompt", value=cached_prompt)}}
-{% endif %}
-
-{{Return(val=cached_prompt)}}

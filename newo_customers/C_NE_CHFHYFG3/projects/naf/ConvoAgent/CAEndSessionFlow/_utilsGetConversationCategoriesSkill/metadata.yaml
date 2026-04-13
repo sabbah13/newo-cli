@@ -1,9 +1,0 @@
-id: 741e1c82-a536-4f16-a402-7b9873fac6b8
-idn: _utilsGetConversationCategoriesSkill
-title: ""
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

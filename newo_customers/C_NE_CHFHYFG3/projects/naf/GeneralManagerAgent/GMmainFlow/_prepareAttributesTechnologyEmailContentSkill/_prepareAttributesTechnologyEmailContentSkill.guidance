@@ -1,3 +1,0 @@
-{{_utilsCustomerAttributeSetIfEmptySkill(field="project_attributes_setting_email_send_information_enabled", value="False")}}
-
-{{!-- Default information that can be sent via email --}}

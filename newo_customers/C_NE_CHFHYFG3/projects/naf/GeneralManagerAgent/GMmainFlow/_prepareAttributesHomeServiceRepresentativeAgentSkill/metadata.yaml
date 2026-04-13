@@ -1,9 +1,0 @@
-id: a39ab86a-fcaf-4d5d-91c6-29e1d7939182
-idn: _prepareAttributesHomeServiceRepresentativeAgentSkill
-title: _prepareAttributesHomeServiceRepresentativeAgentSkill
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

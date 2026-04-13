@@ -1,9 +1,0 @@
-id: d5a43e60-2bbe-49d4-a658-f26fdfd3469f
-idn: library_scenarios_hospitality
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

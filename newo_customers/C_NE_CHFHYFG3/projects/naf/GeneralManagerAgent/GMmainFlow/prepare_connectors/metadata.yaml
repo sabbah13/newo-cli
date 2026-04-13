@@ -1,9 +1,0 @@
-id: cf3132fe-10bc-4fbe-8654-e60d6f575a55
-idn: prepare_connectors
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

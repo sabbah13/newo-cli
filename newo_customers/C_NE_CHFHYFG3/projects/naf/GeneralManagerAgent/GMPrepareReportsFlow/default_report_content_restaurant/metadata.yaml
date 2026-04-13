@@ -1,9 +1,0 @@
-id: e753191b-e5b4-43d9-ade4-7a7e58e7cf6e
-idn: default_report_content_restaurant
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

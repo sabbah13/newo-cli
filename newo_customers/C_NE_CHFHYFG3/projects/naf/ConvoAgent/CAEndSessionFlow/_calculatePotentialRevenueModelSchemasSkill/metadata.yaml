@@ -1,9 +1,0 @@
-id: d2a16777-fe68-439f-9043-32c717acf73b
-idn: _calculatePotentialRevenueModelSchemasSkill
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

@@ -1,9 +1,0 @@
-id: 67e91a51-29d4-4cb1-883c-3606c3c7ce4d
-idn: _getIntentTypeMapSkill
-title: ""
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

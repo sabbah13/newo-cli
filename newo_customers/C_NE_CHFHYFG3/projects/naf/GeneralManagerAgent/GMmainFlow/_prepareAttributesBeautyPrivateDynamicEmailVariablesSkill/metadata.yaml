@@ -1,9 +1,0 @@
-id: 450e5ec2-d60d-4194-aeda-57e9879a50bb
-idn: _prepareAttributesBeautyPrivateDynamicEmailVariablesSkill
-title: _prepareAttributesBeautyPrivateDynamicEmailVariablesSkill
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

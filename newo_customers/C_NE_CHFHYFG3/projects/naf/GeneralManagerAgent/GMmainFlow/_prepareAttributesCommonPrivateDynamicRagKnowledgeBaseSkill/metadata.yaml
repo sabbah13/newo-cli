@@ -1,9 +1,0 @@
-id: 8fe06a28-3417-4569-8233-38b8ee5d1fa6
-idn: _prepareAttributesCommonPrivateDynamicRagKnowledgeBaseSkill
-title: _prepareAttributesCommonPrivateDynamicRagKnowledgeBaseSkill
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

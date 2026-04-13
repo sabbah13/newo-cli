@@ -1,9 +1,0 @@
-id: cb6a9603-93de-44e8-8868-eab0de12528b
-idn: _prepareAttributesRestaurantPrivateDynamicPhoneVariablesSkill
-title: _prepareAttributesRestaurantPrivateDynamicPhoneVariablesSkill
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

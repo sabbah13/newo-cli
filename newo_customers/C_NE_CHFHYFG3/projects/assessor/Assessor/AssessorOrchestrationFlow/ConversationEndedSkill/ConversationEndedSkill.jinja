@@ -1,7 +1,0 @@
-{% set act = GetTriggeredAct() %}
-{% set user_id = GetUser().id | string %}
-{% set intent_id = GetPersonaAttribute(id=user_id, field="assessor_intent_id") %}
-{% if not intent_id %}
-    {{Return()}}
-{% endif %}
-{{SendSystemEvent(eventIdn="convoagent_get_conversation", connectorIdn="system", requesterIdn=GetAgentPersona().name, levels='["conversation", "system"]', callbackArguments=user_id)}}

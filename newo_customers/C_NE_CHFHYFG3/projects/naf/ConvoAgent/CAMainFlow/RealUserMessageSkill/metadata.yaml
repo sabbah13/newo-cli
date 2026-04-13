@@ -1,9 +1,0 @@
-id: df2f15a4-b47d-4dc5-94b2-7cc259db2909
-idn: RealUserMessageSkill
-title: ""
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

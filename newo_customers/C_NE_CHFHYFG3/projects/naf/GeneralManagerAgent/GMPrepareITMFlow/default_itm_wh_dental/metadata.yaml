@@ -1,9 +1,0 @@
-id: ff055585-f095-4eaa-a4fe-b3a678cdb960
-idn: default_itm_wh_dental
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

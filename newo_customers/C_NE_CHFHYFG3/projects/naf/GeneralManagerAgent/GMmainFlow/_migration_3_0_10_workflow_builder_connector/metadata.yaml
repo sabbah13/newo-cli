@@ -1,9 +1,0 @@
-id: 5bebdc6f-1544-405d-baa3-2ee78ee97442
-idn: _migration_3_0_10_workflow_builder_connector
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

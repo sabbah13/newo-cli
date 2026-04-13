@@ -1,9 +1,0 @@
-id: 051b9ca6-202d-4561-9820-e889b2432b25
-idn: Gen2HandleToolCallSkill
-title: ""
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

@@ -1,9 +1,0 @@
-id: d005bc2e-e4f0-4ace-b070-147ee832eaac
-idn: _validateBookingAttributesSkill
-title: ""
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

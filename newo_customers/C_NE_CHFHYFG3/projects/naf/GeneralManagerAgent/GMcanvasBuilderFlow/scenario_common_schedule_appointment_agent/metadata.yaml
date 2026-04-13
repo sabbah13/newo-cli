@@ -1,9 +1,0 @@
-id: b376ba54-5262-4f87-b48d-9df7854ffe39
-idn: scenario_common_schedule_appointment_agent
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

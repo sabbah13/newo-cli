@@ -1,9 +1,0 @@
-id: e6effb9f-8e45-4361-9929-023d352d1c8d
-idn: _prepareAttributesDentalRepresentativeAgentSkill
-title: _prepareAttributesDentalRepresentativeAgentSkill
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

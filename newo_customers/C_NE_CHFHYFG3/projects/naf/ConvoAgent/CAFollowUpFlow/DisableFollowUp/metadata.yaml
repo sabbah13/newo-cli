@@ -1,9 +1,0 @@
-id: 1725eccd-9b50-4390-9018-141d14859b38
-idn: DisableFollowUp
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

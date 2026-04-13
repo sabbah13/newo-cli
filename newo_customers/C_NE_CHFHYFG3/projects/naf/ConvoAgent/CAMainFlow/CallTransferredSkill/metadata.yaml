@@ -1,9 +1,0 @@
-id: 58958ee8-a43d-49ca-a514-7bb8f2e12ccc
-idn: CallTransferredSkill
-title: ""
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

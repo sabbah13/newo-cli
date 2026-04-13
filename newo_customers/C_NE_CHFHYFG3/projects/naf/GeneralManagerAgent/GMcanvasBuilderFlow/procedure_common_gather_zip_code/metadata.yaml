@@ -1,9 +1,0 @@
-id: 7b57b6de-ef78-42c1-993e-4d62b77d9d98
-idn: procedure_common_gather_zip_code
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

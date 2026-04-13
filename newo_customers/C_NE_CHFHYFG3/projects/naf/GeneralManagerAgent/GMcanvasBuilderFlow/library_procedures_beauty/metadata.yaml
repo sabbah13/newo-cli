@@ -1,9 +1,0 @@
-id: 6dcc177b-aa8f-48a7-97bf-d5fe7bdd9926
-idn: library_procedures_beauty
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

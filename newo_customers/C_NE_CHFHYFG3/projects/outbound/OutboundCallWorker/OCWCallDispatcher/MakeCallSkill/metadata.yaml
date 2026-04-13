@@ -1,9 +1,0 @@
-id: f910ab6c-6015-4942-94a6-b2e3960bf637
-idn: MakeCallSkill
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

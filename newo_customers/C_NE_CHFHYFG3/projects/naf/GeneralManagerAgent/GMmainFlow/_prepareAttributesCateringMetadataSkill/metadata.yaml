@@ -1,9 +1,0 @@
-id: bc570404-8608-49de-af7f-462731db79a9
-idn: _prepareAttributesCateringMetadataSkill
-title: _prepareAttributesCateringMetadataSkill
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

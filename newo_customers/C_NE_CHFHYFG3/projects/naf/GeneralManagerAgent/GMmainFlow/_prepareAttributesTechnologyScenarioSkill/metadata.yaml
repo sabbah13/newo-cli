@@ -1,9 +1,0 @@
-id: 10d4c1df-5fb3-48ce-be00-7a46532fdf57
-idn: _prepareAttributesTechnologyScenarioSkill
-title: _prepareAttributesTechnologyScenarioSkill
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

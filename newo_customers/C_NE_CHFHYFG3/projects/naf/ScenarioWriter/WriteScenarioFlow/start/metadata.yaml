@@ -1,9 +1,0 @@
-id: fe6c68b4-96a7-4805-bf59-485cb8c38696
-idn: start
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

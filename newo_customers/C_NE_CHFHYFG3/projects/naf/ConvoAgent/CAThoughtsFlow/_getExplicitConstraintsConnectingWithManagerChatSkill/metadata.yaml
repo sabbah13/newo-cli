@@ -1,9 +1,0 @@
-id: e9fdab4f-337d-4d84-aeed-d56e4dfeaa6f
-idn: _getExplicitConstraintsConnectingWithManagerChatSkill
-title: ""
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

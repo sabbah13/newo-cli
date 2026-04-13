@@ -1,9 +1,0 @@
-id: 9eb1de27-8acd-4db3-9c17-9a5f0da7d97c
-idn: DefineUserPhoneNumberSkill
-title: DefineUserPhoneNumberSkill
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

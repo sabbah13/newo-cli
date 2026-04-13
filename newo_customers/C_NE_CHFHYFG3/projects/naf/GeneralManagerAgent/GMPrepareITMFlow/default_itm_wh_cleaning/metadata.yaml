@@ -1,9 +1,0 @@
-id: 7bc016aa-7657-4050-8fde-25a92a6eb0ac
-idn: default_itm_wh_cleaning
-title: ""
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

@@ -1,9 +1,0 @@
-id: 333acd3d-083d-4ce8-b003-98e6b2728d82
-idn: SessionEndedGlobal
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

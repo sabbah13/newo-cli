@@ -1,9 +1,0 @@
-id: 4e3bc356-8286-426b-8c74-3f89293671fb
-idn: _migration_3_0_6_spam_attribute_rename
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

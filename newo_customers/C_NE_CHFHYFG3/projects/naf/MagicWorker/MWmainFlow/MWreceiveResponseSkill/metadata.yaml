@@ -1,9 +1,0 @@
-id: b884b6b1-3e9b-4e50-9ecf-5eaadddd02db
-idn: MWreceiveResponseSkill
-title: MWreceiveResponseSkill
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

@@ -1,9 +1,0 @@
-id: 220aa0cb-d56f-4dd3-8309-f12f00febd97
-idn: AbortHangedCall
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

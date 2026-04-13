@@ -1,9 +1,0 @@
-id: 56bce169-9f72-4a82-a6c7-44b93a988a0f
-idn: _getChangeLog
-title: ""
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

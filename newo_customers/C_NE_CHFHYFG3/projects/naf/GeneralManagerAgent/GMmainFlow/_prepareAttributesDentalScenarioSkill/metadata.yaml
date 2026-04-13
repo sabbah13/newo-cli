@@ -1,9 +1,0 @@
-id: b4a233c2-0e46-4918-9870-f0865ffd44ae
-idn: _prepareAttributesDentalScenarioSkill
-title: _prepareAttributesDentalScenarioSkill
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

@@ -1,9 +1,0 @@
-id: c2616d15-8c87-418c-bec9-10fc2d9e75dc
-idn: Gen1ConversationStartedInboundSkill
-title: ""
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

@@ -1,9 +1,0 @@
-id: 545bb8ef-e9de-49f8-ba17-024145d4723f
-idn: ReceiveConversationSkill
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

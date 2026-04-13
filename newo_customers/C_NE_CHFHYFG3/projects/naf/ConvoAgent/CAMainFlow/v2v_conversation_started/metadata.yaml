@@ -1,9 +1,0 @@
-id: ddf6b1cb-8c69-464f-be94-705ddb44fecd
-idn: v2v_conversation_started
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

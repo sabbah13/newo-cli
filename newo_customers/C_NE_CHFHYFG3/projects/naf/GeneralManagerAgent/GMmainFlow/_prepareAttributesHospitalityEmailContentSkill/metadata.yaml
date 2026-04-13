@@ -1,9 +1,0 @@
-id: a8d1572b-d338-440a-a9a4-16d6210f699f
-idn: _prepareAttributesHospitalityEmailContentSkill
-title: _prepareAttributesHospitalityEmailContentSkill
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

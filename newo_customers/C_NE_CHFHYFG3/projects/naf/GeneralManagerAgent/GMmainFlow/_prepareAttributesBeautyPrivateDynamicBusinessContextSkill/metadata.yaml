@@ -1,9 +1,0 @@
-id: 7456f822-db30-47f2-89ca-98d453831833
-idn: _prepareAttributesBeautyPrivateDynamicBusinessContextSkill
-title: _prepareAttributesBeautyPrivateDynamicBusinessContextSkill
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

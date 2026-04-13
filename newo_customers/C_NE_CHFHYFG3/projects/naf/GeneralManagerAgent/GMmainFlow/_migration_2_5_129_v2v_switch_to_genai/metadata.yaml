@@ -1,9 +1,0 @@
-id: eb3b1c71-216a-4216-8b87-b68989e88070
-idn: _migration_2_5_129_v2v_switch_to_genai
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

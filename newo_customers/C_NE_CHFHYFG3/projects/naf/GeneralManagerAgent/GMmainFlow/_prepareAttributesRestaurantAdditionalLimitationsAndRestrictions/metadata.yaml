@@ -1,9 +1,0 @@
-id: 966fcf22-0097-4d12-92fc-157d2b463c8e
-idn: _prepareAttributesRestaurantAdditionalLimitationsAndRestrictions
-title: _prepareAttributesRestaurantAdditionalLimitationsAndRestrictions
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

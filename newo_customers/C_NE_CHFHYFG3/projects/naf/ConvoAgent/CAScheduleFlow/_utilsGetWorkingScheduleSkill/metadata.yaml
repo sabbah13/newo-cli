@@ -1,9 +1,0 @@
-id: 6656fab8-a8e5-4595-afa5-d0a9ed769071
-idn: _utilsGetWorkingScheduleSkill
-title: ""
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

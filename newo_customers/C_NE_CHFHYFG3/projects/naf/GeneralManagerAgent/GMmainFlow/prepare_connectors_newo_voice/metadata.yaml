@@ -1,9 +1,0 @@
-id: b5ab4911-fe5c-4d74-bc68-e16257f48ba0
-idn: prepare_connectors_newo_voice
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

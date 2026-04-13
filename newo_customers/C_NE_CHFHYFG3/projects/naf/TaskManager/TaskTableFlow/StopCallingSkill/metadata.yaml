@@ -1,9 +1,0 @@
-id: fd1eaec9-ccd9-4161-95b3-3819ad3f0b3e
-idn: StopCallingSkill
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

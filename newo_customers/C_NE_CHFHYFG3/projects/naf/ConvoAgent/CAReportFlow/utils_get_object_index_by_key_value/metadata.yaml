@@ -1,9 +1,0 @@
-id: b327a097-17ec-462e-a531-ef5955b9813d
-idn: utils_get_object_index_by_key_value
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

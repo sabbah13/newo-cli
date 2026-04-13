@@ -1,9 +1,0 @@
-id: d09ff1c8-e36a-4ee1-b5a6-1058e43098f4
-idn: library_intent_types_cleaning
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

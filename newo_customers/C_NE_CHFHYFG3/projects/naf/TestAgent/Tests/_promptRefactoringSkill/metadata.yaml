@@ -1,9 +1,0 @@
-id: 3314d3db-ca69-4cc2-b8d7-1aaf0f504c34
-idn: _promptRefactoringSkill
-title: _promptRefactoringSkill
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_pro
-parameters: []
-path: ""

@@ -1,9 +1,0 @@
-id: 8de29bb0-845f-4845-9b6a-ac2f97081d0c
-idn: _prepareAttributesCommonDefaultStaticSkill
-title: _prepareAttributesCommonDefaultStaticSkill
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

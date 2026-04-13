@@ -1,9 +1,0 @@
-id: be37c1ab-676c-4d23-a15d-e182d3b398e7
-idn: prepare_rag_context_schema
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

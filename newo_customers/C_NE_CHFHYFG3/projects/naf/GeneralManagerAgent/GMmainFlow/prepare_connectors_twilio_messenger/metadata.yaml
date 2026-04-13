@@ -1,9 +1,0 @@
-id: daafc4a6-498f-4c90-a451-ccd5d623fc95
-idn: prepare_connectors_twilio_messenger
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

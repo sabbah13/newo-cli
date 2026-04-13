@@ -1,9 +1,0 @@
-id: 11389b59-c1a1-4bc4-b52d-fbdc310f8b27
-idn: ReasonSkill
-title: ""
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

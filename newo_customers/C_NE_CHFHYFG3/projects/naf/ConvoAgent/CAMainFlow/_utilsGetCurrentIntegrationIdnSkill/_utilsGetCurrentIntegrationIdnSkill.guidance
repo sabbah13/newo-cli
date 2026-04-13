@@ -1,7 +1,0 @@
-{{Set(name="current_integration_idn", value=GetPersonaAttribute(id=userId, field="current_integration_idn"))}}
-{{#if IsEmpty(text=current_integration_idn)}}
-    {{Set(name="current_integration_idn", value=GetActor(field="integrationIdn"))}}
-    {{SetPersonaAttribute(id=userId, field="current_integration_idn", value=current_integration_idn)}}
-{{/if}}
-
-{{Return(val=current_integration_idn)}}

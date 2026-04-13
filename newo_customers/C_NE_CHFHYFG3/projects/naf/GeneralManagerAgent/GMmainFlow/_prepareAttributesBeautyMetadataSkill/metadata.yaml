@@ -1,9 +1,0 @@
-id: ac69bb9a-329d-410f-9faa-37e9a1c53127
-idn: _prepareAttributesBeautyMetadataSkill
-title: _prepareAttributesBeautyMetadataSkill
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

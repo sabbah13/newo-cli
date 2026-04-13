@@ -1,9 +1,0 @@
-id: 85d437e1-390a-495b-acc5-7e3454091ae0
-idn: _responseStructuredGenerationSchemaSkill
-title: _responseStructuredGenerationSchemaSkill
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

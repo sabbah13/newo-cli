@@ -1,9 +1,0 @@
-id: a3c424b9-726e-49a7-a9cf-e8232bfc0169
-idn: _migration_3_3_0_agent_style_and_languages
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

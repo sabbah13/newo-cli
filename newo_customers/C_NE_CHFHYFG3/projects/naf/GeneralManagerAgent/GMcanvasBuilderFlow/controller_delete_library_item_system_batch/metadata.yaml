@@ -1,9 +1,0 @@
-id: 3ae5f1e7-ed3b-4127-bc71-2bc3580f3b8f
-idn: controller_delete_library_item_system_batch
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

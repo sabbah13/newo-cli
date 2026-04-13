@@ -1,9 +1,0 @@
-id: c9537670-def4-4f9e-8450-0a4c55b1b506
-idn: ProcessWorkerMessageSkill
-title: ProcessWorkerMessageSkill
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

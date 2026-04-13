@@ -1,9 +1,0 @@
-id: 3d521569-d3a0-4cc6-a225-d5fac042cddf
-idn: _prepareAttributesHospitalityMetadataSkill
-title: _prepareAttributesHospitalityMetadataSkill
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

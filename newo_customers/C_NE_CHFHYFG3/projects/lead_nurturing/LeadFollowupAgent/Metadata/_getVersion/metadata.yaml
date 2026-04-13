@@ -1,9 +1,0 @@
-id: f7e7a063-d796-4fe3-aaf5-9105a49d39bd
-idn: _getVersion
-title: ""
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

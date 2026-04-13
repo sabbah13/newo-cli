@@ -1,9 +1,0 @@
-id: 34e11130-98d0-4ea8-a104-e9e170ec88de
-idn: ResultSuccessSkill
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

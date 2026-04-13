@@ -1,9 +1,0 @@
-id: 958d3697-b690-4345-a7f9-a78c9d0c8eb7
-idn: SendSMSToolSkill
-title: SendSMSToolSkill
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

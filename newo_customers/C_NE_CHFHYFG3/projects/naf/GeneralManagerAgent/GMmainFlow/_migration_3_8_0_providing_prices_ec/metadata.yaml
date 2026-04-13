@@ -1,9 +1,0 @@
-id: 7c06e150-e057-47a3-9126-50bd0b5ced36
-idn: _migration_3_8_0_providing_prices_ec
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

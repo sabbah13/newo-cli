@@ -1,9 +1,0 @@
-{% set user_id = user_id or GetUser().id | string %}
-
-{% set current_integration_idn = GetPersonaAttribute(id=user_id, field="current_integration_idn")%}
-{% if not current_integration_idn.strip() %}
-    {% set current_integration_idn = GetActor().integrationIdn | string %}
-    {{SetPersonaAttribute(id=user_id, field="current_integration_idn", value=current_integration_idn)}}
-{% endif %}
-
-{{Return(val=current_integration_idn)}}

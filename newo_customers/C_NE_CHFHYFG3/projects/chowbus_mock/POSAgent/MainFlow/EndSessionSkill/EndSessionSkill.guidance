@@ -1,4 +1,0 @@
-{{Set(name="user_id", value=GetUser(field="id"))}}
-{{DeletePersonaAttribute(id=user_id, field="current_order")}}
-{{DeletePersonaAttribute(id=user_id, field="current_order_human")}}
-{{SendSystemEvent(eventIdn="remove_prompt_custom_section", connectorIdn="system", sectionName="CurrentFoodOrderContext")}}

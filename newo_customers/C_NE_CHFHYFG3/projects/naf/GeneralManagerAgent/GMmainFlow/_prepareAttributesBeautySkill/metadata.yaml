@@ -1,9 +1,0 @@
-id: f8c6eb4d-060a-4882-a39a-1d0fe172e4da
-idn: _prepareAttributesBeautySkill
-title: _prepareAttributesBeautySkill
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

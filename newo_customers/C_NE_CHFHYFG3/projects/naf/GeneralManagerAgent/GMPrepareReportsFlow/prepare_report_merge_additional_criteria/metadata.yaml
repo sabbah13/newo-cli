@@ -1,9 +1,0 @@
-id: 4751f23f-7bc6-488c-9215-537ce81837b8
-idn: prepare_report_merge_additional_criteria
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

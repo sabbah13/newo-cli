@@ -1,9 +1,0 @@
-id: 212df2ee-c938-49e0-bc14-02d559ccd197
-idn: TransferReply
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

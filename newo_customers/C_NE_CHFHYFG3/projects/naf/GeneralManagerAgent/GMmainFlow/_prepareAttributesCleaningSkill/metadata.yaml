@@ -1,9 +1,0 @@
-id: 865129f0-10f2-412c-a582-9854812b7bec
-idn: _prepareAttributesCleaningSkill
-title: _prepareAttributesCleaningSkill
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

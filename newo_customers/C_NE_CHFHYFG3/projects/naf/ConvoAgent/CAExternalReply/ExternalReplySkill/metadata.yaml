@@ -1,9 +1,0 @@
-id: 24e181b3-304a-4bf0-a5b6-481341a04de8
-idn: ExternalReplySkill
-title: ""
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

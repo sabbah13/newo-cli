@@ -1,9 +1,0 @@
-id: 2be48673-fcc0-4497-9a13-6f6045cc5bc6
-idn: prepare_report_criteria
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

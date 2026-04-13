@@ -1,9 +1,0 @@
-id: 68f4a9b1-175f-478d-8054-7a99ef69489c
-idn: StartTestSkill
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

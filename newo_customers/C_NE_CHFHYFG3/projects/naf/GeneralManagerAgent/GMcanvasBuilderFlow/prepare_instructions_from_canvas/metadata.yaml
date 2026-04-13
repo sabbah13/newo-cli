@@ -1,9 +1,0 @@
-id: f621a2e5-ae98-41e9-b579-7267f1e017a1
-idn: prepare_instructions_from_canvas
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

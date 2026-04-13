@@ -1,9 +1,0 @@
-id: caaca77a-fab0-41d7-aee4-eb57380105be
-idn: scenario_home_service_appointment_request
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

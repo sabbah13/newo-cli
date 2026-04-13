@@ -1,9 +1,0 @@
-id: a7cdcd8e-e46b-477b-97ee-c435be4232e9
-idn: _validateCheckingAvailabilityAttributesSkill
-title: ""
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

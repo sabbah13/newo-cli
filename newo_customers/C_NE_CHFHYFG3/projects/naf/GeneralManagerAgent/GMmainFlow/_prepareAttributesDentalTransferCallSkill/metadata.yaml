@@ -1,9 +1,0 @@
-id: 935ea714-9b8d-4f36-94eb-de7e47a416d5
-idn: _prepareAttributesDentalTransferCallSkill
-title: _prepareAttributesDentalTransferCallSkill
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

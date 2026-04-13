@@ -1,9 +1,0 @@
-id: c3cb3d36-bb08-4eae-95b9-ecc380107371
-idn: scenario_home_service_relaying_message_to_the_manager
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

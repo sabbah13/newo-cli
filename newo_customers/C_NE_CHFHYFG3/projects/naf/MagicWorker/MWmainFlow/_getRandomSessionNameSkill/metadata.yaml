@@ -1,9 +1,0 @@
-id: 2dac54ab-3eab-48ff-b982-24b9bea7e8b7
-idn: _getRandomSessionNameSkill
-title: _getRandomSessionNameSkill
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

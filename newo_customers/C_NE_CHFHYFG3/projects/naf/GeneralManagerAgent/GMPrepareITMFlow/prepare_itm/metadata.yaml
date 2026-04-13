@@ -1,9 +1,0 @@
-id: a4cc0676-fab0-4287-846b-40b4fdacfc9c
-idn: prepare_itm
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

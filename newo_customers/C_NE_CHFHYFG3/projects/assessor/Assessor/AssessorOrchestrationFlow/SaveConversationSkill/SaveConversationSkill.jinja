@@ -1,7 +1,0 @@
-{% set act = GetTriggeredAct() %}
-{% set user_id = act.arguments.callbackArguments %}
-{% set intent_id = GetPersonaAttribute(id=user_id, field="assessor_intent_id") %}
-{% if not intent_id %}
-    {{Return()}}
-{% endif %}
-{{SetPersonaAttribute(id=user_id, field="assessor_complete_conversation", value=act.arguments.conversation)}}

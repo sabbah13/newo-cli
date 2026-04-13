@@ -1,9 +1,0 @@
-id: 09943f48-b948-4f1e-b175-0f903c829104
-idn: scenario_dental_relaying_message
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

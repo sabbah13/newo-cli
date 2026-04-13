@@ -1,7 +1,0 @@
-id: 4ac6a03a-ce24-4c16-8f90-bd5c0612e00c
-idn: ConvoAgent
-title: ConvoAgent
-description: >-
-  MAIN CONVERSATIONAL AGENT. This Agent communicates with Users (clients of your
-  business). It processes messages and responds in all user-facing
-  conversational channels: phone, chat, Telegram, WhatsApp, etc.

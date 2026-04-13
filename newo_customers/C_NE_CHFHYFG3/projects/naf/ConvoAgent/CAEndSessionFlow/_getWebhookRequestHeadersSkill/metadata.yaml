@@ -1,9 +1,0 @@
-id: 4dfdddc9-f00a-46eb-b0a0-83676c9cf2da
-idn: _getWebhookRequestHeadersSkill
-title: ""
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

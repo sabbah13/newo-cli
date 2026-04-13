@@ -1,9 +1,0 @@
-id: d7d2878b-8aa8-4767-9870-610cc60f0498
-idn: SendEmailSkill
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

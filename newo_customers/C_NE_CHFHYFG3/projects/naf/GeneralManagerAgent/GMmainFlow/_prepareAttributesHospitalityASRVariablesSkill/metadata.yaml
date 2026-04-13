@@ -1,9 +1,0 @@
-id: 833027dc-2306-43ac-a499-012a452e0a28
-idn: _prepareAttributesHospitalityASRVariablesSkill
-title: _prepareAttributesHospitalityASRVariablesSkill
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

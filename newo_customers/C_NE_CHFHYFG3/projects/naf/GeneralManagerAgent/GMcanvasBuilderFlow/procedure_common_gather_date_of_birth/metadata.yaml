@@ -1,9 +1,0 @@
-id: 857a47fe-f6f7-4503-9b39-9e8066db4420
-idn: procedure_common_gather_date_of_birth
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

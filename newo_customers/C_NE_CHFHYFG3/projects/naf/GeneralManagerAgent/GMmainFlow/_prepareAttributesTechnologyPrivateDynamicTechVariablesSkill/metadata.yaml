@@ -1,9 +1,0 @@
-id: 006166b7-20fc-4170-8964-2b7bbbe0feea
-idn: _prepareAttributesTechnologyPrivateDynamicTechVariablesSkill
-title: _prepareAttributesTechnologyPrivateDynamicTechVariablesSkill
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

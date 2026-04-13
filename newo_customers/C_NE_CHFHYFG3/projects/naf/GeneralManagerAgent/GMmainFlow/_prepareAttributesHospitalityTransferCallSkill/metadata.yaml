@@ -1,9 +1,0 @@
-id: 3fc5e6ad-5b48-4cfa-90f5-929271b026e5
-idn: _prepareAttributesHospitalityTransferCallSkill
-title: _prepareAttributesHospitalityTransferCallSkill
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

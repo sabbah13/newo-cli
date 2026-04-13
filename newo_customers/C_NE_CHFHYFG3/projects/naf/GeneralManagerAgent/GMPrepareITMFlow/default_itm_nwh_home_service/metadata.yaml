@@ -1,9 +1,0 @@
-id: 3f70038b-e76f-4a78-a210-2b016d0c2cad
-idn: default_itm_nwh_home_service
-title: ""
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

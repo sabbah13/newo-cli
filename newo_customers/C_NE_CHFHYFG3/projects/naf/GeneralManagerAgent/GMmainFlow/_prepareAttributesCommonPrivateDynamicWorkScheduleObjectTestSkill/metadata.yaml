@@ -1,9 +1,0 @@
-id: 83ef43f8-d8e0-41da-ba93-0f06beb76f17
-idn: _prepareAttributesCommonPrivateDynamicWorkScheduleObjectTestSkill
-title: _prepareAttributesCommonPrivateDynamicWorkScheduleObjectTestSkill
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

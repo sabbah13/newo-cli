@@ -1,9 +1,0 @@
-id: 1746518e-9d52-4ec1-94fb-a27bc3b32c26
-idn: _prepareAttributesTechnologySMSContentSkill
-title: _prepareAttributesTechnologySMSContentSkill
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

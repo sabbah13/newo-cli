@@ -1,9 +1,0 @@
-id: 3be00fef-4f94-41ba-be30-f634e6980c97
-idn: scenario_beauty_schedule_appointment_link
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

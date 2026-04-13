@@ -1,9 +1,0 @@
-id: 10e6fe25-f79f-4763-a4cc-cc08f402854d
-idn: ReceiveSystemCancellationResult
-title: ReceiveSystemCancellationResult
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

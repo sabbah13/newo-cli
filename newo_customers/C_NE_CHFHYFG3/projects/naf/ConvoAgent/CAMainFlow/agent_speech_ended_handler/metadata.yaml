@@ -1,9 +1,0 @@
-id: 747ba4af-6825-49e9-9abb-e380426caccf
-idn: agent_speech_ended_handler
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

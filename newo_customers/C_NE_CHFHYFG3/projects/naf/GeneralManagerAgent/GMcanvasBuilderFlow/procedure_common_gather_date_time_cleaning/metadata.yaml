@@ -1,9 +1,0 @@
-id: 123308e3-2bfd-4b3b-a86a-7c96805b87c2
-idn: procedure_common_gather_date_time_cleaning
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

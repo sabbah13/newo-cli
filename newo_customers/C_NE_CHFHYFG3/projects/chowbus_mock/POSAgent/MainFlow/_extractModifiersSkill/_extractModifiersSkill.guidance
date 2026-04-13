@@ -1,8 +1,0 @@
-{{#system~}}
-Your task is to analyze the <Conversation> about the latest agreed food and validate it. Figure out correct modifiers to be applied to each item. If latest user agreed order contains the modifier not listed in the enum, add it separately. Don't add any modifiers user are not confirming in their latest interaction.
-<Conversation>
-{{memory}}
-ConvoAgent: {{agentAnswer}}
-</Conversation>
-{{~/system}}
-{{Return(val=Gen(temperature=0.1, skipFilter="True", jsonSchema=schema, validateSchema="True", thinkingBudget=1020, topP=0))}}

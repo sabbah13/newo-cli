@@ -1,9 +1,0 @@
-id: 4cfa2fcc-a266-421f-920d-00b62c37d751
-idn: UserSMSReplySkill
-title: ""
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

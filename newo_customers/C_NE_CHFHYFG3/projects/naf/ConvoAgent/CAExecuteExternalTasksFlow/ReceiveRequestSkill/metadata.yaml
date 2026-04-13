@@ -1,9 +1,0 @@
-id: 3774f3c2-3012-49ca-85d5-cdd423d5a440
-idn: ReceiveRequestSkill
-title: ""
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

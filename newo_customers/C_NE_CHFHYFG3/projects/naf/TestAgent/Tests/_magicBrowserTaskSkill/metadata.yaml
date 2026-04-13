@@ -1,9 +1,0 @@
-id: 9a675a70-8d8f-4049-a18e-faae3dce391a
-idn: _magicBrowserTaskSkill
-title: _magicBrowserTaskSkill
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

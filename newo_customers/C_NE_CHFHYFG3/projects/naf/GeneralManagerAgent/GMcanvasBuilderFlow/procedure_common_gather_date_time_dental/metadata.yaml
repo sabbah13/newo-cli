@@ -1,9 +1,0 @@
-id: 8fa5a9ef-4e4d-4344-91e5-cf142e157f93
-idn: procedure_common_gather_date_time_dental
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

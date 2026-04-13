@@ -1,9 +1,0 @@
-id: 97b33eea-75b2-4bb2-8c46-a18584db19a7
-idn: prompt_get_allowed_content_email
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

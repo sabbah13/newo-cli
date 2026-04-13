@@ -1,9 +1,0 @@
-id: 0e4a5fe2-3eb8-4d6d-a3d3-7741172d727b
-idn: try_start_scheduled_call
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

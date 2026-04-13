@@ -1,9 +1,0 @@
-id: 14eefc4e-141a-4e18-a745-a807e7883895
-idn: scenario_hospitality_relaying_message_to_the_manager
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

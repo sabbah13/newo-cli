@@ -1,9 +1,0 @@
-id: bec94287-2152-4948-9f2d-65ff93e4039a
-idn: _prepareAttributesSalesScenarioSkill
-title: _prepareAttributesSalesScenarioSkill
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

@@ -1,9 +1,0 @@
-id: 46da73d2-5004-4ff3-8608-48ad4f964e83
-idn: _prepareAttributesCommonPrivateDynamicProductsAndServicesSchemaSkill
-title: _prepareAttributesCommonPrivateDynamicProductsAndServicesSchemaSkill
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

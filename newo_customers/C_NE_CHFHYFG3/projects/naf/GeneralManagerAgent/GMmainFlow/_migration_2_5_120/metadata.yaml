@@ -1,9 +1,0 @@
-id: f12957fd-9c04-4abe-9362-cb76cfe440dc
-idn: _migration_2_5_120
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

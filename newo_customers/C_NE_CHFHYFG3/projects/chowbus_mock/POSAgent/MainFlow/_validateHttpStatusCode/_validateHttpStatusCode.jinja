@@ -1,7 +1,0 @@
-{# Validates HTTP status code: returns "success" for 2xx, "fail" otherwise. Used by OrderCreatedSkill callback. #}
-{% set code_number = code | int %}
-{% set result = 'fail' %}
-{% if code_number >= 200 and code_number < 300 %}
-    {% set result = 'success' %}
-{% endif %}
-{{ Return(val=result) }}

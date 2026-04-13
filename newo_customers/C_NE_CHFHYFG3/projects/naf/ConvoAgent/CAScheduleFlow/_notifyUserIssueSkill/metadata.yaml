@@ -1,9 +1,0 @@
-id: 0e8cd500-eb01-41f9-9b58-5022a4a590e7
-idn: _notifyUserIssueSkill
-title: ""
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

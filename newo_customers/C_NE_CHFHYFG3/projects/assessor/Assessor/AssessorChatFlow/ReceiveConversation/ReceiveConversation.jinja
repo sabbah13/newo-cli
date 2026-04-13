@@ -1,9 +1,0 @@
-{% set act = GetTriggeredAct() %}
-{% if act.arguments.requesterIdn == GetAgentPersona().name ~ "_chat" %}
-    {{SendSystemEvent(
-        eventIdn="internal_conversation_retrieved",
-        actorIds=[act.arguments.callbackArguments],
-        memory=act.arguments.conversation,
-        global="False"
-    )}}
-{% endif %}

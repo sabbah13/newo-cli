@@ -1,9 +1,0 @@
-id: a987c0e4-8b4c-48e5-a15c-7bcce1da36d2
-idn: _prepareAttributesCommonPrivateDynamicAgentPersonaSkill
-title: _prepareAttributesCommonPrivateDynamicAgentPersonaSkill
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

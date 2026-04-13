@@ -1,9 +1,0 @@
-id: f3e5cadb-78bc-4180-96ac-d5282c5de2e9
-idn: ProjectImportSkill
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

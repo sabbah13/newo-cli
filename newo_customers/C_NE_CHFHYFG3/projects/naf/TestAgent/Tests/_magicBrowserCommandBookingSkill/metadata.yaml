@@ -1,9 +1,0 @@
-id: e5ca44d9-02b8-4cf3-8f8a-e9ed596e9afc
-idn: _magicBrowserCommandBookingSkill
-title: _magicBrowserCommandBookingSkill
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

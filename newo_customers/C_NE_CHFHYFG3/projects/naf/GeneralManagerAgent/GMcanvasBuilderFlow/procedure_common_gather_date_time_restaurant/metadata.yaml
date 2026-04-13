@@ -1,9 +1,0 @@
-id: 786e394d-0f4c-4b3c-8fbf-7c874c92fb60
-idn: procedure_common_gather_date_time_restaurant
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

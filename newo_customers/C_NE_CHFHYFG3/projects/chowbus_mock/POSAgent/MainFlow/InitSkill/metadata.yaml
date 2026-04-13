@@ -1,9 +1,0 @@
-id: e5e3d336-743b-4b36-9743-2a10320cbb2a
-idn: InitSkill
-title: ""
-runner_type: nsl
-model:
-  provider_idn: openai
-  model_idn: gpt4
-parameters: []
-path: ""

@@ -1,9 +1,0 @@
-id: c952d4d5-071f-4793-b97b-a5b4642ecc1c
-idn: WaitingFallbackSkill
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

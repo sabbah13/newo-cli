@@ -1,9 +1,0 @@
-id: 470e0e2d-daf9-4491-9d72-b7cd4551d273
-idn: RetryCallSkill
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

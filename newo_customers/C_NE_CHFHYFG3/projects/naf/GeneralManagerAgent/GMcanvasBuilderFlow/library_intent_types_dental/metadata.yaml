@@ -1,9 +1,0 @@
-id: 298278fe-9c1e-41f1-b0fa-cfeb87567689
-idn: library_intent_types_dental
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

@@ -1,9 +1,0 @@
-id: 37e79c13-c250-4053-ae9a-bc62325a6f47
-idn: PushAgentTurnSkill
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

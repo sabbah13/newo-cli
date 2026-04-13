@@ -1,9 +1,0 @@
-id: 0b7f7053-b0d5-4159-8568-7fafb310da7a
-idn: _getManyChatReplyRequestHeadersSkill
-title: ""
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

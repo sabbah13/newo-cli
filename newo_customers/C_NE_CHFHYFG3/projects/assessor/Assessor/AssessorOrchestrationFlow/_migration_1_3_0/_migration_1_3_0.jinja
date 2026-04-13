@@ -1,8 +1,0 @@
-{% set agent_persona_id = GetAgentPersona().id | string %}
-{% if GetPersonaAttribute(id=agent_persona_id, field="target_connectors").strip() %}
-    {{DeletePersonaAttribute(id=agent_persona_id, field="target_connectors")}}
-{% endif %}
-
-{% if GetConnectorInfo(integrationIdn="program_timer", connectorIdn="assessor_internal") %}
-    {{DeleteConnector(integrationIdn="program_timer", connectorIdn="assessor_internal")}}
-{% endif %}

@@ -1,9 +1,0 @@
-id: 34120f10-46b9-48a2-aa54-2f84c419a470
-idn: _prepareAttributesHospitalityPrivateDynamicBusinessContextSkill
-title: _prepareAttributesHospitalityPrivateDynamicBusinessContextSkill
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

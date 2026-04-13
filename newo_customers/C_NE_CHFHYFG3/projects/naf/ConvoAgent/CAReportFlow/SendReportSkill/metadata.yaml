@@ -1,9 +1,0 @@
-id: ab5b12d0-6bf8-4855-b7a7-9e31956e3e0f
-idn: SendReportSkill
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

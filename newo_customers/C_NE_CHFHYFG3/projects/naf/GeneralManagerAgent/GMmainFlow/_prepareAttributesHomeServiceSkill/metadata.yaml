@@ -1,9 +1,0 @@
-id: 682e6fbe-7048-43b2-a1c1-7844066455a9
-idn: _prepareAttributesHomeServiceSkill
-title: _prepareAttributesHomeServiceSkill
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

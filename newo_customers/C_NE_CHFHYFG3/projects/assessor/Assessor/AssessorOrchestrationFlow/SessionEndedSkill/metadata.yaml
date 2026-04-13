@@ -1,9 +1,0 @@
-id: ac85a33e-15dd-4ca0-af2e-04976cf69919
-idn: SessionEndedSkill
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

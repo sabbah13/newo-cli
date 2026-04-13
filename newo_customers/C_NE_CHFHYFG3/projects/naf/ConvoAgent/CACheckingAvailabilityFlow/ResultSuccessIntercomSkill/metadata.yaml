@@ -1,9 +1,0 @@
-id: 13dae6f6-d218-416e-ba96-b1b60934dd39
-idn: ResultSuccessIntercomSkill
-title: ""
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

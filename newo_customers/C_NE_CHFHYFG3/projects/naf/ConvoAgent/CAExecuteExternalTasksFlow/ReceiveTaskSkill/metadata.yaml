@@ -1,9 +1,0 @@
-id: bbf38c89-cbd5-4cd1-89c2-144c8651adcc
-idn: ReceiveTaskSkill
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

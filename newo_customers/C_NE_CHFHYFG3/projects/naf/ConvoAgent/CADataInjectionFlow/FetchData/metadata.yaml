@@ -1,9 +1,0 @@
-id: e1ed548c-7ea2-4f4c-b41b-c894aa2b7058
-idn: FetchData
-title: FetchData
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

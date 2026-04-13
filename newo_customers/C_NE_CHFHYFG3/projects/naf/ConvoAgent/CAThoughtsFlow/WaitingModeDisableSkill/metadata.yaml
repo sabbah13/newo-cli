@@ -1,9 +1,0 @@
-id: 1e839652-f1cc-4a7e-9155-435d8b558f55
-idn: WaitingModeDisableSkill
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

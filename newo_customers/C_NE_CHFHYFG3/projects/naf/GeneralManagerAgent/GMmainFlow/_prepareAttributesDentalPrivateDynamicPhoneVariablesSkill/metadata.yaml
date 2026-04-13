@@ -1,9 +1,0 @@
-id: 11a217e3-04d4-48fb-a4b0-c18902acd61b
-idn: _prepareAttributesDentalPrivateDynamicPhoneVariablesSkill
-title: _prepareAttributesDentalPrivateDynamicPhoneVariablesSkill
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

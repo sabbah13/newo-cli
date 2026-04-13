@@ -1,9 +1,0 @@
-id: 408a0ae1-b46c-4781-881f-93909100dc94
-idn: _prepareAttributesSalesMetadataSkill
-title: _prepareAttributesSalesMetadataSkill
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

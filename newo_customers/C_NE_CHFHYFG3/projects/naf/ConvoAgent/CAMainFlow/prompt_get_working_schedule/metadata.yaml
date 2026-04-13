@@ -1,9 +1,0 @@
-id: 1b753043-ac88-40ea-819f-7ba0add414f3
-idn: prompt_get_working_schedule
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

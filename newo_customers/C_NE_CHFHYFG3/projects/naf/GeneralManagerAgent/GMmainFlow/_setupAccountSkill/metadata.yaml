@@ -1,9 +1,0 @@
-id: 0f9fc7ea-2f66-42fb-bf27-c1c53092860f
-idn: _setupAccountSkill
-title: _setupAccountSkill
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

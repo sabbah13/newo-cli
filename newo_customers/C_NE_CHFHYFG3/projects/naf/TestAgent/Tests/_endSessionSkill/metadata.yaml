@@ -1,9 +1,0 @@
-id: db20cc15-4224-43c9-b057-07e9e5510f18
-idn: _endSessionSkill
-title: _endSessionSkill
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

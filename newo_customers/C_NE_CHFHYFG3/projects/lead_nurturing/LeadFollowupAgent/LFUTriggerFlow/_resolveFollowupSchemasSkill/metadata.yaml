@@ -1,9 +1,0 @@
-id: 806cae06-f62d-46df-97be-7cbec31d7f81
-idn: _resolveFollowupSchemasSkill
-title: ""
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

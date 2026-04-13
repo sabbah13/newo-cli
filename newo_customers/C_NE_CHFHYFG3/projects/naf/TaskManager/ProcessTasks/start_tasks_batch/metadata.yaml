@@ -1,9 +1,0 @@
-id: b6f3b470-3652-4e72-9e90-ee3f5c49ffb4
-idn: start_tasks_batch
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

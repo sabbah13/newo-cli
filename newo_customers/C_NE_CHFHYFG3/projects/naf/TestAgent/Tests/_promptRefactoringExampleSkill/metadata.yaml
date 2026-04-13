@@ -1,9 +1,0 @@
-id: 940eb7a3-fa73-47d5-984d-a43334267408
-idn: _promptRefactoringExampleSkill
-title: _promptRefactoringExampleSkill
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

@@ -1,9 +1,0 @@
-id: 97746e3a-f613-4c8c-902e-e463daae78ce
-idn: library_introductions_catering
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

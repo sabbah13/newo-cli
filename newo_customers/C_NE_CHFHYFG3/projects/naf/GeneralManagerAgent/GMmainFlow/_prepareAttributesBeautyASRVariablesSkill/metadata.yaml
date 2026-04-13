@@ -1,9 +1,0 @@
-id: 373540c4-3b01-432d-b0db-d76c7a84c8ce
-idn: _prepareAttributesBeautyASRVariablesSkill
-title: _prepareAttributesBeautyASRVariablesSkill
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

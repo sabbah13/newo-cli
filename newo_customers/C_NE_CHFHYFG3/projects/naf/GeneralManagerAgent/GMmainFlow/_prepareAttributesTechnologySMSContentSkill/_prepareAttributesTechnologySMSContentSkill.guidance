@@ -1,3 +1,0 @@
-{{_utilsCustomerAttributeSetIfEmptySkill(field="project_attributes_setting_sms_send_information_enabled", value="True")}}
-
-{{!-- Default information that can be sent via SMS --}}

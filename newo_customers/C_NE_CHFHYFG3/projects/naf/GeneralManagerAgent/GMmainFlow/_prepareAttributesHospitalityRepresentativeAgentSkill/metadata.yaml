@@ -1,9 +1,0 @@
-id: f4cb3c70-f1b0-4530-8b72-c767dd2b93bf
-idn: _prepareAttributesHospitalityRepresentativeAgentSkill
-title: _prepareAttributesHospitalityRepresentativeAgentSkill
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

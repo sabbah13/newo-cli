@@ -1,9 +1,0 @@
-id: 0b2d1c22-df0f-459d-9d34-668b8642606f
-idn: SessionUpdated
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

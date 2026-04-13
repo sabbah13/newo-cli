@@ -1,9 +1,0 @@
-id: 82af8ca1-c34a-4e4d-ba20-df9fe2f4b3ed
-idn: _prepareAttributesCommonPrivateDynamicVariablesSkill
-title: _prepareAttributesCommonPrivateDynamicVariablesSkill
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

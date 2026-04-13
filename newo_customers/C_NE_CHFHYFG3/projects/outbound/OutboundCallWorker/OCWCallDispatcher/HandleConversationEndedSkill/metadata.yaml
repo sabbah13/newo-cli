@@ -1,9 +1,0 @@
-id: 4744c879-6fa5-40e1-9815-6a9ab157cc01
-idn: HandleConversationEndedSkill
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

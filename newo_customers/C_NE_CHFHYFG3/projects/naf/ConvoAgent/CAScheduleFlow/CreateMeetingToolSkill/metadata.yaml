@@ -1,9 +1,0 @@
-id: 3e5d2a07-30f5-4f7e-b0ce-d55e2784693d
-idn: CreateMeetingToolSkill
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

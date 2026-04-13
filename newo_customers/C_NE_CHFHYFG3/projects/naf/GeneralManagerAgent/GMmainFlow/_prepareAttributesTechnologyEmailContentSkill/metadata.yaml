@@ -1,9 +1,0 @@
-id: b8131092-5a9d-482f-81d7-c29abb9ad378
-idn: _prepareAttributesTechnologyEmailContentSkill
-title: _prepareAttributesTechnologyEmailContentSkill
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

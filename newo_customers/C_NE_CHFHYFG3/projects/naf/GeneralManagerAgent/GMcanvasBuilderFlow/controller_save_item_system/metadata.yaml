@@ -1,9 +1,0 @@
-id: 3f798ee1-1b64-4ce4-bb35-6bbddac5d691
-idn: controller_save_item_system
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

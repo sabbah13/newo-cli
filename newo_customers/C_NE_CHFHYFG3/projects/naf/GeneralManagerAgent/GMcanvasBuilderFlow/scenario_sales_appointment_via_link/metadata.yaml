@@ -1,9 +1,0 @@
-id: b6247e21-ceb4-4d32-b3b8-89153855f31d
-idn: scenario_sales_appointment_via_link
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

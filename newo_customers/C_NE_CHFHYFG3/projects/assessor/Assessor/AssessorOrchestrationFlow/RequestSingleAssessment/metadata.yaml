@@ -1,9 +1,0 @@
-id: ce6d9eb5-6cb5-4156-94e2-c4e8fd14d7b8
-idn: RequestSingleAssessment
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

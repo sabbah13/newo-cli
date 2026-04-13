@@ -1,9 +1,0 @@
-id: acccd5e2-13c0-4c5c-9425-57c839b7f769
-idn: prepare_connectors_google_calendar_integration
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

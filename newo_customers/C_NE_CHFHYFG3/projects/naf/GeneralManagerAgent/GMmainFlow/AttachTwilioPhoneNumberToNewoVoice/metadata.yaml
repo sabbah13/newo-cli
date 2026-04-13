@@ -1,9 +1,0 @@
-id: 28ab83f8-06ff-442e-8312-49ecd7aa5cb1
-idn: AttachTwilioPhoneNumberToNewoVoice
-title: AttachTwilioPhoneNumberToNewoVoice
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

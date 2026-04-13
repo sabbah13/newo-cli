@@ -1,9 +1,0 @@
-id: bc6ff38b-406b-4e90-8548-3a92ea4b9ba8
-idn: _buildOrderPayloadSkill
-title: ""
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

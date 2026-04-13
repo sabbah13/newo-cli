@@ -1,9 +1,0 @@
-id: dd5950b2-11d4-4a42-ab3c-6d69cacece08
-idn: _prepareAttributesDentalVariablesSkill
-title: _prepareAttributesDentalVariablesSkill
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

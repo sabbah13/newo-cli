@@ -1,9 +1,0 @@
-id: 12b6aad8-8588-45db-99ee-d49a493057ea
-idn: controller_init_canvas
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

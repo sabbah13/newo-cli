@@ -1,9 +1,0 @@
-id: 12a948f2-5087-4b5e-a30c-a37c2386e379
-idn: wait_run_completion
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

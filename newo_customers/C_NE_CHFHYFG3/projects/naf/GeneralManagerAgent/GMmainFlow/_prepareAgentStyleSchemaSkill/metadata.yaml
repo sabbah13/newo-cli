@@ -1,9 +1,0 @@
-id: e1f15e49-7bd9-4bfb-a331-8b27082d8487
-idn: _prepareAgentStyleSchemaSkill
-title: ""
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

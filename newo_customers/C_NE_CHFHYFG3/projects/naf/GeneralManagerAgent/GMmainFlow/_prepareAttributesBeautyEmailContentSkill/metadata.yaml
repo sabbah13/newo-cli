@@ -1,9 +1,0 @@
-id: c55f5bbf-3538-4358-a006-b2ef2a7ef9e0
-idn: _prepareAttributesBeautyEmailContentSkill
-title: _prepareAttributesBeautyEmailContentSkill
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

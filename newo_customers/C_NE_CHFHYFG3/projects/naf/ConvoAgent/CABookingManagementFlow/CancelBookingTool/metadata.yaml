@@ -1,9 +1,0 @@
-id: 993e4ab9-07ad-4b09-b82e-8801629da140
-idn: CancelBookingTool
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

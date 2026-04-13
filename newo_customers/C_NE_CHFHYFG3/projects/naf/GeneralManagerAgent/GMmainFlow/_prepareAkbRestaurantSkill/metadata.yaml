@@ -1,9 +1,0 @@
-id: 687383c2-c4d9-4579-9e9f-c0301e203628
-idn: _prepareAkbRestaurantSkill
-title: ""
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

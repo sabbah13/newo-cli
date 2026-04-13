@@ -1,9 +1,0 @@
-id: 4faa2e71-6d0a-4146-9fc4-279b184ac6f1
-idn: scenario_dental_introduction
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

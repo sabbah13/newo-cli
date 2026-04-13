@@ -1,9 +1,0 @@
-id: e91a60c4-f4f6-43f6-9d8e-408bfed5a3f4
-idn: default_itm_wh
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

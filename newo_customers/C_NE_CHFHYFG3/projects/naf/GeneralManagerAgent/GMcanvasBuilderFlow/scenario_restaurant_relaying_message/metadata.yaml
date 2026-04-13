@@ -1,9 +1,0 @@
-id: fd88ddf4-fe8a-4f36-8cb4-5525dcab4d8c
-idn: scenario_restaurant_relaying_message
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

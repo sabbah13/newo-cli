@@ -1,9 +1,0 @@
-id: bb702542-87d0-4216-ba1f-1a8a1e0ce32f
-idn: scenario_sales_lead_qualification
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

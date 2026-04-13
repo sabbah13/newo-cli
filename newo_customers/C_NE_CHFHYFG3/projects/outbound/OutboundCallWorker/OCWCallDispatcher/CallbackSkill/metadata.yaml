@@ -1,9 +1,0 @@
-id: 72cafaf4-bdb9-419e-9be0-8c713c604363
-idn: CallbackSkill
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

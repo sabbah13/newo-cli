@@ -1,9 +1,0 @@
-id: 205280ca-c7e3-4de3-b09f-fb8fd46c77ea
-idn: WaitingModeActivateSkill
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

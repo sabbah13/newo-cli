@@ -1,9 +1,0 @@
-id: cd69f4ef-b2b8-4373-8389-f14a27d62a86
-idn: _prepareAttributesHomeServiceSMSContentSkill
-title: _prepareAttributesHomeServiceSMSContentSkill
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

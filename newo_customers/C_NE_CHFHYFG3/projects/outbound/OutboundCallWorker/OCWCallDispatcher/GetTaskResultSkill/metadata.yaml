@@ -1,9 +1,0 @@
-id: f443e772-225f-472f-900e-696633c7e643
-idn: GetTaskResultSkill
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

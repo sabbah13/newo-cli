@@ -1,9 +1,0 @@
-id: 55caca23-d036-45f1-b0e6-11e7eee09274
-idn: GetProjectMetadata
-title: ""
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

@@ -1,9 +1,0 @@
-id: f34296ff-d55b-4584-99e0-41d72fe589f4
-idn: _prepareAttributesCleaningMetadataSkill
-title: _prepareAttributesCleaningMetadataSkill
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

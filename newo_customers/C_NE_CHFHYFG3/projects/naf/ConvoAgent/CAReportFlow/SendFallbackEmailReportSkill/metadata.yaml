@@ -1,9 +1,0 @@
-id: 288c25cb-8921-4803-ad7c-1551b9ff710b
-idn: SendFallbackEmailReportSkill
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

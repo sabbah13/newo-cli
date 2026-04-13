@@ -1,9 +1,0 @@
-id: 60da4ff5-7418-42be-afb5-47953f960394
-idn: _getRandomPostfixSkill
-title: ""
-runner_type: guidance
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

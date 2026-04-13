@@ -1,9 +1,0 @@
-id: 4f29d925-c084-4881-8ed9-29a0b45e0cd1
-idn: scenario_restaurant_introduction
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

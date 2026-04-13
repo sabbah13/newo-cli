@@ -1,9 +1,0 @@
-id: 4b573348-a301-474b-b513-17cc65485500
-idn: default_report_content_catering_json
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

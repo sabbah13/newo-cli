@@ -1,9 +1,0 @@
-id: b67c0bec-7e55-4eca-8258-946d9ee7ed55
-idn: scenario_cleaning_finish_conversation
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

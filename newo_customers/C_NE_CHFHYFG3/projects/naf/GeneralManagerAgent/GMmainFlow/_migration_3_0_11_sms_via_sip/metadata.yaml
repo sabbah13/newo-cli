@@ -1,9 +1,0 @@
-id: 3f38c270-014d-42d6-ac41-a50fea5594e1
-idn: _migration_3_0_11_sms_via_sip
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""

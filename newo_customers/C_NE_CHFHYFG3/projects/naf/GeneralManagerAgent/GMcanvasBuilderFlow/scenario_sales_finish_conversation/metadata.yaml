@@ -1,9 +1,0 @@
-id: 66782044-574c-417c-a3b9-e530a2491605
-idn: scenario_sales_finish_conversation
-title: ""
-runner_type: nsl
-model:
-  provider_idn: google
-  model_idn: gemini25_flash
-parameters: []
-path: ""
