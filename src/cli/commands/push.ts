@@ -16,6 +16,8 @@ import { selectSingleCustomer, interactiveCustomerSelection } from '../customer-
 import { setupCli } from '../../cli-new/bootstrap.js';
 import { PUSHABLE_RESOURCE_TYPES } from '../../cli-new/di/tokens.js';
 import type { MultiCustomerConfig, CliArgs, CustomerConfig } from '../../types.js';
+import { resolveFormat } from '../../format/detect.js';
+import type { FormatVersion } from '../../format/types.js';
 
 /**
  * Parse resource list from comma-separated string
@@ -47,15 +49,16 @@ function validateResources(resources: string[]): { valid: string[]; invalid: str
 }
 
 /**
- * Push using V2 SyncEngine with selective sync
+ * Push using SyncEngine with selective sync and format support
  */
-async function pushWithV2Engine(
+async function pushWithSyncEngine(
   customerConfig: MultiCustomerConfig,
   customer: CustomerConfig,
   resources: string[] | 'all',
-  verbose: boolean
+  verbose: boolean,
+  formatVersion?: FormatVersion
 ): Promise<void> {
-  const { syncEngine, logger } = setupCli(customerConfig, verbose);
+  const { syncEngine, logger } = setupCli(customerConfig, verbose, formatVersion);
 
   if (resources === 'all') {
     const result = await syncEngine.pushAll(customer);
@@ -124,44 +127,48 @@ export async function handlePushCommand(
     console.log(`📦 Pushing ALL resources`);
   }
 
-  // Use V2 engine if selective sync requested, otherwise use legacy for backward compatibility
-  const useV2Engine = onlyResources.length > 0 || excludeResources.length > 0 || pushAllResources;
+  // Use SyncEngine if selective sync requested, otherwise use legacy for backward compatibility
+  const useSyncEngine = onlyResources.length > 0 || excludeResources.length > 0 || pushAllResources;
+  const explicitFormat = args.format as string | undefined;
+
+  /**
+   * Push for a single customer with format detection
+   */
+  async function pushForCustomer(customer: CustomerConfig): Promise<void> {
+    const formatConfig = resolveFormat(customer.idn, explicitFormat);
+    const isV2Format = formatConfig.version === 'newo_v2';
+
+    if (verbose || isV2Format) {
+      const sourceLabel = formatConfig.source === 'auto-detected' ? 'auto-detected'
+        : formatConfig.source === 'env-var' ? 'from .env'
+        : formatConfig.source === 'explicit-flag' ? '--format flag'
+        : 'default';
+      console.log(`Format: ${formatConfig.version} [${sourceLabel}]`);
+    }
+
+    if (useSyncEngine || isV2Format) {
+      await pushWithSyncEngine(customerConfig, customer, resourcesToPush, verbose, formatConfig.version);
+    } else {
+      const accessToken = await getValidAccessToken(customer);
+      const client = await makeClient(verbose, accessToken);
+      await pushChanged(client, customer, verbose, shouldPublish);
+    }
+  }
 
   if (selectedCustomer) {
-    if (useV2Engine) {
-      await pushWithV2Engine(customerConfig, selectedCustomer, resourcesToPush, verbose);
-    } else {
-      // Legacy behavior
-      const accessToken = await getValidAccessToken(selectedCustomer);
-      const client = await makeClient(verbose, accessToken);
-      await pushChanged(client, selectedCustomer, verbose, shouldPublish);
-    }
+    await pushForCustomer(selectedCustomer);
   } else if (isMultiCustomer) {
-    // Multiple customers exist with no default, ask user
     const customersToProcess = await interactiveCustomerSelection(allCustomers);
 
     if (customersToProcess.length === 1) {
-      const customer = customersToProcess[0]!;
-      if (useV2Engine) {
-        await pushWithV2Engine(customerConfig, customer, resourcesToPush, verbose);
-      } else {
-        const accessToken = await getValidAccessToken(customer);
-        const client = await makeClient(verbose, accessToken);
-        await pushChanged(client, customer, verbose, shouldPublish);
-      }
+      await pushForCustomer(customersToProcess[0]!);
     } else {
-      console.log(`🔄 Pushing to ${customersToProcess.length} customers...`);
+      console.log(`Pushing to ${customersToProcess.length} customers...`);
       for (const customer of customersToProcess) {
-        console.log(`\n📤 Pushing for customer: ${customer.idn}`);
-        if (useV2Engine) {
-          await pushWithV2Engine(customerConfig, customer, resourcesToPush, verbose);
-        } else {
-          const accessToken = await getValidAccessToken(customer);
-          const client = await makeClient(verbose, accessToken);
-          await pushChanged(client, customer, verbose, shouldPublish);
-        }
+        console.log(`\nPushing for customer: ${customer.idn}`);
+        await pushForCustomer(customer);
       }
-      console.log(`\n✅ Push completed for all ${customersToProcess.length} customers`);
+      console.log(`\nPush completed for all ${customersToProcess.length} customers`);
     }
   }
 }

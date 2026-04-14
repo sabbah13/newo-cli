@@ -15,6 +15,8 @@ import { selectSingleCustomer } from '../customer-selection.js';
 import { setupCli } from '../../cli-new/bootstrap.js';
 import { ALL_RESOURCE_TYPES, RESOURCE_TYPES } from '../../cli-new/di/tokens.js';
 import type { MultiCustomerConfig, CliArgs, CustomerConfig } from '../../types.js';
+import { resolveFormat } from '../../format/detect.js';
+import type { FormatVersion } from '../../format/types.js';
 
 /**
  * Parse resource list from comma-separated string
@@ -44,16 +46,17 @@ function validateResources(resources: string[]): { valid: string[]; invalid: str
 }
 
 /**
- * Pull using V2 SyncEngine with selective sync
+ * Pull using SyncEngine with selective sync and format support
  */
-async function pullWithV2Engine(
+async function pullWithSyncEngine(
   customerConfig: MultiCustomerConfig,
   customer: CustomerConfig,
   resources: string[] | 'all',
   verbose: boolean,
-  silentOverwrite: boolean
+  silentOverwrite: boolean,
+  formatVersion?: FormatVersion
 ): Promise<void> {
-  const { syncEngine, logger } = setupCli(customerConfig, verbose);
+  const { syncEngine, logger } = setupCli(customerConfig, verbose, formatVersion);
 
   const pullOptions = {
     verbose,
@@ -126,28 +129,56 @@ export async function handlePullCommand(
     console.log(`📦 Pulling ALL resources`);
   }
 
-  // Use V2 engine if selective sync requested, otherwise use legacy for backward compatibility
-  const useV2Engine = onlyResources.length > 0 || excludeResources.length > 0 || pullAllResources;
+  // Use SyncEngine if selective sync requested, otherwise use legacy for backward compatibility
+  const useSyncEngine = onlyResources.length > 0 || excludeResources.length > 0 || pullAllResources;
+
+  // Explicit --format flag (applies to all customers in this run)
+  const explicitFormat = args.format as string | undefined;
 
   if (selectedCustomer) {
-    if (useV2Engine) {
-      await pullWithV2Engine(customerConfig, selectedCustomer, resourcesToFetch, verbose, silentOverwrite);
+    // Resolve format for this customer
+    const formatConfig = resolveFormat(selectedCustomer.idn, explicitFormat);
+    const isV2Format = formatConfig.version === 'newo_v2';
+
+    if (verbose || isV2Format) {
+      const sourceLabel = formatConfig.source === 'auto-detected' ? 'auto-detected'
+        : formatConfig.source === 'env-var' ? 'from .env'
+        : formatConfig.source === 'explicit-flag' ? '--format flag'
+        : 'default';
+      console.log(`Format: ${formatConfig.version} [${sourceLabel}]`);
+    }
+
+    // If format is newo_v2, always use SyncEngine (which will use V2ProjectSyncStrategy)
+    if (useSyncEngine || isV2Format) {
+      await pullWithSyncEngine(customerConfig, selectedCustomer, resourcesToFetch, verbose, silentOverwrite, formatConfig.version);
     } else {
-      // Legacy behavior: pull projects + attributes only
+      // Legacy behavior: pull projects + attributes only (cli_v1)
       const accessToken = await getValidAccessToken(selectedCustomer);
       const client = await makeClient(verbose, accessToken);
       const projectId = selectedCustomer.projectId || null;
       await pullAll(client, selectedCustomer, projectId, verbose, silentOverwrite);
     }
   } else if (isMultiCustomer) {
-    if (verbose) console.log(`📥 No default customer specified, pulling from all ${allCustomers.length} customers`);
-    console.log(`🔄 Pulling from ${allCustomers.length} customers...`);
+    if (verbose) console.log(`No default customer specified, pulling from all ${allCustomers.length} customers`);
+    console.log(`Pulling from ${allCustomers.length} customers...`);
 
     for (const customer of allCustomers) {
-      console.log(`\n📥 Pulling from customer: ${customer.idn}`);
+      console.log(`\nPulling from customer: ${customer.idn}`);
 
-      if (useV2Engine) {
-        await pullWithV2Engine(customerConfig, customer, resourcesToFetch, verbose, silentOverwrite);
+      // Resolve format per customer (auto-detect from filesystem)
+      const formatConfig = resolveFormat(customer.idn, explicitFormat);
+      const isV2Format = formatConfig.version === 'newo_v2';
+
+      if (verbose || isV2Format) {
+        const sourceLabel = formatConfig.source === 'auto-detected' ? 'auto-detected'
+          : formatConfig.source === 'env-var' ? 'from .env'
+          : formatConfig.source === 'explicit-flag' ? '--format flag'
+          : 'default';
+        console.log(`  Format: ${formatConfig.version} [${sourceLabel}]`);
+      }
+
+      if (useSyncEngine || isV2Format) {
+        await pullWithSyncEngine(customerConfig, customer, resourcesToFetch, verbose, silentOverwrite, formatConfig.version);
       } else {
         const accessToken = await getValidAccessToken(customer);
         const client = await makeClient(verbose, accessToken);
@@ -155,6 +186,6 @@ export async function handlePullCommand(
         await pullAll(client, customer, projectId, verbose, silentOverwrite);
       }
     }
-    console.log(`\n✅ Pull completed for all ${allCustomers.length} customers`);
+    console.log(`\nPull completed for all ${allCustomers.length} customers`);
   }
 }

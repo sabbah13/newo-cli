@@ -11,6 +11,8 @@ import { ConsoleLogger, type ILogger, type CustomerConfig, type MultiCustomerCon
 import { SyncEngine, type SyncEngineOptions } from '../application/sync/SyncEngine.js';
 import { MigrationEngine, TransformService } from '../application/migration/MigrationEngine.js';
 import { ProjectSyncStrategy, createProjectSyncStrategy } from '../domain/strategies/sync/ProjectSyncStrategy.js';
+import { createV2ProjectSyncStrategy } from '../domain/strategies/sync/V2ProjectSyncStrategy.js';
+import type { FormatVersion } from '../format/types.js';
 import { AttributeSyncStrategy, createAttributeSyncStrategy } from '../domain/strategies/sync/AttributeSyncStrategy.js';
 import { IntegrationSyncStrategy, createIntegrationSyncStrategy } from '../domain/strategies/sync/IntegrationSyncStrategy.js';
 import { AkbSyncStrategy, createAkbSyncStrategy } from '../domain/strategies/sync/AkbSyncStrategy.js';
@@ -30,7 +32,7 @@ export async function createApiClient(customer: CustomerConfig, verbose: boolean
     process.env.NEWO_PROJECT_ID = customer.projectId;
   }
 
-  const token = await getValidAccessToken();
+  const token = await getValidAccessToken(customer);
   return makeClient(verbose, token);
 }
 
@@ -47,6 +49,12 @@ export interface BootstrapOptions {
    * Sync engine options
    */
   syncEngineOptions?: SyncEngineOptions;
+
+  /**
+   * Format version for project sync strategy
+   * 'newo_v2' uses V2ProjectSyncStrategy, 'cli_v1' (default) uses ProjectSyncStrategy
+   */
+  formatVersion?: FormatVersion | undefined;
 }
 
 /**
@@ -73,10 +81,13 @@ export function createServiceContainer(
 
   // === Domain Layer - Sync Strategies ===
 
-  // Project Sync Strategy
-  container.registerSingleton(TOKENS.PROJECT_SYNC_STRATEGY, () =>
-    createProjectSyncStrategy(createApiClient, container.get<ILogger>(TOKENS.LOGGER))
-  );
+  // Project Sync Strategy (format-conditional: cli_v1 or newo_v2)
+  container.registerSingleton(TOKENS.PROJECT_SYNC_STRATEGY, () => {
+    if (options.formatVersion === 'newo_v2') {
+      return createV2ProjectSyncStrategy(createApiClient, container.get<ILogger>(TOKENS.LOGGER));
+    }
+    return createProjectSyncStrategy(createApiClient, container.get<ILogger>(TOKENS.LOGGER));
+  });
 
   // Attribute Sync Strategy
   container.registerSingleton(TOKENS.ATTRIBUTE_SYNC_STRATEGY, () =>
@@ -151,14 +162,15 @@ export function getLogger(container: ServiceContainer): ILogger {
  */
 export function setupCli(
   customerConfig: MultiCustomerConfig,
-  verbose: boolean = false
+  verbose: boolean = false,
+  formatVersion?: FormatVersion
 ): {
   container: ServiceContainer;
   syncEngine: SyncEngine;
   migrationEngine: MigrationEngine;
   logger: ILogger;
 } {
-  const container = createServiceContainer(customerConfig, { verbose });
+  const container = createServiceContainer(customerConfig, { verbose, formatVersion });
 
   return {
     container,
