@@ -298,9 +298,9 @@ export async function pushProjectAttributes(
     // Value type is already parsed (we removed !enum tags above)
     const valueType = localAttr.value_type;
 
-    // Check if value changed
-    const localValue = String(localAttr.value || '');
-    const remoteValue = String(remoteAttr.value || '');
+    // Check if value changed (use ?? to preserve 0, false, empty string)
+    const localValue = String(localAttr.value ?? '');
+    const remoteValue = String(remoteAttr.value ?? '');
 
     if (localValue !== remoteValue) {
       if (verbose) console.log(`   🔄 Updating project attribute: ${localAttr.idn}`);
