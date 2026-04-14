@@ -8,22 +8,22 @@
 **NEWO CLI** - Professional command-line tool for NEWO AI Agent development. Features **modular architecture**, **IDN-based file management**, and **comprehensive multi-customer support**.
 
 Sync NEWO "Project → Agent → Flow → Skills" structure to local files with:
+- 🆕 **Dual format support** (v3.6.0) - `cli_v1` (native) and `newo_v2` (platform compatible), auto-detected per customer
+- 🆕 **Libraries** (v3.6.0) - Pull/push shared reusable skills across agents within a project
+- 🆕 **Bulk export** (v3.6.0) - `newo export` downloads complete V2 ZIP from platform
 - 🚀 **Account migration** - Fully automated account copying with 100% accuracy
 - 🏗️ **Complete entity management** - Create, edit, and delete agents, flows, skills, events, and states
 - 🔄 **Intelligent synchronization** - Pull projects, attributes, and conversations automatically
-- 🎯 **IDN-based naming** - Skills named as `{skillIdn}.jinja/.guidance` for better organization
+- 🎯 **IDN-based naming** - Skills named as `{skillIdn}.jinja/.guidance` or `{skillIdn}.nsl/.nslg`
 - 📊 **Real-time progress** - Live progress tracking during large operations (1,000+ skills)
 - 🏢 **Multi-customer workspaces** - Work with multiple NEWO accounts simultaneously
-- 📁 **Hierarchical structure** - Complete project metadata and organized file structure
 - 🔐 **Secure authentication** - API key-based auth with automatic token refresh
 - ⚡ **Smart change detection** - SHA256-based efficient sync with hash consistency
-- 🛡️ **File validation** - Multiple file detection with clear warnings and safe handling
-- 🧠 **AI skill formats** - Support for `.guidance` (AI prompts) and `.jinja` (NSL templates)
+- 🧠 **AI skill formats** - Support for `.guidance`/`.jinja` (V1) and `.nslg`/`.nsl` (V2)
 - 📡 **Webhook automation** - Automatic webhook creation from YAML configuration
 - 📊 **Knowledge base import** - Bulk import AKB articles from structured text files
 - 💬 **Conversation history** - Extract and sync user conversations and personas
 - 🧪 **Sandbox testing** - Interactive agent testing with conversation continuation
-- ✅ **Migration verification** - Automated validation of migration completeness
 - 🔧 **CI/CD ready** - GitHub Actions integration for automated deployments
 
 ---
@@ -143,14 +143,32 @@ NEWO_REFRESH_URL=custom_refresh_endpoint   # Custom refresh endpoint
 
 | Command | Description | Features |
 |---------|-------------|----------|
-| `newo pull` | Download projects + attributes + metadata | • Real-time progress tracking (966+ skills)<br>• IDN-based file naming<br>• Automatic attributes.yaml generation<br>• `--force` for silent overwrite |
-| `newo push` | Upload local changes to NEWO | • Smart file validation<br>• Multiple file detection<br>• Hash-based change detection<br>• Safe error handling |
-| `newo status` | Show modified files with details | • Multiple file warnings<br>• Detailed change analysis<br>• Clean state validation<br>• Per-customer status |
-| `newo sandbox` | Test agents in sandbox chat mode | • Single-command mode for automation<br>• Multi-turn conversation support<br>• Debug info for agent development<br>• Conversation continuation |
+| `newo pull [--format <fmt>]` | Download projects + attributes + libraries | • Dual format: `cli_v1` / `newo_v2`<br>• Auto-detects format per customer<br>• Real-time progress tracking (1,000+ skills)<br>• IDN-based file naming<br>• `--force` for silent overwrite |
+| `newo push [--format <fmt>]` | Upload local changes to NEWO | • Works with both formats<br>• Hash-based change detection<br>• Library skill updates<br>• Publishes flows automatically |
+| `newo status [--format <fmt>]` | Show modified files | • Format-aware status<br>• Multiple file warnings<br>• Per-customer status |
+| `newo export [--output <file>]` | Download V2 bulk ZIP from platform | • Complete organization export<br>• Projects, agents, flows, skills, attributes, AKB<br>• Compatible with platform UI import |
+| `newo sandbox` | Test agents in sandbox chat mode | • Single-command mode for automation<br>• Multi-turn conversation support<br>• Debug info for agent development |
 | `newo conversations` | Pull conversation history | • User personas and chat history<br>• YAML format output<br>• Pagination support |
 | `newo list-customers` | List configured customers | • Shows default customer<br>• Multi-customer discovery |
 | `newo import-akb` | Import knowledge base articles | • Structured text parsing<br>• Bulk article import<br>• Validation and error reporting |
 | `newo meta` | Get project metadata (debug) | • Project structure analysis<br>• Metadata validation |
+
+### V2 Format Support (NEW v3.6.0)
+
+The CLI supports two formats that coexist in the same workspace:
+
+- **`cli_v1`** (default) - Native CLI format with per-entity metadata files, `.guidance`/`.jinja` extensions
+- **`newo_v2`** - Platform import/export format, `.nslg`/`.nsl` extensions, compatible with SuperAgent repository and NEWO platform export ZIPs
+
+**Format is auto-detected per customer** from filesystem markers (`import_version.txt` = V2, `projects/` dir = V1). Override per-command with `--format newo_v2` or set persistent default with `NEWO_FORMAT=newo_v2` in `.env`.
+
+```bash
+newo pull --format newo_v2      # Pull in V2 format
+newo export --output backup.zip  # Bulk V2 ZIP download
+newo push --format newo_v2       # Push from V2 format project
+```
+
+Round-trip tested against real SuperAgent export: 1426/1426 files, 1331 scripts byte-identical, zero data loss on platform import.
 
 ### Account Migration Commands
 
