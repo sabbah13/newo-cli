@@ -31,6 +31,15 @@ export async function ensureState(customerIdn: string): Promise<void> {
   await fs.ensureDir(customerProjectsDir(customerIdn));
 }
 
+/**
+ * Ensure only the .newo/ state directory exists (no V1 projects/ dir)
+ * Used by newo_v2 format to avoid creating V1 artifacts
+ */
+export async function ensureStateOnly(customerIdn: string): Promise<void> {
+  await fs.ensureDir(STATE_DIR);
+  await fs.ensureDir(customerStateDir(customerIdn));
+}
+
 export function projectDir(customerIdn: string, projectIdn: string): string {
   return path.posix.join(customerProjectsDir(customerIdn), projectIdn);
 }
@@ -108,6 +117,34 @@ export function skillMetadataPath(
   skillIdn: string
 ): string {
   return path.posix.join(skillFolderPath(customerIdn, projectIdn, agentIdn, flowIdn, skillIdn), 'metadata.yaml');
+}
+
+// Library paths (cli_v1 format)
+export function libraryDir(customerIdn: string, projectIdn: string, libraryIdn: string): string {
+  return path.posix.join(customerProjectsDir(customerIdn), projectIdn, 'libraries', libraryIdn);
+}
+
+export function libraryMetadataPath(customerIdn: string, projectIdn: string, libraryIdn: string): string {
+  return path.posix.join(libraryDir(customerIdn, projectIdn, libraryIdn), 'metadata.yaml');
+}
+
+export function librarySkillFolderPath(
+  customerIdn: string, projectIdn: string, libraryIdn: string, skillIdn: string
+): string {
+  return path.posix.join(libraryDir(customerIdn, projectIdn, libraryIdn), skillIdn);
+}
+
+export function librarySkillScriptPath(
+  customerIdn: string, projectIdn: string, libraryIdn: string, skillIdn: string, runnerType: RunnerType = 'guidance'
+): string {
+  const extension = runnerType === 'nsl' ? '.jinja' : '.guidance';
+  return path.posix.join(librarySkillFolderPath(customerIdn, projectIdn, libraryIdn, skillIdn), `${skillIdn}${extension}`);
+}
+
+export function librarySkillMetadataPath(
+  customerIdn: string, projectIdn: string, libraryIdn: string, skillIdn: string
+): string {
+  return path.posix.join(librarySkillFolderPath(customerIdn, projectIdn, libraryIdn, skillIdn), 'metadata.yaml');
 }
 
 // Legacy metadata path - keep for backwards compatibility

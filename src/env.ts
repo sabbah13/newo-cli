@@ -12,6 +12,7 @@ export interface ValidatedEnv {
   readonly NEWO_REFRESH_TOKEN: string | undefined;
   readonly NEWO_REFRESH_URL: string | undefined;
   readonly NEWO_DEFAULT_CUSTOMER: string | undefined;
+  readonly NEWO_FORMAT: string | undefined;
   // Dynamic customer entries will be detected at runtime
   readonly [key: string]: string | undefined;
 }
@@ -81,6 +82,7 @@ export function validateEnvironment(): ValidatedEnv {
     NEWO_REFRESH_TOKEN: refreshToken,
     NEWO_REFRESH_URL: refreshUrl,
     NEWO_DEFAULT_CUSTOMER: env.NEWO_DEFAULT_CUSTOMER?.trim(),
+    NEWO_FORMAT: env.NEWO_FORMAT?.trim(),
   };
 }
 

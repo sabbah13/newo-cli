@@ -182,10 +182,16 @@ export interface AgentData {
   flows: Record<string, FlowData>;
 }
 
+export interface LibraryData {
+  id: string;
+  skills: Record<string, SkillMetadata>;
+}
+
 export interface ProjectData {
   projectId: string;
   projectIdn: string;
   agents: Record<string, AgentData>;
+  libraries?: Record<string, LibraryData> | undefined;
 }
 
 export interface ProjectMap {
