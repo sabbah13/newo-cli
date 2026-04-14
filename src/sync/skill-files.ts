@@ -69,8 +69,8 @@ export async function findSkillScriptFiles(skillFolderPath: string): Promise<Ski
     if (stats.isFile()) {
       const ext = path.extname(fileName).toLowerCase();
 
-      // Check for script file extensions
-      if (['.jinja', '.guidance', '.nsl'].includes(ext)) {
+      // Check for script file extensions (all formats)
+      if (['.jinja', '.guidance', '.nsl', '.nslg'].includes(ext)) {
         const content = await fs.readFile(filePath, 'utf8');
         scriptFiles.push({
           filePath,

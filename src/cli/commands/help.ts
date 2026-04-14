@@ -7,19 +7,20 @@ export function handleHelpCommand(): void {
 A professional command-line tool for NEWO AI Agent development with modular architecture and comprehensive multi-customer support.
 
 Core Commands:
-  newo pull [--customer <idn>]                  # download projects + attributes -> ./newo_customers/<idn>/
-  newo push [--customer <idn>] [--no-publish]    # upload modified *.guidance/*.jinja + attributes back to NEWO, publish flows by default
-  newo status [--customer <idn>]                # show modified files that would be pushed
-  newo watch [--customer <idn>]                 # watch for file changes and auto-push (NEW)
-  newo diff [--customer <idn>]                  # show differences between local and remote (NEW)
-  newo logs [--customer <idn>]                  # fetch and display analytics logs from platform (NEW)
-  newo conversations [--customer <idn>] [--all] # download user conversations -> ./newo_customers/<idn>/conversations.yaml
+  newo pull [--customer <idn>] [--format <fmt>]  # download projects + attributes + libraries
+  newo push [--customer <idn>] [--format <fmt>]  # upload modified skills + attributes, publish flows
+  newo status [--customer <idn>] [--format <fmt>] # show modified files that would be pushed
+  newo export [--customer <idn>] [--output <file>] # download V2 bulk export ZIP from platform
+  newo watch [--customer <idn>]                 # watch for file changes and auto-push
+  newo diff [--customer <idn>]                  # show differences between local and remote
+  newo logs [--customer <idn>]                  # fetch and display analytics logs from platform
+  newo conversations [--customer <idn>] [--all] # download user conversations -> conversations.yaml
   newo sandbox "<message>" [--customer <idn>]   # test agent in sandbox - single message mode
-  newo sandbox --actor <id> "message"           # continue existing sandbox conversation with chat ID
+  newo sandbox --actor <id> "message"           # continue existing sandbox conversation
   newo pull-attributes [--customer <idn>]       # download customer + project attributes
-  newo list-customers                           # list available customers and their configuration
-  newo meta [--customer <idn>]                  # get project metadata (debug command)
-  newo import-akb <file> <persona_id> [--customer <idn>]  # import AKB articles from structured text file
+  newo list-customers                           # list available customers
+  newo meta [--customer <idn>]                  # get project metadata (debug)
+  newo import-akb <file> <persona_id> [--customer <idn>]  # import AKB articles
 
 Project Management:
   newo create-project <idn> [--title <title>] [--description <desc>] [--version <version>] [--auto-update]  # create empty project on platform
@@ -75,6 +76,7 @@ Account & Customer Management:
 
 Flags:
   --customer <idn>             # specify customer (if not set, uses default or interactive selection)
+  --format <cli_v1|newo_v2>    # project format (auto-detected from filesystem, or set NEWO_FORMAT in .env)
   --all                        # include all available data (for conversations: all personas and acts)
   --force, -f                  # force overwrite without prompting (for pull command)
   --verbose, -v                # enable detailed logging and progress information
@@ -82,6 +84,7 @@ Flags:
   --actor <id>                 # continue existing sandbox chat with actor/chat ID
   --confirm                    # confirm destructive operations without prompting
   --no-publish                 # skip automatic flow publishing during push operations
+  --output, -o <file>          # output file path (for export command)
 
 Selective Sync Flags (NEW):
   --only <resources>           # sync only specified resources (comma-separated)
@@ -99,6 +102,7 @@ Selective Sync Flags (NEW):
 
 Environment Variables:
   NEWO_BASE_URL                                 # NEWO API base URL (default: https://app.newo.ai)
+  NEWO_FORMAT                                   # Default format for new pulls: cli_v1 (default) or newo_v2
 
 Single Customer:
   NEWO_API_KEY                                  # API key for single customer setup
@@ -200,37 +204,45 @@ Usage Examples:
   newo create-customer "Test Co" --email test@test.com --status temporal  # Temporal (trial) customer
   newo create-customer "Partner" --email p@p.com --project nac_integration --auto-update  # With project template
 
-File Structure:
-  newo_customers/
-  ├── <customer-idn>/
-  │   ├── attributes.yaml                      # Customer attributes (pull-attributes)
-  │   ├── conversations.yaml                   # User conversations and personas
-  │   ├── akb/                                 # AKB knowledge base articles (pull-akb)
-  │   │   └── <agent-idn>.yaml                # AKB articles per agent persona
-  │   ├── integrations/                        # Integration configurations (pull-integrations)
-  │   │   ├── integrations.yaml               # Master integrations list
-  │   │   └── <integration-idn>/
-  │   │       ├── <integration-idn>.yaml      # Integration metadata + settings (combined)
-  │   │       └── connectors/
-  │   │           └── <connector-idn>/        # Each connector in own directory
-  │   │               ├── <connector-idn>.yaml  # Connector config
-  │   │               └── webhooks/           # Webhooks subdirectory (if any)
-  │   │                   ├── outgoing.yaml   # Outgoing webhooks
-  │   │                   └── incoming.yaml   # Incoming webhooks
-  │   └── projects/
-  │       └── <project-idn>/
-  │           ├── attributes.yaml              # Project attributes (pull-attributes)
-  │           ├── flows.yaml                   # Auto-generated project structure
-  │           ├── metadata.yaml                # Project metadata
-  │           └── <agent-idn>/
-  │               ├── metadata.yaml            # Agent metadata
-  │               └── <flow-idn>/
-  │                   ├── metadata.yaml        # Flow metadata
-  │                   └── <skill-idn>/
-  │                       ├── skill.guidance   # AI guidance scripts
-  │                       ├── skill.jinja      # NSL/Jinja template scripts
-  │                       └── metadata.yaml    # Skill metadata
-  └── .newo/                                   # CLI state and mappings (auto-generated)
+File Structure (cli_v1 - default):
+  newo_customers/<customer-idn>/
+  ├── attributes.yaml                        # Customer attributes
+  ├── conversations.yaml                     # User conversations
+  ├── akb/<agent-idn>.yaml                   # AKB knowledge base
+  ├── integrations/                          # Integration configurations
+  └── projects/<project-idn>/
+      ├── metadata.yaml                      # Project metadata
+      ├── flows.yaml                         # Auto-generated structure
+      ├── attributes.yaml                    # Project attributes
+      ├── libraries/<lib-idn>/               # Shared skill libraries
+      │   ├── metadata.yaml
+      │   └── <skill-idn>/<skill>.jinja|.guidance
+      └── <agent-idn>/<flow-idn>/<skill-idn>/
+          ├── <skill>.guidance|.jinja        # Skill scripts
+          └── metadata.yaml                  # Skill metadata
+
+File Structure (newo_v2 - platform compatible):
+  newo_customers/<customer-idn>/
+  ├── import_version.txt                     # Format marker (v2.0.0)
+  ├── attributes.yaml                        # Customer attributes
+  ├── akb/<agent-idn>.yaml                   # AKB knowledge base
+  └── <project-idn>/
+      ├── <project-idn>.yaml                # Project metadata
+      ├── attributes.yaml                    # Project attributes
+      ├── libraries/<lib-idn>/               # Shared skill libraries
+      │   ├── <lib-idn>.yaml                # Library + inline skill defs
+      │   └── skills/<skill>.nsl|.nslg
+      └── agents/<agent-idn>/
+          ├── agent.yaml                     # Agent metadata
+          └── flows/<flow-idn>/
+              ├── <flow-idn>.yaml           # Flow + inline skill defs + events
+              └── skills/<skill>.nsl|.nslg  # Skill scripts
+
+Format Detection:
+  Format is auto-detected per customer from the filesystem:
+  - import_version.txt present -> newo_v2
+  - projects/ directory present -> cli_v1
+  Set NEWO_FORMAT=newo_v2 in .env for new pulls, or use --format flag
 
 For more information, visit: https://github.com/sabbah13/newo-cli
 `);

@@ -46,6 +46,7 @@ import { handleAddProjectCommand } from './cli/commands/add-project.js';
 import { handleWatchCommand } from './cli/commands/watch.js';
 import { handleDiffCommand } from './cli/commands/diff.js';
 import { handleLogsCommand } from './cli/commands/logs.js';
+import { handleExportCommand } from './cli/commands/export.js';
 import type { CliArgs, NewoApiError } from './types.js';
 
 dotenv.config();
@@ -109,6 +110,10 @@ async function main(): Promise<void> {
 
       case 'logs':
         await handleLogsCommand(customerConfig, args, verbose);
+        break;
+
+      case 'export':
+        await handleExportCommand(customerConfig, args, verbose);
         break;
 
       case 'conversations':

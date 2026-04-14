@@ -64,6 +64,7 @@ export const TOKENS = {
   // Configuration
   CUSTOMER_CONFIG: Symbol('CustomerConfig'),
   ENVIRONMENT: Symbol('Environment'),
+  FORMAT_VERSION: Symbol('FormatVersion'),
 } as const;
 
 /**

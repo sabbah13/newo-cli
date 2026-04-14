@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.6.0] - 2026-04-13
+
+### Added
+
+- **NEWO V2 Format Support** - Dual format support: `cli_v1` (native, default) and `newo_v2` (NEWO platform import/export compatible). Format is auto-detected per customer from filesystem (`import_version.txt` = newo_v2, `projects/` dir = cli_v1). Multiple formats coexist in the same workspace.
+- **Libraries** - New entity type for shared reusable skills across agents within a project. Full pull/push/status support in both cli_v1 and newo_v2 formats via `GET/POST /api/v1/designer/projects/{id}/libraries` and `PATCH /api/v1/designer/libraries/{id}/skills/{id}`.
+- **`newo export` command** - Bulk download V2 export ZIP from NEWO platform via `POST /api/v2/designer/customer/export`. Usage: `newo export [--output file.zip] [--customer idn]`.
+- **`--format` flag** - Per-command format override for `pull`, `push`, and `status` commands. Values: `cli_v1`, `newo_v2`.
+- **`NEWO_FORMAT` environment variable** - Persistent default format for new pulls (only affects customers without existing local files).
+- **Format auto-detection** - Automatic per-customer format detection from filesystem markers. Existing projects always auto-detect; env var only applies to fresh pulls.
+- **V2ProjectSyncStrategy** - New sync strategy using same V1 APIs but writing newo_v2 file layout (agents/flows/skills structure, .nsl/.nslg extensions, inline flow YAML with skills/events/states).
+- **Format module** (`src/format/`) - Types, detection, extension mapping, V2 paths, V2 YAML parsers/generators, and pyyaml-compatible formatting.
+
+### Changed
+
+- `pull`, `push`, and `status` commands now support `--format` flag and auto-detect format per customer
+- DI bootstrap conditionally registers V2ProjectSyncStrategy when format is newo_v2
+- `skill-files.ts` now recognizes `.nslg` extension alongside `.guidance`, `.jinja`, `.nsl`
+- `env.ts` validates `NEWO_FORMAT` environment variable
+- API client factory passes customer config to `getValidAccessToken()` for correct multi-customer auth
+
 ## [3.4.2] - 2026-04-12
 
 ### Added

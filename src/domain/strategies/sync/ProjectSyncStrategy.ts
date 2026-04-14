@@ -46,7 +46,9 @@ import {
   listFlowEvents,
   listFlowStates,
   updateSkill,
-  publishFlow
+  publishFlow,
+  listLibraries,
+  updateLibrarySkill,
 } from '../../../api.js';
 import {
   ensureState,
@@ -60,7 +62,10 @@ import {
   skillFolderPath,
   flowsYamlPath,
   customerProjectsDir,
-  projectDir
+  projectDir,
+  libraryMetadataPath,
+  librarySkillMetadataPath,
+  librarySkillScriptPath,
 } from '../../../fsutil.js';
 import { sha256, saveHashes, loadHashes } from '../../../hash.js';
 import { generateFlowsYaml } from '../../../sync/metadata.js';
@@ -239,6 +244,52 @@ export class ProjectSyncStrategy implements ISyncStrategy<ProjectMeta, LocalProj
             projectData.agents[agent.idn]!.flows[flow.idn]!.skills[skill.idn] = skill.metadata;
           }
         }
+      }
+
+      // Pull libraries for this project
+      try {
+        const libraries = await listLibraries(client, project.id);
+        if (libraries.length > 0) {
+          this.logger.verbose(`  Found ${libraries.length} libraries in project ${project.idn}`);
+          projectData.libraries = {};
+
+          for (const lib of libraries) {
+            projectData.libraries[lib.idn] = {
+              id: lib.id,
+              skills: {}
+            };
+
+            // Save library metadata
+            const libMetaPath = libraryMetadataPath(customer.idn, project.idn, lib.idn);
+            const libMeta = { id: lib.id, idn: lib.idn };
+            const libMetaYaml = yaml.dump(libMeta, { indent: 2, quotingType: '"', forceQuotes: false });
+            await writeFileSafe(libMetaPath, libMetaYaml);
+            hashes[libMetaPath] = sha256(libMetaYaml);
+
+            for (const skill of lib.skills) {
+              // Save skill metadata
+              const skillMetaPath = librarySkillMetadataPath(customer.idn, project.idn, lib.idn, skill.idn);
+              const skillMeta: SkillMetadata = {
+                id: skill.id, idn: skill.idn, title: skill.title,
+                runner_type: skill.runner_type, model: skill.model,
+                parameters: [...skill.parameters], path: skill.path
+              };
+              const skillMetaYaml = yaml.dump(skillMeta, { indent: 2, quotingType: '"', forceQuotes: false });
+              await writeFileSafe(skillMetaPath, skillMetaYaml);
+              hashes[skillMetaPath] = sha256(skillMetaYaml);
+
+              // Save skill script
+              const scriptContent = skill.prompt_script || '';
+              const scriptPath = librarySkillScriptPath(customer.idn, project.idn, lib.idn, skill.idn, skill.runner_type);
+              await writeFileSafe(scriptPath, scriptContent);
+              hashes[scriptPath] = sha256(scriptContent);
+
+              projectData.libraries[lib.idn]!.skills[skill.idn] = skillMeta;
+            }
+          }
+        }
+      } catch (error) {
+        this.logger.verbose(`  Could not pull libraries for project ${project.idn}: ${error instanceof Error ? error.message : String(error)}`);
       }
 
       existingMap.projects[project.idn] = projectData;
@@ -489,11 +540,15 @@ export class ProjectSyncStrategy implements ISyncStrategy<ProjectMeta, LocalProj
     for (const change of changes) {
       try {
         if (change.operation === 'modified') {
-          // Update existing skill
-          const updateResult = await this.pushSkillUpdate(client, customer, change, mapData, newHashes);
-          result.updated += updateResult;
+          const isLibrary = change.path.includes('/libraries/');
+          if (isLibrary) {
+            const updateResult = await this.pushLibrarySkillUpdate(client, change, mapData, newHashes);
+            result.updated += updateResult;
+          } else {
+            const updateResult = await this.pushSkillUpdate(client, customer, change, mapData, newHashes);
+            result.updated += updateResult;
+          }
         } else if (change.operation === 'created') {
-          // Create new entity
           const createResult = await this.pushNewEntity(client, customer, change, mapData, newHashes);
           result.created += createResult;
         }
@@ -564,6 +619,40 @@ export class ProjectSyncStrategy implements ISyncStrategy<ProjectMeta, LocalProj
   }
 
   /**
+   * Push a library skill update
+   * Path: newo_customers/{customer}/projects/{project}/libraries/{lib}/{skill}/{skill}.jinja
+   */
+  private async pushLibrarySkillUpdate(
+    client: AxiosInstance,
+    change: ChangeItem<LocalProjectData>,
+    mapData: ProjectMap,
+    newHashes: HashStore
+  ): Promise<number> {
+    const pathParts = change.path.split('/');
+    const skillIdn = pathParts[pathParts.length - 2] || '';
+    const libIdn = pathParts[pathParts.length - 3] || '';
+    const projectIdn = pathParts[pathParts.length - 5] || '';
+
+    const projectData = mapData.projects[projectIdn];
+    const libData = projectData?.libraries?.[libIdn];
+    const skillData = libData?.skills[skillIdn];
+
+    if (!skillData || !libData) {
+      throw new Error(`Library skill ${skillIdn} not found in project map`);
+    }
+
+    const content = await fs.readFile(change.path, 'utf8');
+
+    await updateLibrarySkill(client, libData.id, skillData.id, {
+      prompt_script: content,
+    });
+
+    newHashes[change.path] = sha256(content);
+    this.logger.info(`Pushed library skill: ${libIdn}/${skillIdn}`);
+    return 1;
+  }
+
+  /**
    * Push a new entity
    */
   private async pushNewEntity(
@@ -616,7 +705,7 @@ export class ProjectSyncStrategy implements ISyncStrategy<ProjectMeta, LocalProj
     const hashes = await loadHashes(customer.idn);
     const mapData = await fs.readJson(mapFile) as ProjectMap;
 
-    // Scan for changed skill scripts
+    // Scan for changed flow skill scripts
     for (const [projectIdn, projectData] of Object.entries(mapData.projects)) {
       for (const [agentIdn, agentData] of Object.entries(projectData.agents)) {
         for (const [flowIdn, flowData] of Object.entries(agentData.flows)) {
@@ -629,9 +718,34 @@ export class ProjectSyncStrategy implements ISyncStrategy<ProjectMeta, LocalProj
 
               if (storedHash !== currentHash) {
                 changes.push({
-                  item: {} as LocalProjectData, // Simplified for now
+                  item: {} as LocalProjectData,
                   operation: 'modified',
                   path: skillFile.filePath
+                });
+              }
+            }
+          }
+        }
+      }
+
+      // Scan for changed library skill scripts
+      if (projectData.libraries) {
+        for (const [libIdn, libData] of Object.entries(projectData.libraries)) {
+          for (const [skillIdn, skillMeta] of Object.entries(libData.skills)) {
+            const scriptPath = librarySkillScriptPath(
+              customer.idn, projectIdn, libIdn, skillIdn, skillMeta.runner_type
+            );
+
+            if (await fs.pathExists(scriptPath)) {
+              const content = await fs.readFile(scriptPath, 'utf8');
+              const currentHash = sha256(content);
+              const storedHash = hashes[scriptPath];
+
+              if (storedHash !== currentHash) {
+                changes.push({
+                  item: {} as LocalProjectData,
+                  operation: 'modified',
+                  path: scriptPath
                 });
               }
             }

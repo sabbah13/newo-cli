@@ -628,3 +628,67 @@ export async function getLogs(
   const response = await client.get<LogsResponse>(`/api/v1/analytics/logs?${queryParams.toString()}`);
   return response.data;
 }
+
+// ── Libraries ──
+
+export interface LibraryResponse {
+  id: string;
+  idn: string;
+  project_id: string;
+  skills: Skill[];
+}
+
+export async function listLibraries(client: AxiosInstance, projectId: string): Promise<LibraryResponse[]> {
+  const response = await client.get<LibraryResponse[]>(
+    `/api/v1/designer/projects/${projectId}/libraries`
+  );
+  return response.data;
+}
+
+export async function listLibrarySkills(client: AxiosInstance, libraryId: string): Promise<Skill[]> {
+  const response = await client.get<Skill[]>(
+    `/api/v1/designer/libraries/${libraryId}/skills`
+  );
+  return response.data;
+}
+
+export async function updateLibrarySkill(
+  client: AxiosInstance,
+  libraryId: string,
+  skillId: string,
+  data: { prompt_script: string; [key: string]: unknown }
+): Promise<void> {
+  await client.patch(
+    `/api/v1/designer/libraries/${libraryId}/skills/${skillId}`,
+    data
+  );
+}
+
+// ── V2 Bulk Export/Import ──
+
+export interface V2ExportOptions {
+  export_akb?: boolean;
+  export_customer_attributes?: boolean;
+  exclude_projects_idn?: string[];
+}
+
+export async function exportCustomerV2(
+  client: AxiosInstance,
+  customerId: string,
+  options: V2ExportOptions = {}
+): Promise<Buffer> {
+  const params = new URLSearchParams();
+  params.set('customer_id', customerId);
+  if (options.export_akb !== undefined) params.set('export_akb', String(options.export_akb));
+  if (options.export_customer_attributes !== undefined) params.set('export_customer_attributes', String(options.export_customer_attributes));
+  if (options.exclude_projects_idn && options.exclude_projects_idn.length > 0) {
+    for (const idn of options.exclude_projects_idn) {
+      params.append('exclude_projects_idn', idn);
+    }
+  }
+
+  const response = await client.post(`/api/v2/designer/customer/export?${params.toString()}`, null, {
+    responseType: 'arraybuffer',
+  });
+  return Buffer.from(response.data as ArrayBuffer);
+}
