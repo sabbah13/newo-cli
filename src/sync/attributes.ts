@@ -11,6 +11,7 @@ import {
 import path from 'path';
 import fs from 'fs-extra';
 import yaml from 'js-yaml';
+import { patchYamlToPyyaml } from '../format/yaml-patch.js';
 import type { AxiosInstance } from 'axios';
 import type { CustomerConfig } from '../types.js';
 
@@ -72,25 +73,24 @@ export async function saveCustomerAttributes(
       attributes: cleanAttributes
     };
 
-    // Configure YAML output to match reference format exactly
+    // Emit YAML without folding/wrapping; patchYamlToPyyaml handles long-line
+    // wrapping and converts JSON-like double-quoted values to single-quoted
+    // (so strings containing `"` stay valid YAML on reload).
     let yamlContent = yaml.dump(attributesYaml, {
       indent: 2,
       quotingType: '"',
       forceQuotes: false,
-      lineWidth: 80, // Wrap long lines to match reference format
+      lineWidth: -1,
       noRefs: true,
       sortKeys: false,
-      flowLevel: -1, // Never use flow syntax
-      styles: {
-        '!!str': 'folded' // Use folded style for better line wrapping of long strings
-      }
+      flowLevel: -1,
     });
 
-    // Post-process to fix enum format and improve JSON string formatting
+    // Post-process to fix enum format
     yamlContent = yamlContent.replace(/__ENUM_PLACEHOLDER_(\w+)__/g, '!enum "AttributeValueTypes.$1"');
 
-    // Fix JSON string formatting to match reference (remove escape characters)
-    yamlContent = yamlContent.replace(/\\"/g, '"');
+    // Convert JSON-like double-quoted values to single-quoted and wrap long lines
+    yamlContent = patchYamlToPyyaml(yamlContent);
 
     // Save all files: attributes.yaml, ID mapping, and backup for diff tracking
     await writeFileSafe(customerAttributesPath(customer.idn), yamlContent);
@@ -172,20 +172,20 @@ export async function saveProjectAttributes(
       attributes: cleanAttributes
     };
 
-    // Configure YAML output
+    // Emit YAML without folding/wrapping; patchYamlToPyyaml handles long-line
+    // wrapping and converts JSON-like double-quoted values to single-quoted.
     let yamlContent = yaml.dump(attributesYaml, {
       indent: 2,
       quotingType: '"',
       forceQuotes: false,
-      lineWidth: 80,
+      lineWidth: -1,
       noRefs: true,
       sortKeys: false,
-      flowLevel: -1
+      flowLevel: -1,
     });
 
-    // Post-process to fix enum format
     yamlContent = yamlContent.replace(/__ENUM_PLACEHOLDER_(\w+)__/g, '!enum "AttributeValueTypes.$1"');
-    yamlContent = yamlContent.replace(/\\"/g, '"');
+    yamlContent = patchYamlToPyyaml(yamlContent);
 
     // Save to project directory
     const customerDir = path.join(process.cwd(), 'newo_customers', customer.idn);

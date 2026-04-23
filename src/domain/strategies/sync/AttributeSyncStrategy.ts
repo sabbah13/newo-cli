@@ -38,6 +38,7 @@ import {
   customerAttributesPath,
   customerAttributesMapPath
 } from '../../../fsutil.js';
+import { patchYamlToPyyaml } from '../../../format/yaml-patch.js';
 import { sha256, saveHashes, loadHashes } from '../../../hash.js';
 
 /**
@@ -251,19 +252,21 @@ export class AttributeSyncStrategy implements ISyncStrategy<CustomerAttributesRe
       value_type: `__ENUM_PLACEHOLDER_${attr.value_type}__`
     }));
 
+    // Emit YAML without folding/wrapping; patchYamlToPyyaml handles long-line
+    // wrapping and converts JSON-like double-quoted values to single-quoted
+    // (so strings containing `"` stay valid YAML on reload).
     let yamlContent = yaml.dump({ attributes: attributesWithPlaceholders }, {
       indent: 2,
       quotingType: '"',
       forceQuotes: false,
-      lineWidth: 80,
+      lineWidth: -1,
       noRefs: true,
       sortKeys: false,
-      flowLevel: -1
+      flowLevel: -1,
     });
 
-    // Replace placeholders with enum syntax
     yamlContent = yamlContent.replace(/__ENUM_PLACEHOLDER_(\w+)__/g, '!enum "AttributeValueTypes.$1"');
-    yamlContent = yamlContent.replace(/\\"/g, '"');
+    yamlContent = patchYamlToPyyaml(yamlContent);
 
     return yamlContent;
   }
