@@ -22,6 +22,19 @@ Core Commands:
   newo meta [--customer <idn>]                  # get project metadata (debug)
   newo import-akb <file> <persona_id> [--customer <idn>]  # import AKB articles
 
+Linting & Formatting (NEW):
+  newo lint [paths...] [--format <fmt>] [--reporter <text|json|sarif>]       # static-analysis on DSL files
+  newo lint --changed                                                        # lint only files modified since last push
+  newo lint --live                                                           # refresh action catalog from NEWO API
+  newo lint --rule <code> --no-rule <code>                                   # selectively enable/disable rules
+  newo lint --max-warnings <n>                                               # fail when warnings exceed threshold
+  newo format [paths...] [--check]                                           # apply canonical formatting (in-place or --check)
+  newo check [paths...]                                                      # umbrella: lint + format --check (CI gate)
+
+  Powered by newo-dsl-analyzer. Exit codes: 0 clean, 1 lint errors, 2 runtime error.
+  Discover rules via the Diagnostic code column (E100, W101, ...); configure
+  them in .neworc.yaml at your repo root. Plugin authors: depend on newo-dsl-core.
+
 Project Management:
   newo create-project <idn> [--title <title>] [--description <desc>] [--version <version>] [--auto-update]  # create empty project on platform
   newo list-registries [--customer <idn>]                                   # list available project registries (production, staging, etc.)

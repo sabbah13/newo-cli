@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.7.0] - 2026-04-23
+
+### Added
+
+- **`newo lint` command** - Static analysis for Guidance / Jinja / NSL / NSLG files. Exit codes 0/1/2. Flags: `--format`, `--reporter text|json|sarif`, `--max-warnings`, `--quiet`, `--rule`, `--rule-off`, `--changed`, `--live`, `--customer`. Powered by `newo-dsl-analyzer`, the same engine used by the VS Code extension.
+- **`newo format` command** - Apply canonical formatting in place. `--check` flag reports without writing (CI gate). v1 is an identity transform that ensures final newline; concrete formatting rules iterate in later releases.
+- **`newo check` command** - Umbrella command: runs `lint` then `format --check` for a single CI gate invocation.
+- **`src/lint/` glue module** - File discovery respecting format-aware extensions and `.newo/{customer}/hashes.json` for `--changed`, `.neworc.yaml` config loader, live schema refresh (caches `/api/v1/script/actions` response to `.newo/{customer}/actions.json`), text/JSON/SARIF 2.1.0 reporters.
+- **Dependency on `newo-dsl-analyzer` and `newo-dsl-core`** - the shared Newo DSL analysis engine published from the newo-nsl-lsp repo. See README for the plugin contract.
+- **Offline mode for lint/format/check** - These commands do not require `NEWO_API_KEY` or any environment configuration when run with explicit paths and without `--customer` or `--live`. Safe for pre-commit hooks and sandboxed CI jobs.
+- **`.neworc.yaml` config discovery** - Walks up the directory tree from cwd to find lint config. Supports `rules`, `plugins`, `extensions`, `ignore`.
+
+### Changed
+
+- `src/cli.ts` short-circuits environment validation for offline `newo lint` / `newo format` / `newo check` invocations. All other commands still require credentials at startup.
+
+### Publisher notes
+
+Before running `npm publish` on this version, swap the local `file:` dependencies in `package.json` for semver ranges (npm rejects published packages that reference `file:` paths). The `newo-dsl-*` packages must be published from the [newo-nsl-lsp](https://github.com/newo-ai/newo-nsl-lsp) monorepo first:
+
+```json
+"dependencies": {
+  "newo-dsl-analyzer": "^1.0.0",
+  "newo-dsl-core": "^1.0.0",
+  ...
+}
+```
+
+Recommended release order:
+1. Tag `v1.0.0` on newo-nsl-lsp -> CI publishes `newo-dsl-core`, `newo-dsl-data`, `newo-dsl-analyzer`, `newo-dsl-lsp` to npm.
+2. In newo-cli: swap `file:` to `^1.0.0`, `npm install`, build, test.
+3. Tag `v3.7.0` on newo-cli -> `npm publish --access public`.
+
+## [3.6.2] - 2026-04-23
+
+### Fixed
+
+- **`attributes.yaml` YAML escaping** - Values containing double quotes (e.g. `["+37410333310"]`) are now serialized as single-quoted scalars instead of invalid double-quoted output. Previously `newo push --format newo_v2` could not parse round-tripped files because the generated YAML was malformed. Fix ported via PR #1 (commit `d3a1d4e`).
+
 ## [3.6.1] - 2026-04-14
 
 ### Documentation
@@ -999,6 +1038,8 @@ Another Item: $Price [Modifiers: modifier3]
 [3.2.0]: https://github.com/sabbah13/newo-cli/compare/v3.1.0...v3.2.0
 [3.1.0]: https://github.com/sabbah13/newo-cli/compare/v3.0.0...v3.1.0
 [3.0.0]: https://github.com/sabbah13/newo-cli/compare/v2.0.6...v3.0.0
+[3.7.0]: https://github.com/sabbah13/newo-cli/compare/v3.6.2...v3.7.0
+[3.6.2]: https://github.com/sabbah13/newo-cli/compare/v3.6.1...v3.6.2
 [2.0.6]: https://github.com/sabbah13/newo-cli/compare/v2.0.5...v2.0.6
 [2.0.5]: https://github.com/sabbah13/newo-cli/compare/v2.0.4...v2.0.5
 [2.0.4]: https://github.com/sabbah13/newo-cli/compare/v2.0.3...v2.0.4

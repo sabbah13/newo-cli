@@ -1,6 +1,6 @@
 {
   "name": "newo",
-  "version": "3.6.1",
+  "version": "3.7.0",
   "description": "NEWO CLI: Professional command-line tool with modular architecture for NEWO AI Agent development. Features account migration, integration management, webhook automation, AKB knowledge base, project attributes, sandbox testing, IDN-based file management, real-time progress tracking, intelligent sync operations, and comprehensive multi-customer support.",
   "type": "module",
   "bin": {
@@ -60,6 +60,8 @@
     "node": ">=18"
   },
   "dependencies": {
+    "newo-dsl-analyzer": "^1.0.0",
+    "newo-dsl-core": "^1.0.0",
     "axios": "^1.7.7",
     "chokidar": "^5.0.0",
     "dotenv": "^16.4.5",

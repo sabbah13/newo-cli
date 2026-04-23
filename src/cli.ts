@@ -47,19 +47,14 @@ import { handleWatchCommand } from './cli/commands/watch.js';
 import { handleDiffCommand } from './cli/commands/diff.js';
 import { handleLogsCommand } from './cli/commands/logs.js';
 import { handleExportCommand } from './cli/commands/export.js';
+import { handleLintCommand } from './cli/commands/lint.js';
+import { handleFormatCommand } from './cli/commands/format.js';
+import { handleCheckCommand } from './cli/commands/check.js';
 import type { CliArgs, NewoApiError } from './types.js';
 
 dotenv.config();
 
 async function main(): Promise<void> {
-  try {
-    // Initialize and validate environment at startup
-    initializeEnvironment();
-  } catch (error: unknown) {
-    console.error('Environment validation failed:', error instanceof Error ? error.message : String(error));
-    process.exit(1);
-  }
-
   const args = minimist(process.argv.slice(2)) as CliArgs;
   const cmd = args._[0];
   const verbose = Boolean(args.verbose || args.v);
@@ -72,10 +67,44 @@ async function main(): Promise<void> {
 
   if (verbose) console.log(`🔍 Command parsed: "${cmd}"`);
 
-  // Handle help command first
+  // Handle help command first - no env or customer config needed
   if (!cmd || ['help', '-h', '--help'].includes(cmd)) {
     handleHelpCommand();
     return;
+  }
+
+  // Offline commands: lint/format/check don't need NEWO credentials
+  // UNLESS the user passes --customer or --live (both touch the API).
+  const isOfflineLint =
+    (cmd === 'lint' || cmd === 'format' || cmd === 'check') &&
+    !args.customer &&
+    !args.live;
+
+  if (isOfflineLint) {
+    try {
+      const emptyConfig: import('./types.js').MultiCustomerConfig = { customers: {} };
+      switch (cmd) {
+        case 'lint':
+          await handleLintCommand(emptyConfig, args, verbose);
+          return;
+        case 'format':
+          await handleFormatCommand(emptyConfig, args, verbose);
+          return;
+        case 'check':
+          await handleCheckCommand(emptyConfig, args, verbose);
+          return;
+      }
+    } catch (error: unknown) {
+      handleCliError(error, cmd);
+    }
+  }
+
+  // All other commands (and customer-scoped lint/format/check) require env + customer config.
+  try {
+    initializeEnvironment();
+  } catch (error: unknown) {
+    console.error('Environment validation failed:', error instanceof Error ? error.message : String(error));
+    process.exit(1);
   }
 
   // Handle list-customers command (doesn't need full customer config)
@@ -247,6 +276,18 @@ async function main(): Promise<void> {
 
       case 'diff':
         await handleDiffCommand(customerConfig, args, verbose);
+        break;
+
+      case 'lint':
+        await handleLintCommand(customerConfig, args, verbose);
+        break;
+
+      case 'format':
+        await handleFormatCommand(customerConfig, args, verbose);
+        break;
+
+      case 'check':
+        await handleCheckCommand(customerConfig, args, verbose);
         break;
 
       default:

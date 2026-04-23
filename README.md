@@ -153,6 +153,67 @@ NEWO_REFRESH_URL=custom_refresh_endpoint   # Custom refresh endpoint
 | `newo import-akb` | Import knowledge base articles | • Structured text parsing<br>• Bulk article import<br>• Validation and error reporting |
 | `newo meta` | Get project metadata (debug) | • Project structure analysis<br>• Metadata validation |
 
+### Lint, Format, Check (NEW v3.7.0)
+
+Static-analysis over DSL files, powered by [`newo-dsl-analyzer`](https://www.npmjs.com/package/newo-dsl-analyzer). Same engine that runs in the VS Code extension - no drift between editor and CI.
+
+| Command | Description |
+|---------|-------------|
+| `newo lint [paths...]` | Lint Guidance / Jinja / NSL / NSLG files. Exit 0 clean, 1 findings, 2 runtime error. |
+| `newo format [paths...]` | Apply canonical formatting in place. Use `--check` to only report (no writes). |
+| `newo check [paths...]` | Umbrella: runs `lint` then `format --check`. Single CI gate. |
+
+**Lint flags:**
+
+| Flag | Purpose |
+|------|---------|
+| `--format <cli_v1\|newo_v2>` | Restrict file extensions to one format's set |
+| `--reporter <text\|json\|sarif>` | Output format. `sarif` is ready for GitHub Code Scanning |
+| `--max-warnings <n>` | Exit 1 if warning count exceeds threshold |
+| `--quiet` | Errors only (filters warnings from output) |
+| `--rule <code>` / `--rule-off <code>` | Enable / disable specific rules (comma-separated or repeatable) |
+| `--changed` | Lint only files modified since last `newo push` (uses `.newo/{customer}/hashes.json`) |
+| `--live` | Refresh schemas from NEWO API (`/api/v1/script/actions`) and cache to `.newo/{customer}/actions.json` |
+| `--customer <idn>` | Scope to one configured customer |
+
+**Config file:** `.neworc.yaml` at your repo root (or any ancestor directory):
+
+```yaml
+rules:
+  E100: error      # Unknown skill
+  W101: off        # Unknown function (useful when using bundled schemas without --live)
+  W102: warning    # Unknown parameter
+ignore:
+  - archived/
+plugins:
+  - ./my-lint-plugin
+```
+
+**Examples:**
+
+```bash
+# Quick lint of the current directory
+newo lint newo_customers
+
+# Lint only changed files, as SARIF, suitable for GitHub PR comments
+newo lint --changed --reporter sarif > lint.sarif
+
+# Lint one customer with platform-fresh schemas
+newo lint --customer acme --live
+
+# CI gate
+newo check --max-warnings 0
+
+# Pre-commit: auto-format then lint
+newo format && newo lint
+```
+
+**Exit codes:** 0 clean / 1 findings (errors present OR `--max-warnings` exceeded) / 2 runtime error.
+
+**Offline mode:** `newo lint`, `newo format`, and `newo check` do not require `NEWO_API_KEY` or any environment configuration when run with explicit paths and without `--customer` / `--live`. Safe to use in sandboxes and pre-commit hooks.
+
+**Plugin authors:** depend on [`newo-dsl-core`](https://www.npmjs.com/package/newo-dsl-core) and register your plugin in `.neworc.yaml`. See the analyzer README for the full rule API.
+
 ### V2 Format Support (NEW v3.6.0)
 
 The CLI supports two formats that coexist in the same workspace:
