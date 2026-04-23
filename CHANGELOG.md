@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.6.2] - 2026-04-23
+
+### Fixed
+
+- **`attributes.yaml` YAML escaping**: The attribute serializer previously ran `.replace(/\\"/g, '"')` as a "prettify" post-processing step, which stripped legitimate YAML escape characters from double-quoted scalars. Values containing double quotes (e.g. `["+37410333310"]`) were written as invalid YAML like `value: "["+37410333310"]"` — rejected by `yaml.load` with `bad indentation of a mapping entry`. This made `newo push --format newo_v2` unable to parse customer/project attribute files at all, and long compiled values (e.g. AMI) broke on the first embedded quote. The serializer now uses the existing `patchYamlToPyyaml` post-processor (already used on the V2 path) to convert JSON-like double-quoted values to single-quoted form (`value: '["+37410333310"]'`) and handle long-line wrapping in pyyaml style. Fix applied in both `src/sync/attributes.ts` and `src/domain/strategies/sync/AttributeSyncStrategy.ts`. Added 11 round-trip regression tests.
+
 ## [3.6.1] - 2026-04-14
 
 ### Documentation
@@ -994,7 +1000,8 @@ Another Item: $Price [Modifiers: modifier3]
 - GitHub Actions CI/CD integration
 - Robust authentication with token refresh
 
-[Unreleased]: https://github.com/sabbah13/newo-cli/compare/v3.3.0...HEAD
+[Unreleased]: https://github.com/sabbah13/newo-cli/compare/v3.6.2...HEAD
+[3.6.2]: https://github.com/sabbah13/newo-cli/compare/v3.6.1...v3.6.2
 [3.3.0]: https://github.com/sabbah13/newo-cli/compare/v3.2.0...v3.3.0
 [3.2.0]: https://github.com/sabbah13/newo-cli/compare/v3.1.0...v3.2.0
 [3.1.0]: https://github.com/sabbah13/newo-cli/compare/v3.0.0...v3.1.0
