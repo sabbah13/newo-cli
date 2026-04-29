@@ -12,6 +12,11 @@ import path from 'path';
 import fs from 'fs-extra';
 import yaml from 'js-yaml';
 import { patchYamlToPyyaml } from '../format/yaml-patch.js';
+import {
+  isJsonValueType,
+  normalizeJsonValueForStorage,
+  jsonValuesEqual
+} from './json-attr-utils.js';
 import type { AxiosInstance } from 'axios';
 import type { CustomerConfig } from '../types.js';
 
@@ -43,15 +48,21 @@ export async function saveCustomerAttributes(
         idMapping[attr.idn] = attr.id;
       }
 
-      // Special handling for complex JSON string values
+      // Coerce JSON-typed values to a STRING. The API can return the value
+      // as a parsed object for `value_type: json` attributes; if we let
+      // yaml.dump serialize that as a YAML structure the next push sends
+      // `{"value": {...}}` instead of `{"value": "..."}` and the Workflow
+      // Builder canvas breaks. See src/sync/json-attr-utils.ts for the
+      // full rationale.
       let processedValue = attr.value;
-      if (typeof attr.value === 'string' && attr.value.startsWith('[{') && attr.value.endsWith('}]')) {
+      if (isJsonValueType(attr.value_type)) {
+        processedValue = normalizeJsonValueForStorage(attr.value);
+      } else if (typeof attr.value === 'string' && attr.value.startsWith('[{') && attr.value.endsWith('}]')) {
+        // Legacy: reformat array-of-objects JSON strings for readability
         try {
-          // Parse and reformat JSON for better readability
           const parsed = JSON.parse(attr.value);
-          processedValue = JSON.stringify(parsed, null, 0); // No extra spacing, but valid JSON
+          processedValue = JSON.stringify(parsed, null, 0); // compact, valid JSON
         } catch (e) {
-          // Keep original if parsing fails
           processedValue = attr.value;
         }
       }
@@ -145,9 +156,12 @@ export async function saveProjectAttributes(
         idMapping[attr.idn] = attr.id;
       }
 
-      // Special handling for complex JSON string values
+      // Coerce JSON-typed values to a STRING. See json-attr-utils.ts for
+      // why this matters (Workflow Builder canvas blank-screen bug).
       let processedValue = attr.value;
-      if (typeof attr.value === 'string' && attr.value.startsWith('[{') && attr.value.endsWith('}]')) {
+      if (isJsonValueType(attr.value_type)) {
+        processedValue = normalizeJsonValueForStorage(attr.value);
+      } else if (typeof attr.value === 'string' && attr.value.startsWith('[{') && attr.value.endsWith('}]')) {
         try {
           const parsed = JSON.parse(attr.value);
           processedValue = JSON.stringify(parsed, null, 0);
@@ -297,19 +311,34 @@ export async function pushProjectAttributes(
 
     // Value type is already parsed (we removed !enum tags above)
     const valueType = localAttr.value_type;
+    const isJson = isJsonValueType(valueType);
 
-    // Check if value changed (use ?? to preserve 0, false, empty string)
-    const localValue = String(localAttr.value ?? '');
-    const remoteValue = String(remoteAttr.value ?? '');
+    // Check if value changed.
+    // For JSON-typed values, compare canonical (compact) JSON so that
+    // pretty- vs compact-printed forms don't register as changes and
+    // string vs object representations compare equal. For everything
+    // else, fall back to the existing String() comparison (which still
+    // preserves 0, false, "" via ??).
+    const valuesAreEqual = isJson
+      ? jsonValuesEqual(localAttr.value, remoteAttr.value)
+      : String(localAttr.value ?? '') === String(remoteAttr.value ?? '');
 
-    if (localValue !== remoteValue) {
+    if (!valuesAreEqual) {
       if (verbose) console.log(`   🔄 Updating project attribute: ${localAttr.idn}`);
 
       try {
+        // Always send JSON-typed values as a STRING. If the API or our
+        // YAML loader handed us an object, the platform stores it
+        // differently from the original string and the Workflow Builder
+        // canvas blanks out.
+        const valueToSend = isJson
+          ? normalizeJsonValueForStorage(localAttr.value)
+          : localAttr.value;
+
         const attributeToUpdate = {
           id: attributeId,
           idn: localAttr.idn,
-          value: localAttr.value,
+          value: valueToSend,
           title: localAttr.title,
           description: localAttr.description,
           group: localAttr.group,

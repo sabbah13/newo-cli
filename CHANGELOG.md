@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.7.1] - 2026-04-29
+
+### Fixed
+
+- **Workflow Builder canvas blank-screen after `newo push --only attributes`** - JSON-typed project/customer attributes (e.g. `project_attributes_private_dynamic_workflow_builder_canvas`) are now always coerced to a JSON STRING when persisted to `attributes.yaml` and when sent on push. Previously, when the API returned the `value` field as a parsed object, `yaml.dump` serialized it as a YAML structure and the next push sent `{"value": {...object...}}` instead of `{"value": "...json..."}` - the platform stored a shape Builder could not render and the canvas blanked out. Change-detection now compares both sides as canonical (compact) JSON, so pretty- vs compact-printed forms and string vs object representations no longer trigger spurious pushes. String-typed values are left bit-for-bit untouched, so no churn on existing repos. New helpers in `src/sync/json-attr-utils.ts` are wired into both `src/sync/attributes.ts` and `src/domain/strategies/sync/AttributeSyncStrategy.ts`. Reported by Bob; 19 regression tests in `test/json-attribute-roundtrip.test.js`.
+
 ## [3.7.0] - 2026-04-23
 
 ### Added
@@ -1033,7 +1039,8 @@ Another Item: $Price [Modifiers: modifier3]
 - GitHub Actions CI/CD integration
 - Robust authentication with token refresh
 
-[Unreleased]: https://github.com/sabbah13/newo-cli/compare/v3.3.0...HEAD
+[Unreleased]: https://github.com/sabbah13/newo-cli/compare/v3.7.1...HEAD
+[3.7.1]: https://github.com/sabbah13/newo-cli/compare/v3.7.0...v3.7.1
 [3.3.0]: https://github.com/sabbah13/newo-cli/compare/v3.2.0...v3.3.0
 [3.2.0]: https://github.com/sabbah13/newo-cli/compare/v3.1.0...v3.2.0
 [3.1.0]: https://github.com/sabbah13/newo-cli/compare/v3.0.0...v3.1.0

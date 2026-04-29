@@ -39,6 +39,11 @@ import {
   customerAttributesMapPath
 } from '../../../fsutil.js';
 import { patchYamlToPyyaml } from '../../../format/yaml-patch.js';
+import {
+  isJsonValueType,
+  normalizeJsonValueForStorage,
+  jsonValuesEqual
+} from '../../../sync/json-attr-utils.js';
 import { sha256, saveHashes, loadHashes } from '../../../hash.js';
 
 /**
@@ -220,8 +225,14 @@ export class AttributeSyncStrategy implements ISyncStrategy<CustomerAttributesRe
   private cleanAttribute(attr: CustomerAttribute): CustomerAttribute {
     let processedValue = attr.value;
 
-    // Handle JSON string values
-    if (typeof attr.value === 'string' && attr.value.startsWith('[{') && attr.value.endsWith('}]')) {
+    // Coerce JSON-typed values to a STRING. The API may return parsed
+    // objects for `value_type: json`; if we let yaml.dump turn them into
+    // YAML structures, the next push sends an object and the Workflow
+    // Builder canvas blanks out. See src/sync/json-attr-utils.ts.
+    if (isJsonValueType(attr.value_type)) {
+      processedValue = normalizeJsonValueForStorage(attr.value);
+    } else if (typeof attr.value === 'string' && attr.value.startsWith('[{') && attr.value.endsWith('}]')) {
+      // Legacy: reformat array-of-objects JSON strings for readability
       try {
         const parsed = JSON.parse(attr.value);
         processedValue = JSON.stringify(parsed, null, 0);
@@ -342,10 +353,24 @@ export class AttributeSyncStrategy implements ISyncStrategy<CustomerAttributesRe
       const remoteAttr = remoteMap.get(localAttr.idn);
       if (!remoteAttr) continue;
 
-      if (String(localAttr.value) !== String(remoteAttr.value)) {
+      // For JSON-typed attrs, compare canonical JSON (handles
+      // pretty/compact and string/object differences). Always send the
+      // value as a STRING so the platform stores the canvas the way the
+      // Workflow Builder expects to read it back.
+      const isJson = isJsonValueType(localAttr.value_type);
+      const valuesAreEqual = isJson
+        ? jsonValuesEqual(localAttr.value, remoteAttr.value)
+        : String(localAttr.value) === String(remoteAttr.value);
+
+      if (!valuesAreEqual) {
+        const valueToSend = isJson
+          ? normalizeJsonValueForStorage(localAttr.value)
+          : localAttr.value;
+
         await updateCustomerAttribute(client, {
-          id: attributeId,
-          ...localAttr
+          ...localAttr,
+          value: valueToSend,
+          id: attributeId
         });
         updatedCount++;
         this.logger.info(`  ✓ Updated customer attribute: ${localAttr.idn}`);
@@ -399,10 +424,22 @@ export class AttributeSyncStrategy implements ISyncStrategy<CustomerAttributesRe
       const remoteAttr = remoteMap.get(localAttr.idn);
       if (!remoteAttr) continue;
 
-      if (String(localAttr.value) !== String(remoteAttr.value)) {
+      // Same canonical-JSON / always-string-on-push policy as customer
+      // attributes (see pushCustomerAttributes for rationale).
+      const isJson = isJsonValueType(localAttr.value_type);
+      const valuesAreEqual = isJson
+        ? jsonValuesEqual(localAttr.value, remoteAttr.value)
+        : String(localAttr.value) === String(remoteAttr.value);
+
+      if (!valuesAreEqual) {
+        const valueToSend = isJson
+          ? normalizeJsonValueForStorage(localAttr.value)
+          : localAttr.value;
+
         await updateProjectAttribute(client, project.id, {
-          id: attributeId,
-          ...localAttr
+          ...localAttr,
+          value: valueToSend,
+          id: attributeId
         });
         updatedCount++;
         this.logger.info(`  ✓ Updated project attribute: ${projectIdn}/${localAttr.idn}`);
