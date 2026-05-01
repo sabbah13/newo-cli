@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.8.0] - 2026-05-01
+
+### Added
+
+- **`newo mcp serve` subcommand** - Starts a Model Context Protocol server over stdio so Claude Code, Cowork, Claude Desktop, and any other MCP client can call NEWO tools directly without shelling out to the CLI. Same authentication as the CLI (NEWO_API_KEY / .env). Six tools shipped in this initial release:
+  - `newo_list_customers` - enumerate configured customers (no network)
+  - `newo_profile` - fetch customer profile (auth smoke test)
+  - `newo_list_actions` - full NSL/Jinja action catalog
+  - `newo_logs` - rich-filter log queries with runtime_context_id correlation, structured JSON response
+  - `newo_test` - sandbox call returning `{reply, runtime_context_id, flow_idn, skill_idn, user_actor_id, debug}` for closing the test->troubleshoot loop in MCP-aware sessions
+  - `newo_status` - per-customer modified-file diff plus auth status, no platform mutations
+- **`newo mcp tools` subcommand** - Lists the tools the server exposes (with `--json` for machine-readable output). Useful for plugin authors who want to verify the catalog without booting the full server.
+- **`@modelcontextprotocol/sdk` v1.29.0 dependency** - Powers the server. Stdio transport only for now; HTTP transport can be added later if remote hosting becomes a use case.
+- **Stdout guard in `src/mcp/server.ts`** - Redirects stray `console.log` writes from shared CLI modules to stderr so a noisy library can never corrupt the JSON-RPC frame stream. Plus `cli.ts` short-circuits the `mcp` command to skip eager auth/customer-config init (the auth module logs JSON to stdout otherwise).
+- **`test/mcp-server.test.js`** - 4 integration tests covering server boot, `tools/list`, `tools/call newo_list_customers`, and the `mcp tools --json` listing. All pass against a fresh build.
+
+### Notes for plugin authors
+
+The companion Claude Code / Cowork plugin lives at `github.com/sabbah13/newo-claude-plugins/plugins/newo-cli/`. Its `.mcp.json` references `npx -y newo@latest mcp serve`, so installing the plugin auto-installs this version. Tools surface as MCP tools to the model and can also be invoked via the four slash commands shipped in that plugin.
+
 ## [3.7.1] - 2026-04-29
 
 ### Fixed
@@ -1039,7 +1059,8 @@ Another Item: $Price [Modifiers: modifier3]
 - GitHub Actions CI/CD integration
 - Robust authentication with token refresh
 
-[Unreleased]: https://github.com/sabbah13/newo-cli/compare/v3.7.1...HEAD
+[Unreleased]: https://github.com/sabbah13/newo-cli/compare/v3.8.0...HEAD
+[3.8.0]: https://github.com/sabbah13/newo-cli/compare/v3.7.1...v3.8.0
 [3.7.1]: https://github.com/sabbah13/newo-cli/compare/v3.7.0...v3.7.1
 [3.3.0]: https://github.com/sabbah13/newo-cli/compare/v3.2.0...v3.3.0
 [3.2.0]: https://github.com/sabbah13/newo-cli/compare/v3.1.0...v3.2.0

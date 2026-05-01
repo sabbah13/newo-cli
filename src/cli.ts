@@ -50,6 +50,7 @@ import { handleExportCommand } from './cli/commands/export.js';
 import { handleLintCommand } from './cli/commands/lint.js';
 import { handleFormatCommand } from './cli/commands/format.js';
 import { handleCheckCommand } from './cli/commands/check.js';
+import { handleMcpCommand } from './cli/commands/mcp.js';
 import type { CliArgs, NewoApiError } from './types.js';
 
 dotenv.config();
@@ -71,6 +72,23 @@ async function main(): Promise<void> {
   if (!cmd || ['help', '-h', '--help'].includes(cmd)) {
     handleHelpCommand();
     return;
+  }
+
+  // MCP commands run without eager customer config. `mcp serve` boots the
+  // stdio server; `mcp tools` / `mcp help` are pure listings. Both must
+  // suppress the auth module's stdout output - otherwise we corrupt the
+  // JSON-RPC stream the moment the SDK sends its first frame. Customer
+  // config is loaded lazily inside MCP tool handlers (see src/mcp/context.ts).
+  if (cmd === 'mcp') {
+    process.env.NEWO_QUIET_MODE = 'true';
+    try {
+      // Build a minimal config; the MCP server doesn't use it directly.
+      const emptyConfig: import('./types.js').MultiCustomerConfig = { customers: {} };
+      await handleMcpCommand(emptyConfig, args, verbose);
+      return;
+    } catch (error: unknown) {
+      handleCliError(error, 'mcp');
+    }
   }
 
   // Offline commands: lint/format/check don't need NEWO credentials
@@ -288,6 +306,10 @@ async function main(): Promise<void> {
 
       case 'check':
         await handleCheckCommand(customerConfig, args, verbose);
+        break;
+
+      case 'mcp':
+        await handleMcpCommand(customerConfig, args, verbose);
         break;
 
       default:
