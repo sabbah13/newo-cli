@@ -8,6 +8,7 @@
 **NEWO CLI** - Professional command-line tool for NEWO AI Agent development. Features **modular architecture**, **IDN-based file management**, and **comprehensive multi-customer support**.
 
 Sync NEWO "Project → Agent → Flow → Skills" structure to local files with:
+- 🆕 **Flow metadata sync** (v3.7.2) - `newo push` now reconciles flow title, events, and state_fields from local `metadata.yaml` to the platform (closes [#3](https://github.com/sabbah13/newo-cli/issues/3))
 - 🆕 **Dual format support** (v3.6.0) - `cli_v1` (native) and `newo_v2` (platform compatible), auto-detected per customer
 - 🆕 **Libraries** (v3.6.0) - Pull/push shared reusable skills across agents within a project
 - 🆕 **Bulk export** (v3.6.0) - `newo export` downloads complete V2 ZIP from platform
@@ -152,6 +153,28 @@ NEWO_REFRESH_URL=custom_refresh_endpoint   # Custom refresh endpoint
 | `newo list-customers` | List configured customers | • Shows default customer<br>• Multi-customer discovery |
 | `newo import-akb` | Import knowledge base articles | • Structured text parsing<br>• Bulk article import<br>• Validation and error reporting |
 | `newo meta` | Get project metadata (debug) | • Project structure analysis<br>• Metadata validation |
+
+### Flow Metadata Sync (NEW v3.7.2)
+
+`newo push` now reconciles **flow-level metadata** — title, `events:`, and `state_fields:` — from local YAML to the platform. Before v3.7.2 push only uploaded skill scripts, so edits to a flow's `metadata.yaml` (V1) or `{FlowIdn}.yaml` (V2) silently never reached the platform; events added via `newo create-event` could appear to disappear after a pull → push cycle. Closes [#3](https://github.com/sabbah13/newo-cli/issues/3).
+
+**How it works:**
+
+| Local change in `metadata.yaml` | What push does |
+|---|---|
+| `title:` changed | `PATCH /api/v1/designer/flows/{id}` with full descriptor |
+| New event in `events:` | `POST /api/v1/designer/flows/{id}/events` |
+| Event field edited | `PATCH /api/v1/designer/flows/events/{eventId}` |
+| Event removed from list | `DELETE /api/v1/designer/flows/events/{eventId}` |
+| Same for `state_fields:` | Mirrored CRUD against `/states` |
+
+**Safety:**
+
+- **Hash-gated**: flows whose `metadata.yaml` SHA256 is unchanged are *not* compared against the platform. Stale local trees cannot wipe events you created via the Builder UI.
+- **Full sync on changed flows**: when you *do* edit `metadata.yaml`, local becomes the source of truth for that flow. Events present on the platform but missing locally are deleted. To keep events created out-of-band, run `newo pull` before editing.
+- **Push output**: changed flows print `↑ Flow <flow>: events +N/~N/-N, states +N/~N/-N` so you see exactly what synced.
+
+**Available in:** legacy V1 push path (`pushChanged`), `ProjectSyncStrategy`, and `V2ProjectSyncStrategy`. Works the same with `newo push --format cli_v1` and `--format newo_v2`.
 
 ### Lint, Format, Check (NEW v3.7.0)
 

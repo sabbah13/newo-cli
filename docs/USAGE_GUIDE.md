@@ -139,6 +139,8 @@ newo pull
 - `create-persona` - Create agent persona
 - `create-attribute` - Create customer attribute
 
+**Flow events and `newo push` (v3.7.2+):** Editing `events:` or `state_fields:` in a flow's `metadata.yaml` (V1) or `{FlowIdn}.yaml` (V2) now syncs to the platform on `newo push`. Hash-gated — only changed flows are reconciled. After `newo create-event`, run `newo pull` first to fold the new event into local metadata; otherwise the next push will treat the event as platform-only and delete it. See README → "Flow Metadata Sync".
+
 ---
 
 ### Scenario 4: Account Migration
