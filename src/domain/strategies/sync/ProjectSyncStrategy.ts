@@ -49,7 +49,14 @@ import {
   publishFlow,
   listLibraries,
   updateLibrarySkill,
+  getFlow,
 } from '../../../api.js';
+import {
+  syncFlowMetadata,
+  emptyFlowSyncCounts,
+  totalFlowSyncOps,
+  describeFlowSyncCounts
+} from '../../../sync/flow-metadata.js';
 import {
   ensureState,
   writeFileSafe,
@@ -540,6 +547,24 @@ export class ProjectSyncStrategy implements ISyncStrategy<ProjectMeta, LocalProj
     for (const change of changes) {
       try {
         if (change.operation === 'modified') {
+          // Flow-level metadata.yaml needs different handling than a skill
+          // script: we sync title/events/state_fields rather than uploading a
+          // file. Detected by filename. (GH issue #3)
+          if (change.path.endsWith('/metadata.yaml') && !change.path.includes('/libraries/')) {
+            const pathParts = change.path.split('/');
+            // {customer}/projects/{project}/{agent}/{flow}/metadata.yaml
+            // Last 5 segments end with metadata.yaml; skip if it's a skill
+            // metadata file (one extra segment) - skill metadata is handled
+            // by V1 legacy push, not by this strategy yet.
+            const tail = pathParts.slice(-5);
+            const isFlowMeta = tail[0] === 'projects' || tail[2] && tail[4] === 'metadata.yaml';
+            if (isFlowMeta && tail.length === 5) {
+              const updateResult = await this.pushFlowMetadataUpdate(client, change, mapData, newHashes);
+              result.updated += updateResult;
+              continue;
+            }
+          }
+
           const isLibrary = change.path.includes('/libraries/');
           if (isLibrary) {
             const updateResult = await this.pushLibrarySkillUpdate(client, change, mapData, newHashes);
@@ -566,6 +591,64 @@ export class ProjectSyncStrategy implements ISyncStrategy<ProjectMeta, LocalProj
     }
 
     return result;
+  }
+
+  /**
+   * Push a flow metadata.yaml change — syncs title, events, and state_fields
+   * to the platform. Closes GH issue #3 (events/title silently un-synced).
+   *
+   * Path shape: newo_customers/{customer}/projects/{project}/{agent}/{flow}/metadata.yaml
+   */
+  private async pushFlowMetadataUpdate(
+    client: AxiosInstance,
+    change: ChangeItem<LocalProjectData>,
+    mapData: ProjectMap,
+    newHashes: HashStore
+  ): Promise<number> {
+    const pathParts = change.path.split('/');
+    // Tail: projects/{project}/{agent}/{flow}/metadata.yaml
+    const flowIdn = pathParts[pathParts.length - 2] || '';
+    const agentIdn = pathParts[pathParts.length - 3] || '';
+    const projectIdn = pathParts[pathParts.length - 4] || '';
+
+    const projectData = mapData.projects[projectIdn];
+    const agentData = projectData?.agents[agentIdn];
+    const flowData = agentData?.flows[flowIdn];
+
+    if (!flowData?.id) {
+      this.logger.warn(`Flow metadata change but flow not in project map: ${projectIdn}/${agentIdn}/${flowIdn}`);
+      return 0;
+    }
+
+    const content = await fs.readFile(change.path, 'utf8');
+    let localFlow: FlowMetadata;
+    try {
+      localFlow = yaml.load(content) as FlowMetadata;
+    } catch (error) {
+      throw new Error(`Failed to parse ${change.path}: ${error instanceof Error ? error.message : String(error)}`);
+    }
+
+    let remoteFlow = null;
+    try {
+      remoteFlow = await getFlow(client, flowData.id);
+    } catch (error: any) {
+      this.logger.verbose(`Could not GET flow ${flowIdn}: ${error.response?.status ?? error.message}`);
+    }
+
+    const counts = emptyFlowSyncCounts();
+    await syncFlowMetadata(client, flowData.id, localFlow, remoteFlow, false, counts);
+
+    const total = totalFlowSyncOps(counts);
+    if (total > 0) {
+      this.logger.info(`↑ Flow ${flowIdn}: ${describeFlowSyncCounts(counts)}`);
+    }
+    for (const err of counts.errors) {
+      this.logger.warn(err);
+    }
+
+    // Stamp the hash so the next push skips this file unless it changes again.
+    newHashes[change.path] = sha256(content);
+    return total;
   }
 
   /**
@@ -709,6 +792,23 @@ export class ProjectSyncStrategy implements ISyncStrategy<ProjectMeta, LocalProj
     for (const [projectIdn, projectData] of Object.entries(mapData.projects)) {
       for (const [agentIdn, agentData] of Object.entries(projectData.agents)) {
         for (const [flowIdn, flowData] of Object.entries(agentData.flows)) {
+          // Flow metadata change detection (title/events/state_fields).
+          // Surfaced as a change so push() picks it up alongside skill edits.
+          const flowMetaPath = flowMetadataPath(customer.idn, projectIdn, agentIdn, flowIdn);
+          if (await fs.pathExists(flowMetaPath)) {
+            const content = await fs.readFile(flowMetaPath, 'utf8');
+            const currentHash = sha256(content);
+            const storedHash = hashes[flowMetaPath];
+
+            if (storedHash !== currentHash) {
+              changes.push({
+                item: {} as LocalProjectData,
+                operation: 'modified',
+                path: flowMetaPath
+              });
+            }
+          }
+
           for (const [skillIdn, _skillData] of Object.entries(flowData.skills)) {
             const skillFile = await getSingleSkillFile(customer.idn, projectIdn, agentIdn, flowIdn, skillIdn);
 

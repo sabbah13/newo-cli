@@ -23,8 +23,11 @@ import type {
   CreateSkillResponse,
   CreateFlowEventRequest,
   CreateFlowEventResponse,
+  UpdateFlowEventRequest,
   CreateFlowStateRequest,
   CreateFlowStateResponse,
+  UpdateFlowStateRequest,
+  UpdateFlowRequest,
   CreateSkillParameterRequest,
   CreateSkillParameterResponse,
   CreateCustomerAttributeRequest,
@@ -148,6 +151,30 @@ export async function getProjectMeta(client: AxiosInstance, projectId: string): 
 
 export async function listFlowSkills(client: AxiosInstance, flowId: string): Promise<Skill[]> {
   const response = await client.get<Skill[]>(`/api/v1/designer/flows/${flowId}/skills`);
+  return response.data;
+}
+
+/**
+ * Fetch a single flow's top-level descriptor.
+ *
+ * Used by push to detect whether local metadata.yaml title/description
+ * differ from the platform before patching.
+ */
+export interface FlowDescriptor {
+  id: string;
+  idn: string;
+  title: string;
+  description: string | null;
+  agent_id: string;
+  default_runner_type: string;
+  default_model: { provider_idn: string; model_idn: string };
+  publication_datetime?: string;
+  last_change_datetime?: string;
+  creation_datetime?: string;
+}
+
+export async function getFlow(client: AxiosInstance, flowId: string): Promise<FlowDescriptor> {
+  const response = await client.get<FlowDescriptor>(`/api/v1/designer/flows/${flowId}`);
   return response.data;
 }
 
@@ -345,6 +372,14 @@ export async function createFlowEvent(client: AxiosInstance, flowId: string, eve
   return response.data;
 }
 
+export async function updateFlowEvent(
+  client: AxiosInstance,
+  eventId: string,
+  eventData: UpdateFlowEventRequest
+): Promise<void> {
+  await client.patch(`/api/v1/designer/flows/events/${eventId}`, eventData);
+}
+
 export async function deleteFlowEvent(client: AxiosInstance, eventId: string): Promise<void> {
   await client.delete(`/api/v1/designer/flows/events/${eventId}`);
 }
@@ -352,6 +387,32 @@ export async function deleteFlowEvent(client: AxiosInstance, eventId: string): P
 export async function createFlowState(client: AxiosInstance, flowId: string, stateData: CreateFlowStateRequest): Promise<CreateFlowStateResponse> {
   const response = await client.post<CreateFlowStateResponse>(`/api/v1/designer/flows/${flowId}/states`, stateData);
   return response.data;
+}
+
+export async function updateFlowState(
+  client: AxiosInstance,
+  stateId: string,
+  stateData: UpdateFlowStateRequest
+): Promise<void> {
+  await client.put(`/api/v1/designer/flows/states/${stateId}`, stateData);
+}
+
+export async function deleteFlowState(client: AxiosInstance, stateId: string): Promise<void> {
+  await client.delete(`/api/v1/designer/flows/states/${stateId}`);
+}
+
+/**
+ * Update flow metadata (title, description, runner type, default model).
+ *
+ * Uses PATCH /api/v1/designer/flows/{flowId}. The platform requires the
+ * full flow descriptor; sending a partial body returns 500.
+ */
+export async function updateFlow(
+  client: AxiosInstance,
+  flowId: string,
+  flowData: UpdateFlowRequest
+): Promise<void> {
+  await client.patch(`/api/v1/designer/flows/${flowId}`, flowData);
 }
 
 export async function createSkillParameter(client: AxiosInstance, skillId: string, paramData: CreateSkillParameterRequest): Promise<CreateSkillParameterResponse> {
