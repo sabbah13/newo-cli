@@ -59,7 +59,9 @@ Desktop.ini
 
 # Claude Code specific files
 .claude/
-CLAUDE.md
+# CLAUDE.md — intentionally tracked. It's the project briefing for Claude
+# Code sessions and contains the canonical release checklist. Per-machine
+# scratch lives under .claude/ (ignored above).
 
 # Project specific config files
 jinja-lsp.toml
