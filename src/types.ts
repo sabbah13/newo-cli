@@ -521,6 +521,23 @@ export interface CreateFlowEventResponse {
   id: string;
 }
 
+/**
+ * Payload for PATCH /api/v1/designer/flows/events/{eventId}
+ *
+ * Required fields per probe testing: idn, skill_selector, interrupt_mode.
+ * Sending the full event body is the platform's expected shape.
+ */
+export interface UpdateFlowEventRequest {
+  idn: string;
+  description?: string | null;
+  skill_selector: string;
+  skill_idn?: string | null;
+  state_idn?: string | null;
+  interrupt_mode: string;
+  integration_idn?: string | null;
+  connector_idn?: string | null;
+}
+
 export interface CreateFlowStateRequest {
   title: string;
   idn: string;
@@ -530,6 +547,29 @@ export interface CreateFlowStateRequest {
 
 export interface CreateFlowStateResponse {
   id: string;
+}
+
+/**
+ * Payload for PUT /api/v1/designer/flows/states/{stateId}
+ */
+export interface UpdateFlowStateRequest {
+  title: string;
+  idn: string;
+  default_value?: string;
+  scope: string;
+}
+
+/**
+ * Payload for PATCH /api/v1/designer/flows/{flowId}
+ *
+ * Empty body returns 500; the platform requires the full descriptor.
+ */
+export interface UpdateFlowRequest {
+  idn: string;
+  title: string;
+  description?: string;
+  default_runner_type: RunnerType;
+  default_model: ModelConfig;
 }
 
 export interface CreateSkillParameterRequest {

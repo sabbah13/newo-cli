@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.7.2] - 2026-05-17
+
+### Fixed
+
+- **`newo push` now syncs flow metadata (title, events, state_fields) to the platform** — closes [#3](https://github.com/sabbah13/newo-cli/issues/3). Previously `newo push` only uploaded skill scripts; edits to a flow's `metadata.yaml` (V1) or `{FlowIdn}.yaml` (V2) silently never reached the platform, and events added via `newo create-event` could appear to disappear after a subsequent push because the local-side definition lagged the remote one. Push now performs hash-gated reconciliation per flow: when `metadata.yaml` changes locally it calls `PATCH /api/v1/designer/flows/{id}` for title/description/runner, then create/update/delete child events and state_fields against `/events` and `/states` so the platform mirrors local. Hash-gating is critical — flows whose `metadata.yaml` is untouched are never even compared, so stale local trees cannot accidentally wipe events created out-of-band via the Builder UI. Wired into the legacy `pushChanged` path, `ProjectSyncStrategy`, and `V2ProjectSyncStrategy`. Reported by Bob (issue #3).
+
+### Added
+
+- **`updateFlow`, `updateFlowEvent`, `updateFlowState`, `deleteFlowState`, `getFlow` API wrappers** in `src/api.ts` for the previously-undocumented `PATCH /api/v1/designer/flows/{id}`, `PATCH /api/v1/designer/flows/events/{id}`, `PUT /api/v1/designer/flows/states/{id}`, `DELETE /api/v1/designer/flows/states/{id}`, and `GET /api/v1/designer/flows/{id}` endpoints. Empty payload returns 500; the platform requires the full descriptor.
+- **`src/sync/flow-metadata.ts`** module — pure-logic reconciler shared by both V1 and V2 push paths. Comparator helpers `flowEventDiffers`/`flowStateDiffers` normalize null/undefined/empty so YAML round-trips don't trigger spurious updates.
+- **18 unit tests** in `test/flow-metadata.test.js` covering create/update/delete event flows, state CRUD in a single pass, no-op when local matches remote, and graceful error handling that records failures without aborting the loop.
+
 ## [3.7.1] - 2026-04-29
 
 ### Fixed

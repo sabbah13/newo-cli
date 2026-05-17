@@ -33,6 +33,7 @@ import type {
   Skill,
   FlowEvent,
   FlowState,
+  FlowMetadata,
   ProjectData,
   ProjectMap,
   SkillMetadata
@@ -51,7 +52,14 @@ import {
   getCustomerAttributes,
   listLibraries,
   updateLibrarySkill,
+  getFlow,
 } from '../../../api.js';
+import {
+  syncFlowMetadata,
+  emptyFlowSyncCounts,
+  totalFlowSyncOps,
+  describeFlowSyncCounts
+} from '../../../sync/flow-metadata.js';
 import type { LibraryResponse } from '../../../api.js';
 import {
   ensureStateOnly,
@@ -84,7 +92,10 @@ import {
   buildV2InlineSkill,
   buildV2FlowEvent,
   buildV2StateField,
+  parseV2FlowYaml,
   type V2InlineSkill,
+  type V2FlowEvent,
+  type V2StateField,
 } from '../../../format/v2-yaml.js';
 import { isContentDifferent } from '../../../sync/skill-files.js';
 import yaml from 'js-yaml';
@@ -648,6 +659,15 @@ export class V2ProjectSyncStrategy implements ISyncStrategy<ProjectMeta, LocalPr
     for (const change of changes) {
       try {
         if (change.operation === 'modified') {
+          // V2 flow YAML: newo_customers/{cust}/{proj}/agents/{agent}/flows/{flow}/{flow}.yaml
+          // The flow YAML carries title, events, and state_fields inline, so
+          // changes there must sync to the platform like V1 metadata.yaml.
+          if (this.isV2FlowYamlPath(change.path)) {
+            const count = await this.pushV2FlowYamlUpdate(client, change, mapData, newHashes);
+            result.updated += count;
+            continue;
+          }
+
           // Detect if this is a library skill or flow skill by path
           const isLibrary = change.path.includes('/libraries/');
           const count = isLibrary
@@ -669,6 +689,115 @@ export class V2ProjectSyncStrategy implements ISyncStrategy<ProjectMeta, LocalPr
     }
 
     return result;
+  }
+
+  /**
+   * Recognize the V2 flow YAML location: .../agents/{agent}/flows/{flow}/{flow}.yaml
+   * Distinguishes it from skill scripts, library YAMLs, and attribute files.
+   */
+  private isV2FlowYamlPath(p: string): boolean {
+    const parts = p.split('/');
+    const file = parts[parts.length - 1];
+    if (!file || !file.endsWith('.yaml')) return false;
+    // .../agents/{agent}/flows/{flow}/{flow}.yaml → last 5 parts:
+    //   agents, {agent}, flows, {flow}, {flow}.yaml
+    if (parts.length < 5) return false;
+    const flowsKeyword = parts[parts.length - 3];
+    const agentsKeyword = parts[parts.length - 5];
+    const flowFolder = parts[parts.length - 2] || '';
+    const stem = file.slice(0, -'.yaml'.length);
+    return flowsKeyword === 'flows' && agentsKeyword === 'agents' && stem === flowFolder;
+  }
+
+  /**
+   * Push V2 flow YAML changes. Closes GH issue #3 for newo_v2 layout.
+   * Parses the V2 YAML, converts to V1-shaped FlowMetadata, and reuses the
+   * shared syncFlowMetadata routine that calls PATCH/POST/DELETE per child.
+   */
+  private async pushV2FlowYamlUpdate(
+    client: AxiosInstance,
+    change: ChangeItem<LocalProjectData>,
+    mapData: ProjectMap,
+    newHashes: HashStore
+  ): Promise<number> {
+    const parts = change.path.split('/');
+    const flowIdn = parts[parts.length - 2] || '';
+    const agentIdn = parts[parts.length - 4] || '';
+    const projectIdn = parts[parts.length - 6] || '';
+
+    const projectData = mapData.projects[projectIdn];
+    const agentData = projectData?.agents[agentIdn];
+    const flowData = agentData?.flows[flowIdn];
+
+    if (!flowData?.id) {
+      this.logger.warn(`[newo_v2] Flow YAML change but flow not in project map: ${projectIdn}/${agentIdn}/${flowIdn}`);
+      return 0;
+    }
+
+    const v2Flow = await parseV2FlowYaml(change.path);
+
+    // Convert V2 → V1-shaped FlowMetadata for the shared sync routine.
+    // V2 events lack `id` and `description`; we fill defaults so the shape
+    // matches FlowEvent[] / FlowState[] expected by syncFlowMetadata.
+    // Optional fields are omitted (not set to undefined) to satisfy
+    // exactOptionalPropertyTypes.
+    const localMeta: FlowMetadata = {
+      id: flowData.id,
+      idn: v2Flow.idn,
+      title: v2Flow.title,
+      description: v2Flow.description ?? '',
+      default_runner_type: (v2Flow.default_runner_type as 'guidance' | 'nsl') || 'guidance',
+      default_model: {
+        provider_idn: v2Flow.default_provider_idn,
+        model_idn: v2Flow.default_model_idn,
+      },
+      events: (v2Flow.events || []).map((e: V2FlowEvent) => {
+        const out: FlowEvent = {
+          id: '',
+          idn: e.idn,
+          description: '',
+          skill_selector: e.skill_selector as 'first' | 'last' | 'random' | 'all',
+          interrupt_mode: (e.interrupt_mode || 'queue') as 'allow' | 'deny' | 'queue',
+          ...(e.skill_idn != null ? { skill_idn: e.skill_idn } : {}),
+          ...(e.state_idn != null ? { state_idn: e.state_idn } : {}),
+          ...(e.integration_idn != null ? { integration_idn: e.integration_idn } : {}),
+          ...(e.connector_idn != null ? { connector_idn: e.connector_idn } : {}),
+        };
+        return out;
+      }),
+      state_fields: (v2Flow.state_fields || []).map((s: V2StateField) => {
+        const out: FlowState = {
+          id: '',
+          idn: s.idn,
+          title: s.title || s.idn,
+          scope: (s.scope || 'flow') as 'flow' | 'agent' | 'project' | 'global',
+          ...(s.default_value != null ? { default_value: s.default_value } : {}),
+        };
+        return out;
+      }),
+    };
+
+    let remoteFlow = null;
+    try {
+      remoteFlow = await getFlow(client, flowData.id);
+    } catch (error: any) {
+      this.logger.verbose(`[newo_v2] Could not GET flow ${flowIdn}: ${error.response?.status ?? error.message}`);
+    }
+
+    const counts = emptyFlowSyncCounts();
+    await syncFlowMetadata(client, flowData.id, localMeta, remoteFlow, false, counts);
+
+    const total = totalFlowSyncOps(counts);
+    if (total > 0) {
+      this.logger.info(`[newo_v2] ↑ Flow ${flowIdn}: ${describeFlowSyncCounts(counts)}`);
+    }
+    for (const err of counts.errors) {
+      this.logger.warn(err);
+    }
+
+    const content = await fs.readFile(change.path, 'utf8');
+    newHashes[change.path] = sha256(content);
+    return total;
   }
 
   /**
@@ -801,6 +930,24 @@ export class V2ProjectSyncStrategy implements ISyncStrategy<ProjectMeta, LocalPr
     for (const [projectIdn, projectData] of Object.entries(mapData.projects)) {
       // Flow skills
       for (const [agentIdn, agentData] of Object.entries(projectData.agents)) {
+        for (const [flowIdn, _flowData] of Object.entries(agentData.flows)) {
+          // V2 stores flow events / state_fields / title inline in the flow
+          // YAML. Detect changes here so push() can sync them (GH issue #3).
+          const flowYamlPath = v2FlowYamlPath(customer.idn, projectIdn, agentIdn, flowIdn);
+          if (await fs.pathExists(flowYamlPath)) {
+            const content = await fs.readFile(flowYamlPath, 'utf8');
+            const currentHash = sha256(content);
+            const storedHash = hashes[flowYamlPath];
+            if (storedHash !== currentHash) {
+              changes.push({
+                item: {} as LocalProjectData,
+                operation: 'modified',
+                path: flowYamlPath
+              });
+            }
+          }
+        }
+
         for (const [flowIdn, flowData] of Object.entries(agentData.flows)) {
           for (const [skillIdn, skillMeta] of Object.entries(flowData.skills)) {
             const scriptPath = v2SkillScriptPath(

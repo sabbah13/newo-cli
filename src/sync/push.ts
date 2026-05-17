@@ -1,13 +1,14 @@
 /**
  * Push operations for changed files
  */
-import { updateSkill, createAgent, createFlow, createSkill, publishFlow } from '../api.js';
+import { updateSkill, createAgent, createFlow, createSkill, publishFlow, getFlow } from '../api.js';
 import {
   ensureState,
   mapPath,
   skillMetadataPath,
   projectDir,
-  agentMetadataPath
+  agentMetadataPath,
+  flowMetadataPath
 } from '../fsutil.js';
 import {
   validateSkillFolder,
@@ -21,6 +22,12 @@ import { generateFlowsYaml } from './metadata.js';
 import { isProjectMap, isLegacyProjectMap } from './projects.js';
 import { flowsYamlPath } from '../fsutil.js';
 import { pushAllProjectAttributes } from './attributes.js';
+import {
+  syncFlowMetadata,
+  emptyFlowSyncCounts,
+  totalFlowSyncOps,
+  describeFlowSyncCounts
+} from './flow-metadata.js';
 import type { AxiosInstance } from 'axios';
 import type {
   ProjectData,
@@ -504,6 +511,72 @@ export async function pushChanged(client: AxiosInstance, customer: CustomerConfi
         }
       }
     }
+  }
+
+  // Sync flow metadata (title, events, state_fields) for any flow whose
+  // metadata.yaml hash has changed. This closes the loop on GH issue #3:
+  // previously push only updated skill scripts, leaving local edits to
+  // flow events and title silently un-synced.
+  const flowSyncCounts = emptyFlowSyncCounts();
+  for (const [projectIdn, projectData] of Object.entries(projects)) {
+    for (const [agentIdn, agentObj] of Object.entries(projectData.agents)) {
+      for (const [flowIdn, flowObj] of Object.entries(agentObj.flows)) {
+        if (!flowObj.id) continue;
+
+        const metaPath = flowMetadataPath(customer.idn, projectIdn, agentIdn, flowIdn);
+        if (!(await fs.pathExists(metaPath))) continue;
+
+        const metaContent = await fs.readFile(metaPath, 'utf8');
+        const metaHash = sha256(metaContent);
+        const oldHash = hashes[metaPath];
+
+        if (oldHash === metaHash) {
+          if (verbose) console.log(`    ✓ Flow metadata unchanged: ${flowIdn}`);
+          continue;
+        }
+
+        if (verbose) console.log(`    🔄 Flow metadata changed, syncing: ${agentIdn}/${flowIdn}`);
+
+        let localFlow: FlowMetadata;
+        try {
+          localFlow = yaml.load(metaContent) as FlowMetadata;
+        } catch (error) {
+          console.error(`❌ Failed to parse flow metadata for ${flowIdn}: ${error instanceof Error ? error.message : String(error)}`);
+          continue;
+        }
+
+        let remoteFlow = null;
+        try {
+          remoteFlow = await getFlow(client, flowObj.id);
+        } catch (error: any) {
+          // 404 means the flow ID is stale; skip flow-level update but still
+          // try to sync children since list endpoints may still work.
+          if (verbose) {
+            console.log(`    ⚠️  Could not GET flow ${flowIdn}: ${error.response?.status ?? error.message}`);
+          }
+        }
+
+        const opsBefore = totalFlowSyncOps(flowSyncCounts);
+        await syncFlowMetadata(client, flowObj.id, localFlow, remoteFlow, verbose, flowSyncCounts);
+        const opsAfter = totalFlowSyncOps(flowSyncCounts);
+
+        if (opsAfter > opsBefore) {
+          pushed += (opsAfter - opsBefore);
+          metadataChanged = true;
+        }
+        // Hash is updated regardless of whether ops happened, so we don't
+        // re-scan the same untouched flow on the next push.
+        newHashes[metaPath] = metaHash;
+      }
+    }
+  }
+
+  const totalFlowOps = totalFlowSyncOps(flowSyncCounts);
+  if (totalFlowOps > 0) {
+    console.log(`↑ Flow metadata synced: ${describeFlowSyncCounts(flowSyncCounts)}`);
+  }
+  if (flowSyncCounts.errors.length > 0) {
+    console.warn(`⚠️  ${flowSyncCounts.errors.length} flow-metadata error(s) during push.`);
   }
 
   if (verbose) console.log(`🔄 Scanned ${scanned} files, found ${pushed} changes`);
