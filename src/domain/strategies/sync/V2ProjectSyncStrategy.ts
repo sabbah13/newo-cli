@@ -864,8 +864,9 @@ export class V2ProjectSyncStrategy implements ISyncStrategy<ProjectMeta, LocalPr
             );
 
             if (!(await fs.pathExists(scriptPath))) {
-              this.logger.verbose(`[newo_v2] Skipping skill without local script: ${skill.idn}`);
-              continue;
+              throw new Error(
+                `[newo_v2] Missing script for skill ${projectIdn}/${agentIdn}/${flowIdn}/${skill.idn}: ${scriptPath}`
+              );
             }
 
             const content = await fs.readFile(scriptPath, 'utf8');
@@ -1333,33 +1334,45 @@ export class V2ProjectSyncStrategy implements ISyncStrategy<ProjectMeta, LocalPr
             try {
               const flowDef = await parseV2FlowYaml(flowYamlPath);
               localYamlSkills = new Map((flowDef.skills || []).map(s => [s.idn, s]));
+
+              for (const localYamlSkill of flowDef.skills || []) {
+                const runnerType = this.normalizeRunnerType(
+                  localYamlSkill.runner_type || flowData.skills[localYamlSkill.idn]?.runner_type
+                );
+                const scriptPath = await this.resolveV2FlowSkillScriptPath(
+                  customer.idn,
+                  projectIdn,
+                  agentIdn,
+                  flowIdn,
+                  localYamlSkill.idn,
+                  runnerType,
+                  localYamlSkill.prompt_script
+                );
+
+                if (!(await fs.pathExists(scriptPath))) {
+                  errors.push({
+                    field: `skill.${localYamlSkill.idn}`,
+                    message: `Script file not found: ${scriptPath}`,
+                    path: scriptPath
+                  });
+                }
+              }
             } catch {
               localYamlSkills = undefined;
             }
           }
 
           for (const [skillIdn, skillMeta] of Object.entries(flowData.skills)) {
-            const localYamlSkill = localYamlSkills?.get(skillIdn);
-            const scriptPath = localYamlSkill
-              ? await this.resolveV2FlowSkillScriptPath(
-                customer.idn,
-                projectIdn,
-                agentIdn,
-                flowIdn,
-                skillIdn,
-                this.normalizeRunnerType(localYamlSkill.runner_type || skillMeta.runner_type),
-                localYamlSkill.prompt_script
-              )
-              : v2SkillScriptPath(
-                customer.idn, projectIdn, agentIdn, flowIdn, skillIdn,
-                skillMeta.runner_type
-              );
+            if (localYamlSkills) {
+              continue;
+            }
+
+            const scriptPath = v2SkillScriptPath(
+              customer.idn, projectIdn, agentIdn, flowIdn, skillIdn,
+              skillMeta.runner_type
+            );
 
             if (!(await fs.pathExists(scriptPath))) {
-              if (localYamlSkills && !localYamlSkills.has(skillIdn)) {
-                continue;
-              }
-
               errors.push({
                 field: `skill.${skillIdn}`,
                 message: `Script file not found: ${scriptPath}`,
