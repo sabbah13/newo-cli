@@ -12,6 +12,7 @@
  * disappear at runtime so the methods are reachable from JS tests.
  */
 import assert from 'assert';
+import { describe, it } from 'node:test';
 import { V2ProjectSyncStrategy } from '../dist/domain/strategies/sync/V2ProjectSyncStrategy.js';
 
 const noopLogger = { info: () => {}, warn: () => {}, verbose: () => {} };

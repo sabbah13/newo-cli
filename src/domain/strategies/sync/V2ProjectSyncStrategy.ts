@@ -1364,17 +1364,33 @@ export class V2ProjectSyncStrategy implements ISyncStrategy<ProjectMeta, LocalPr
             try {
               const flowDef = await parseV2FlowYaml(flowYamlPath);
               localYamlSkills = new Map((flowDef.skills || []).map(s => [s.idn, s]));
+              const skillIdns = new Set([
+                ...Object.keys(flowData.skills),
+                ...localYamlSkills.keys()
+              ]);
 
-              for (const localYamlSkill of flowDef.skills || []) {
+              for (const skillIdn of skillIdns) {
+                const localYamlSkill = localYamlSkills.get(skillIdn);
+                const skillMeta = flowData.skills[skillIdn];
+
+                if (!localYamlSkill) {
+                  errors.push({
+                    field: `skill.${skillIdn}`,
+                    message: `Skill exists in project map but is missing from flow YAML: ${flowYamlPath}`,
+                    path: flowYamlPath
+                  });
+                  continue;
+                }
+
                 const runnerType = this.normalizeRunnerType(
-                  localYamlSkill.runner_type || flowData.skills[localYamlSkill.idn]?.runner_type
+                  localYamlSkill.runner_type || skillMeta?.runner_type
                 );
                 const scriptPath = await this.resolveV2FlowSkillScriptPath(
                   customer.idn,
                   projectIdn,
                   agentIdn,
                   flowIdn,
-                  localYamlSkill.idn,
+                  skillIdn,
                   runnerType,
                   localYamlSkill.prompt_script
                 );
