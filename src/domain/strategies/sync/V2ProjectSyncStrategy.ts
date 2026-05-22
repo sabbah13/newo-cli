@@ -871,6 +871,7 @@ export class V2ProjectSyncStrategy implements ISyncStrategy<ProjectMeta, LocalPr
 
             const content = await fs.readFile(scriptPath, 'utf8');
             const localMetadata = this.buildV2SkillMetadataFromYaml(skill, flowDef, runnerType, flowData.skills[skill.idn]);
+            this.assertSkillModelResolved(localMetadata, `${projectIdn}/${agentIdn}/${flowIdn}/${skill.idn}`);
             const existingSkill = flowData.skills[skill.idn];
 
             if (!existingSkill) {
@@ -1000,15 +1001,26 @@ export class V2ProjectSyncStrategy implements ISyncStrategy<ProjectMeta, LocalPr
     return created;
   }
 
+  /**
+   * Detect "resource already exists" API errors.
+   *
+   * Matches only on the precise phrases the platform actually returns
+   * ("already exists", "duplicate key"). Loose substrings like "exist"
+   * would otherwise sweep up unrelated "does not exist" / "doesn't exist"
+   * errors and trigger an incorrect reuse fallback.
+   */
   private isAlreadyExistsApiError(error: unknown): boolean {
     const response = (error as { response?: { status?: number; data?: unknown } }).response;
     const status = response?.status;
-    const message = JSON.stringify(response?.data || (error instanceof Error ? error.message : String(error))).toLowerCase();
+    if (status !== 400 && status !== 409 && status !== 422) {
+      return false;
+    }
 
-    return (
-      (status === 400 || status === 409 || status === 422) &&
-      (message.includes('already') || message.includes('exist') || message.includes('duplicate'))
-    );
+    const haystack = JSON.stringify(
+      response?.data ?? (error instanceof Error ? error.message : String(error))
+    ).toLowerCase();
+
+    return haystack.includes('already exists') || haystack.includes('duplicate key');
   }
 
   private normalizeRunnerType(runnerType: string | undefined): RunnerType {
@@ -1020,6 +1032,24 @@ export class V2ProjectSyncStrategy implements ISyncStrategy<ProjectMeta, LocalPr
       name: p.name,
       default_value: p.default_value ?? ''
     }));
+  }
+
+  /**
+   * Fail fast if no model could be resolved for a V2 skill.
+   *
+   * `buildV2SkillMetadataFromYaml` falls back to empty strings when neither
+   * the skill nor the flow declare a model. The platform rejects empty
+   * model_idn/provider_idn at creation/update time, but the error it returns
+   * is generic — we surface a clearer message before issuing the request.
+   */
+  private assertSkillModelResolved(metadata: SkillMetadata, locator: string): void {
+    if (!metadata.model.model_idn || !metadata.model.provider_idn) {
+      throw new Error(
+        `[newo_v2] Cannot resolve model for skill ${locator}: ` +
+        `model_idn="${metadata.model.model_idn}", provider_idn="${metadata.model.provider_idn}". ` +
+        `Set either skill.model.* or flow default_model_idn/default_provider_idn in the flow YAML.`
+      );
+    }
   }
 
   private buildV2SkillMetadataFromYaml(

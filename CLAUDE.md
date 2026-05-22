@@ -67,6 +67,7 @@ This implementation represents **Phase 3** of the product requirements:
 - ✅ **Format Auto-Detection** (NEW v3.6.0) - Per-customer format detection, NEWO_FORMAT env, --format flag
 - ✅ **Lint / Format / Check** (NEW v3.7.0) - DSL static analysis via `newo-dsl-analyzer`. Same engine as the VS Code extension. SARIF output, `.neworc.yaml` config, `--changed` hash-diff, `--live` API refresh, offline-capable
 - ✅ **Flow Metadata Sync on push** (NEW v3.7.2) - `newo push` now reconciles flow title, events, and state_fields from local `metadata.yaml` (V1) or `{FlowIdn}.yaml` (V2) to the platform. Hash-gated full sync (create/update/delete) with new `PATCH /flows/{id}`, `PATCH /flows/events/{id}`, `PUT /flows/states/{id}` endpoints. Closes GH issue [#3](https://github.com/sabbah13/newo-cli/issues/3)
+- ✅ **V2 Skill Creation on push** (NEW v3.7.3) - `V2ProjectSyncStrategy.push()` now creates new skills declared inline in `{FlowIdn}.yaml` (previously only existing skills could be updated). Includes race-safe "already exists" fallback via `listFlowSkills`+`updateSkill`, auto-creation of missing skill parameters, strict pre-flight model validation (`assertSkillModelResolved`), tightened `isAlreadyExistsApiError` matcher (no more false positives on "does not exist"), and 27 unit tests in `test/v2-push-helpers.test.js`
 - 🔄 Future: Watch mode for lint, concrete formatting rules, plugin marketplace
 
 ### NEW: Modular Architecture (v1.9.3+)
