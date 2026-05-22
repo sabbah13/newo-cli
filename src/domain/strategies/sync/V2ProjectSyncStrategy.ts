@@ -46,6 +46,8 @@ import {
   listFlowSkills,
   listFlowEvents,
   listFlowStates,
+  createSkill,
+  createSkillParameter,
   updateSkill,
   publishFlow,
   getProjectAttributes,
@@ -70,6 +72,7 @@ import { sha256, saveHashes, loadHashes } from '../../../hash.js';
 import {
   v2ImportVersionPath,
   v2ProjectYamlPath,
+  v2AgentDir,
   v2AgentYamlPath,
   v2FlowYamlPath,
   v2SkillScriptPath,
@@ -89,10 +92,10 @@ import {
   generateV2FlowYaml,
   generateV2ProjectYaml,
   generateV2AgentYaml,
+  parseV2FlowYaml,
   buildV2InlineSkill,
   buildV2FlowEvent,
   buildV2StateField,
-  parseV2FlowYaml,
   type V2InlineSkill,
   type V2FlowEvent,
   type V2StateField,
@@ -100,6 +103,7 @@ import {
 import { isContentDifferent } from '../../../sync/skill-files.js';
 import yaml from 'js-yaml';
 import { patchYamlToPyyaml } from '../../../format/yaml-patch.js';
+import type { RunnerType, SkillParameter } from '../../../types.js';
 
 /**
  * V2ProjectSyncStrategy - same API, newo_v2 file layout
@@ -655,9 +659,16 @@ export class V2ProjectSyncStrategy implements ISyncStrategy<ProjectMeta, LocalPr
     }
 
     const mapData = await fs.readJson(mapFile) as ProjectMap;
+    const metadataSync = await this.syncV2FlowYamlDefinitions(client, customer, mapData, newHashes);
+    result.created += metadataSync.created;
+    result.updated += metadataSync.updated;
 
     for (const change of changes) {
       try {
+        if (metadataSync.syncedPaths.has(change.path)) {
+          continue;
+        }
+
         if (change.operation === 'modified') {
           // V2 flow YAML: newo_customers/{cust}/{proj}/agents/{agent}/flows/{flow}/{flow}.yaml
           // The flow YAML carries title, events, and state_fields inline, so
@@ -680,6 +691,10 @@ export class V2ProjectSyncStrategy implements ISyncStrategy<ProjectMeta, LocalPr
           `Failed to push ${change.path}: ${error instanceof Error ? error.message : String(error)}`
         );
       }
+    }
+
+    if (metadataSync.created > 0 || metadataSync.updated > 0) {
+      await writeFileSafe(mapFile, JSON.stringify(mapData, null, 2));
     }
 
     await saveHashes(newHashes, customer.idn);
@@ -798,6 +813,260 @@ export class V2ProjectSyncStrategy implements ISyncStrategy<ProjectMeta, LocalPr
     const content = await fs.readFile(change.path, 'utf8');
     newHashes[change.path] = sha256(content);
     return total;
+  }
+
+  /**
+   * Reconcile inline skill definitions from V2 flow YAML before pushing scripts.
+   *
+   * V2 keeps skill metadata (model, runner_type, parameters) in the flow YAML,
+   * not in a separate skill metadata file. The map only contains the remote IDs
+   * from a previous pull, so new local skills must be created before their
+   * callers can be published.
+   */
+  private async syncV2FlowYamlDefinitions(
+    client: AxiosInstance,
+    customer: CustomerConfig,
+    mapData: ProjectMap,
+    newHashes: HashStore
+  ): Promise<{ created: number; updated: number; syncedPaths: Set<string> }> {
+    let created = 0;
+    let updated = 0;
+    const syncedPaths = new Set<string>();
+
+    for (const [projectIdn, projectData] of Object.entries(mapData.projects)) {
+      for (const [agentIdn, agentData] of Object.entries(projectData.agents)) {
+        for (const [flowIdn, flowData] of Object.entries(agentData.flows)) {
+          const flowYamlPath = v2FlowYamlPath(customer.idn, projectIdn, agentIdn, flowIdn);
+          if (!(await fs.pathExists(flowYamlPath))) {
+            continue;
+          }
+
+          let flowDef;
+          try {
+            flowDef = await parseV2FlowYaml(flowYamlPath);
+          } catch (error) {
+            this.logger.warn(
+              `[newo_v2] Failed to parse flow YAML ${flowYamlPath}: ${error instanceof Error ? error.message : String(error)}`
+            );
+            continue;
+          }
+
+          for (const skill of flowDef.skills || []) {
+            const runnerType = this.normalizeRunnerType(skill.runner_type);
+            const scriptPath = await this.resolveV2FlowSkillScriptPath(
+              customer.idn,
+              projectIdn,
+              agentIdn,
+              flowIdn,
+              skill.idn,
+              runnerType,
+              skill.prompt_script
+            );
+
+            if (!(await fs.pathExists(scriptPath))) {
+              this.logger.verbose(`[newo_v2] Skipping skill without local script: ${skill.idn}`);
+              continue;
+            }
+
+            const content = await fs.readFile(scriptPath, 'utf8');
+            const localMetadata = this.buildV2SkillMetadataFromYaml(skill, flowDef, runnerType, flowData.skills[skill.idn]);
+            const existingSkill = flowData.skills[skill.idn];
+
+            if (!existingSkill) {
+              try {
+                const createdSkill = await createSkill(client, flowData.id, {
+                  idn: localMetadata.idn,
+                  title: localMetadata.title,
+                  prompt_script: content,
+                  runner_type: localMetadata.runner_type,
+                  model: localMetadata.model,
+                  parameters: localMetadata.parameters,
+                  path: localMetadata.path || ''
+                });
+
+                flowData.skills[skill.idn] = {
+                  ...localMetadata,
+                  id: createdSkill.id
+                };
+                newHashes[scriptPath] = sha256(content);
+                syncedPaths.add(scriptPath);
+                created++;
+                this.logger.info(`[newo_v2] Created skill: ${flowIdn}/${skill.idn}`);
+              } catch (error) {
+                if (!this.isAlreadyExistsApiError(error)) {
+                  throw error;
+                }
+
+                const remoteSkills = await listFlowSkills(client, flowData.id);
+                const remoteSkill = remoteSkills.find(s => s.idn === skill.idn);
+                if (!remoteSkill) {
+                  throw error;
+                }
+
+                const remoteMetadata: SkillMetadata = {
+                  id: remoteSkill.id,
+                  idn: remoteSkill.idn,
+                  title: remoteSkill.title,
+                  runner_type: remoteSkill.runner_type,
+                  model: remoteSkill.model,
+                  parameters: this.normalizeParameters(remoteSkill.parameters),
+                  path: remoteSkill.path
+                };
+                await this.createMissingSkillParameters(client, remoteMetadata, localMetadata);
+                await updateSkill(client, {
+                  id: remoteSkill.id,
+                  title: localMetadata.title,
+                  idn: localMetadata.idn,
+                  prompt_script: content,
+                  runner_type: localMetadata.runner_type,
+                  model: localMetadata.model,
+                  parameters: localMetadata.parameters,
+                  path: remoteSkill.path || localMetadata.path
+                });
+
+                flowData.skills[skill.idn] = {
+                  ...localMetadata,
+                  id: remoteSkill.id,
+                  path: remoteSkill.path || localMetadata.path
+                };
+                newHashes[scriptPath] = sha256(content);
+                syncedPaths.add(scriptPath);
+                updated++;
+                this.logger.info(`[newo_v2] Reused existing skill: ${flowIdn}/${skill.idn}`);
+              }
+              continue;
+            }
+
+            const createdParameters = await this.createMissingSkillParameters(client, existingSkill, localMetadata);
+
+            if (createdParameters > 0 || this.skillMetadataDiffers(existingSkill, localMetadata)) {
+              await updateSkill(client, {
+                id: existingSkill.id,
+                title: localMetadata.title,
+                idn: localMetadata.idn,
+                prompt_script: content,
+                runner_type: localMetadata.runner_type,
+                model: localMetadata.model,
+                parameters: localMetadata.parameters,
+                path: localMetadata.path
+              });
+
+              flowData.skills[skill.idn] = {
+                ...localMetadata,
+                id: existingSkill.id
+              };
+              newHashes[scriptPath] = sha256(content);
+              syncedPaths.add(scriptPath);
+              updated++;
+              this.logger.info(`[newo_v2] Updated skill metadata: ${flowIdn}/${skill.idn}`);
+            }
+          }
+        }
+      }
+    }
+
+    return { created, updated, syncedPaths };
+  }
+
+  private async createMissingSkillParameters(
+    client: AxiosInstance,
+    existing: SkillMetadata,
+    local: SkillMetadata
+  ): Promise<number> {
+    const existingNames = new Set(this.normalizeParameters(existing.parameters).map(p => p.name));
+    let created = 0;
+
+    for (const parameter of local.parameters) {
+      if (existingNames.has(parameter.name)) {
+        continue;
+      }
+
+      try {
+        await createSkillParameter(client, existing.id, {
+          name: parameter.name,
+          default_value: parameter.default_value ?? ''
+        });
+      } catch (error) {
+        if (!this.isAlreadyExistsApiError(error)) {
+          throw error;
+        }
+      }
+      existingNames.add(parameter.name);
+      created++;
+      this.logger.info(`[newo_v2] Created skill parameter: ${local.idn}/${parameter.name}`);
+    }
+
+    return created;
+  }
+
+  private isAlreadyExistsApiError(error: unknown): boolean {
+    const response = (error as { response?: { status?: number; data?: unknown } }).response;
+    const status = response?.status;
+    const message = JSON.stringify(response?.data || (error instanceof Error ? error.message : String(error))).toLowerCase();
+
+    return (
+      (status === 400 || status === 409 || status === 422) &&
+      (message.includes('already') || message.includes('exist') || message.includes('duplicate'))
+    );
+  }
+
+  private normalizeRunnerType(runnerType: string | undefined): RunnerType {
+    return runnerType === 'nsl' ? 'nsl' : 'guidance';
+  }
+
+  private normalizeParameters(parameters: readonly SkillParameter[] | undefined): SkillParameter[] {
+    return (parameters || []).map(p => ({
+      name: p.name,
+      default_value: p.default_value ?? ''
+    }));
+  }
+
+  private buildV2SkillMetadataFromYaml(
+    skill: V2InlineSkill,
+    flowDef: Awaited<ReturnType<typeof parseV2FlowYaml>>,
+    runnerType: RunnerType,
+    existing?: SkillMetadata
+  ): SkillMetadata {
+    return {
+      id: existing?.id || '',
+      idn: skill.idn,
+      title: skill.title || '',
+      runner_type: runnerType,
+      model: {
+        model_idn: skill.model?.model_idn || flowDef.default_model_idn || '',
+        provider_idn: skill.model?.provider_idn || flowDef.default_provider_idn || ''
+      },
+      parameters: this.normalizeParameters(skill.parameters),
+      path: existing?.path || ''
+    };
+  }
+
+  private skillMetadataDiffers(existing: SkillMetadata, local: SkillMetadata): boolean {
+    return (
+      existing.title !== local.title ||
+      existing.runner_type !== local.runner_type ||
+      JSON.stringify(existing.model) !== JSON.stringify(local.model) ||
+      JSON.stringify(this.normalizeParameters(existing.parameters)) !== JSON.stringify(local.parameters)
+    );
+  }
+
+  private async resolveV2FlowSkillScriptPath(
+    customerIdn: string,
+    projectIdn: string,
+    agentIdn: string,
+    flowIdn: string,
+    skillIdn: string,
+    runnerType: RunnerType,
+    promptScript?: string
+  ): Promise<string> {
+    if (promptScript) {
+      const fromPromptScript = `${v2AgentDir(customerIdn, projectIdn, agentIdn)}/${promptScript}`;
+      if (await fs.pathExists(fromPromptScript)) {
+        return fromPromptScript;
+      }
+    }
+
+    return v2SkillScriptPath(customerIdn, projectIdn, agentIdn, flowIdn, skillIdn, runnerType);
   }
 
   /**
@@ -949,11 +1218,30 @@ export class V2ProjectSyncStrategy implements ISyncStrategy<ProjectMeta, LocalPr
         }
 
         for (const [flowIdn, flowData] of Object.entries(agentData.flows)) {
-          for (const [skillIdn, skillMeta] of Object.entries(flowData.skills)) {
-            const scriptPath = v2SkillScriptPath(
-              customer.idn, projectIdn, agentIdn, flowIdn, skillIdn,
-              skillMeta.runner_type
-            );
+          const flowYamlSkills = await this.loadLocalV2FlowSkills(customer.idn, projectIdn, agentIdn, flowIdn);
+          const skillIdns = new Set([
+            ...Object.keys(flowData.skills),
+            ...flowYamlSkills.keys()
+          ]);
+
+          for (const skillIdn of skillIdns) {
+            const yamlSkill = flowYamlSkills.get(skillIdn);
+            const skillMeta = flowData.skills[skillIdn];
+            const runnerType = this.normalizeRunnerType(yamlSkill?.runner_type || skillMeta?.runner_type);
+            const scriptPath = yamlSkill
+              ? await this.resolveV2FlowSkillScriptPath(
+                customer.idn,
+                projectIdn,
+                agentIdn,
+                flowIdn,
+                skillIdn,
+                runnerType,
+                yamlSkill.prompt_script
+              )
+              : v2SkillScriptPath(
+                customer.idn, projectIdn, agentIdn, flowIdn, skillIdn,
+                runnerType
+              );
 
             if (await fs.pathExists(scriptPath)) {
               const content = await fs.readFile(scriptPath, 'utf8');
@@ -1002,6 +1290,25 @@ export class V2ProjectSyncStrategy implements ISyncStrategy<ProjectMeta, LocalPr
     return changes;
   }
 
+  private async loadLocalV2FlowSkills(
+    customerIdn: string,
+    projectIdn: string,
+    agentIdn: string,
+    flowIdn: string
+  ): Promise<Map<string, V2InlineSkill>> {
+    const flowYamlPath = v2FlowYamlPath(customerIdn, projectIdn, agentIdn, flowIdn);
+    if (!(await fs.pathExists(flowYamlPath))) {
+      return new Map();
+    }
+
+    try {
+      const flowDef = await parseV2FlowYaml(flowYamlPath);
+      return new Map((flowDef.skills || []).map(skill => [skill.idn, skill]));
+    } catch {
+      return new Map();
+    }
+  }
+
   async validate(customer: CustomerConfig, _items: LocalProjectData[]): Promise<ValidationResult> {
     const errors: ValidationError[] = [];
 
@@ -1020,13 +1327,39 @@ export class V2ProjectSyncStrategy implements ISyncStrategy<ProjectMeta, LocalPr
     for (const [projectIdn, projectData] of Object.entries(mapData.projects)) {
       for (const [agentIdn, agentData] of Object.entries(projectData.agents)) {
         for (const [flowIdn, flowData] of Object.entries(agentData.flows)) {
+          const flowYamlPath = v2FlowYamlPath(customer.idn, projectIdn, agentIdn, flowIdn);
+          let localYamlSkills: Map<string, V2InlineSkill> | undefined;
+          if (await fs.pathExists(flowYamlPath)) {
+            try {
+              const flowDef = await parseV2FlowYaml(flowYamlPath);
+              localYamlSkills = new Map((flowDef.skills || []).map(s => [s.idn, s]));
+            } catch {
+              localYamlSkills = undefined;
+            }
+          }
+
           for (const [skillIdn, skillMeta] of Object.entries(flowData.skills)) {
-            const scriptPath = v2SkillScriptPath(
-              customer.idn, projectIdn, agentIdn, flowIdn, skillIdn,
-              skillMeta.runner_type
-            );
+            const localYamlSkill = localYamlSkills?.get(skillIdn);
+            const scriptPath = localYamlSkill
+              ? await this.resolveV2FlowSkillScriptPath(
+                customer.idn,
+                projectIdn,
+                agentIdn,
+                flowIdn,
+                skillIdn,
+                this.normalizeRunnerType(localYamlSkill.runner_type || skillMeta.runner_type),
+                localYamlSkill.prompt_script
+              )
+              : v2SkillScriptPath(
+                customer.idn, projectIdn, agentIdn, flowIdn, skillIdn,
+                skillMeta.runner_type
+              );
 
             if (!(await fs.pathExists(scriptPath))) {
+              if (localYamlSkills && !localYamlSkills.has(skillIdn)) {
+                continue;
+              }
+
               errors.push({
                 field: `skill.${skillIdn}`,
                 message: `Script file not found: ${scriptPath}`,
