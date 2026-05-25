@@ -33,6 +33,7 @@ import yaml from 'js-yaml';
 import { patchYamlToPyyaml } from '../dist/format/yaml-patch.js';
 import {
   isJsonValueType,
+  fixInvalidJsonEscapes,
   normalizeJsonValueForStorage,
   canonicalJsonValue,
   jsonValuesEqual,
@@ -73,11 +74,16 @@ test('normalizeJsonValueForStorage converts an object value to compact JSON stri
   assert.equal(out, '{"title":"Workflow Builder","types":[{"idn":"a"}]}');
 });
 
-test('normalizeJsonValueForStorage leaves string values untouched (preserves pretty-printing)', () => {
-  // We deliberately do NOT reformat string values, even if they look
-  // like JSON, to avoid huge spurious diffs on first re-pull.
+test('normalizeJsonValueForStorage compacts string values to single-line JSON', () => {
+  // Bug 3.7.2-a fix: structural newlines in pretty-printed JSON get removed
+  // by compaction so yaml.dump never needs to escape them as \n, preventing
+  // the single-quoted YAML scalar corruption that blanks the Builder.
   const pretty = '{\n  "title": "X",\n  "description": "Step 1.\\n\\nStep 2."\n}';
-  assert.equal(normalizeJsonValueForStorage(pretty), pretty);
+  const out = normalizeJsonValueForStorage(pretty);
+  // Must be compact (no structural newlines).
+  assert.ok(!out.includes('\n'), 'compacted value must not contain real newlines');
+  // Must round-trip: parse(out) equals parse(pretty).
+  assert.deepEqual(JSON.parse(out), JSON.parse(pretty));
 });
 
 test('normalizeJsonValueForStorage returns "" for null/undefined', () => {
@@ -189,15 +195,18 @@ test('object value is persisted as a STRING in YAML, not as a YAML structure', (
   assert.deepEqual(JSON.parse(reloaded.value), canvasObject);
 });
 
-test('string value with real newlines is preserved bit-for-bit through round-trip', () => {
-  // This is the common case: the API returned the canvas as a
-  // pretty-printed JSON string, with real newlines between fields and
-  // \n escapes inside string values. Existing customer YAML files look
-  // exactly like this — we must not change anything.
+test('pretty-printed JSON string is compacted on pull, round-trips cleanly, JSON.parse succeeds', () => {
+  // Bug 3.7.2-a fix: the API may return a pretty-printed canvas string.
+  // normalizeJsonValueForStorage now compacts it so yaml.dump writes a
+  // single-line scalar (no \n escape corruption via patchYamlToPyyaml).
+  // The compacted value must round-trip through YAML and be parseable by JSON.parse.
   const original = '{\n  "title": "X",\n  "description": "Step 1.\\n\\nStep 2."\n}';
   const out = persistJsonAttr(original, 'json');
   const reloaded = loadAttr(out);
-  assert.equal(reloaded.value, original);
+  // Semantically equal (same parsed structure), even if whitespace differs.
+  assert.deepEqual(JSON.parse(reloaded.value), JSON.parse(original));
+  // Must be parseable by JSON.parse (no structural corruption).
+  assert.doesNotThrow(() => JSON.parse(reloaded.value));
 });
 
 test('compact JSON string with embedded \\n inside string fields round-trips intact', () => {
@@ -208,6 +217,68 @@ test('compact JSON string with embedded \\n inside string fields round-trips int
   assert.equal(reloaded.value, original);
   // And after JSON.parse, the description has a real newline.
   assert.equal(JSON.parse(reloaded.value).description, 'Step 1.\nStep 2.');
+});
+
+// ---------------------------------------------------------------------------
+// fixInvalidJsonEscapes
+// ---------------------------------------------------------------------------
+
+test('fixInvalidJsonEscapes: strips \\_ → _ inside JSON strings', () => {
+  // \_ is not a valid JSON escape sequence (RFC 8259); drop the backslash.
+  const input  = '{"text": "\\_bold\\_"}';
+  const expect = '{"text": "_bold_"}';
+  assert.equal(fixInvalidJsonEscapes(input), expect);
+});
+
+test('fixInvalidJsonEscapes: preserves all valid JSON escape sequences', () => {
+  const input = '{"a":"\\"\\\\\\/\\b\\f\\n\\r\\t\\u0041"}';
+  assert.equal(fixInvalidJsonEscapes(input), input);
+});
+
+test('fixInvalidJsonEscapes: does not touch structural characters outside strings', () => {
+  const input = '{"k":"v"}';
+  assert.equal(fixInvalidJsonEscapes(input), input);
+});
+
+test('fixInvalidJsonEscapes: handles multiple bad escapes in one value', () => {
+  const input  = '{"md": "\\_ **Bold** \\. end"}';
+  const expect = '{"md": "_ **Bold** . end"}';
+  assert.equal(fixInvalidJsonEscapes(input), expect);
+});
+
+// ---------------------------------------------------------------------------
+// Bug 3.7.2-a: structural newlines in pretty-printed JSON
+// ---------------------------------------------------------------------------
+
+test('Bug 3.7.2-a: pretty-printed canvas survives pull→push without blanking Builder', () => {
+  // Simulate API returning a pretty-printed JSON string (structural newlines).
+  // After normalization + YAML round-trip, JSON.parse must succeed.
+  const prettyCanvas = '{\n  "title": "Workflow",\n  "types": [\n    {"idn": "start"}\n  ]\n}';
+  const yaml = persistJsonAttr(prettyCanvas, 'json');
+  const reloaded = loadAttr(yaml);
+  assert.doesNotThrow(() => JSON.parse(reloaded.value),
+    'JSON.parse must succeed after pull→push cycle (no structural-newline corruption)');
+  assert.deepEqual(JSON.parse(reloaded.value), JSON.parse(prettyCanvas));
+});
+
+// ---------------------------------------------------------------------------
+// Bug 3.7.2-b: invalid \_ escape sequences inside JSON string values
+// ---------------------------------------------------------------------------
+
+test('Bug 3.7.2-b: canvas with \\_ Markdown escapes survives pull→push without blanking Builder', () => {
+  // The platform stores canvas body with Markdown \_ for emphasis.
+  // \_ is invalid JSON; after normalizeJsonValueForStorage it must be gone.
+  const badEscape = '\\_';  // backslash (0x5C) + underscore
+  const canvasWithMarkdown =
+    '{"title":"Builder","description":"' + badEscape + ' **Intro** ' + badEscape + ' Notes"}';
+  // The raw value must fail JSON.parse (proving the bug was real).
+  assert.throws(() => JSON.parse(canvasWithMarkdown), /escape|unexpected|invalid/i,
+    'raw value with \\_ must be invalid JSON (pre-fix)');
+  // After normalization + YAML round-trip, it must parse successfully.
+  const yaml = persistJsonAttr(canvasWithMarkdown, 'json');
+  const reloaded = loadAttr(yaml);
+  assert.doesNotThrow(() => JSON.parse(reloaded.value),
+    'JSON.parse must succeed after normalization (\\_ stripped)');
 });
 
 // ---------------------------------------------------------------------------
