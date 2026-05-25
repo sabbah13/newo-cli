@@ -8,6 +8,7 @@
 **NEWO CLI** - Professional command-line tool for NEWO AI Agent development. Features **modular architecture**, **IDN-based file management**, and **comprehensive multi-customer support**.
 
 Sync NEWO "Project → Agent → Flow → Skills" structure to local files with:
+- 🆕 **Canvas blank-screen hardening** (v3.7.3) - JSON-typed attributes (e.g. Workflow Builder canvas) with Markdown `\_` escapes or structural newlines no longer corrupt the canvas on push ([#7](https://github.com/sabbah13/newo-cli/pull/7))
 - 🆕 **Flow metadata sync** (v3.7.2) - `newo push` now reconciles flow title, events, and state_fields from local `metadata.yaml` to the platform (closes [#3](https://github.com/sabbah13/newo-cli/issues/3))
 - 🆕 **Dual format support** (v3.6.0) - `cli_v1` (native) and `newo_v2` (platform compatible), auto-detected per customer
 - 🆕 **Libraries** (v3.6.0) - Pull/push shared reusable skills across agents within a project
