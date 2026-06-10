@@ -8,7 +8,7 @@
  * `value_type: json`. The API may return the `value` field as either a
  * STRING containing JSON or as an already-parsed OBJECT.
  *
- * Without normalization, two bugs leak through:
+ * Without normalization, several bugs leak through:
  *
  * 1. When the API returns the value as an OBJECT, `yaml.dump` serializes
  *    it as a YAML structure (mappings/sequences). Pushing back then sends
@@ -21,10 +21,25 @@
  *    string vs object representations it triggers spurious pushes that
  *    overwrite the canvas with the wrong shape (Builder shows blank).
  *
- * The fix is conservative: for `value_type: json` only, always coerce the
- * value to a STRING when persisting and when pushing, and use canonical
- * JSON for comparisons. String-typed values in the wild are left
- * untouched, so no churn for the majority of attributes.
+ * 3. (Bug 3.7.2-a) Canvas JSON strings with structural newlines (real
+ *    U+000A between tokens) can be emitted by yaml.dump as double-quoted
+ *    scalars with `\n` escape sequences. patchYamlToPyyaml then converts
+ *    those to single-quoted YAML scalars, where `\n` is treated as two
+ *    literal chars (backslash + n). On push the platform stores those
+ *    literal chars and the Builder calls JSON.parse, which fails on
+ *    backslash-n as structural whitespace.
+ *
+ * 4. (Bug 3.7.2-b) Canvas body text contains Markdown with `\_`
+ *    (backslash + underscore). `\_` is not a valid JSON escape sequence
+ *    per RFC 8259 (valid ones: " \ / b f n r t uXXXX). Chrome V8's
+ *    JSON.parse is strict: it throws SyntaxError on `\_`, silently
+ *    blanking the Builder.
+ *
+ * The fix for (3) and (4): for `value_type: json` string values, strip
+ * invalid escape sequences then compact via JSON.parse + JSON.stringify.
+ * Compaction removes structural newlines and re-serializes all string
+ * values with only valid JSON escapes, producing a single-line string
+ * that round-trips through YAML without corruption.
  */
 
 /**
@@ -39,21 +54,77 @@ export function isJsonValueType(valueType: unknown): boolean {
 }
 
 /**
+ * Fix invalid JSON escape sequences inside JSON string values.
+ *
+ * Per RFC 8259, valid escape sequences inside a JSON string are:
+ *   \" \\ \/ \b \f \n \r \t \uXXXX
+ * Anything else (e.g. `\_` `\.` from Markdown) is invalid and causes
+ * JSON.parse to throw. Fix: drop the backslash (e.g. `\_` → `_`).
+ *
+ * Only modifies characters inside JSON string values (tracks quote
+ * context). Structural characters outside strings are untouched.
+ */
+export function fixInvalidJsonEscapes(s: string): string {
+  const VALID_ESCAPES = new Set(['"', '\\', '/', 'b', 'f', 'n', 'r', 't', 'u']);
+  const result: string[] = [];
+  let inString = false;
+  let i = 0;
+  while (i < s.length) {
+    const c = s[i]!;
+    if (inString) {
+      if (c === '\\' && i + 1 < s.length) {
+        const next = s[i + 1]!;
+        if (VALID_ESCAPES.has(next)) {
+          result.push(c, next);
+        } else {
+          result.push(next); // drop the backslash — \_ → _, etc.
+        }
+        i += 2;
+        continue;
+      } else if (c === '"') {
+        inString = false;
+        result.push(c);
+      } else {
+        result.push(c);
+      }
+    } else {
+      if (c === '"') {
+        inString = true;
+        result.push(c);
+      } else {
+        result.push(c);
+      }
+    }
+    i++;
+  }
+  return result.join('');
+}
+
+/**
  * Coerce a JSON-typed attribute's value to a STRING suitable for storage
  * in attributes.yaml and for sending to the platform.
  *
  * - `null` / `undefined` → `''`
  * - object → compact JSON string (`JSON.stringify(value)`)
- * - string → returned as-is (we trust the platform's existing format)
+ * - string → fix invalid escapes (e.g. `\_` → `_`), then compact via
+ *            JSON.parse + JSON.stringify. If parsing still fails after
+ *            fixing escapes, return the fixed string as-is.
  * - other → `String(value)`
  *
- * We deliberately do NOT re-format string values, even when they look
- * like JSON. Many existing canvases are stored pretty-printed and
- * reformatting would create huge spurious diffs in users' repos.
+ * Compacting removes structural newlines and guarantees a single-line
+ * string that yaml.dump serializes without escape-sequence corruption in
+ * the patchYamlToPyyaml pass. See module-level comment for full context.
  */
 export function normalizeJsonValueForStorage(value: unknown): string {
   if (value == null) return '';
-  if (typeof value === 'string') return value;
+  if (typeof value === 'string') {
+    const fixed = fixInvalidJsonEscapes(value);
+    try {
+      return JSON.stringify(JSON.parse(fixed));
+    } catch {
+      return fixed;
+    }
+  }
   if (typeof value === 'object') {
     try {
       return JSON.stringify(value);
@@ -68,18 +139,12 @@ export function normalizeJsonValueForStorage(value: unknown): string {
  * Canonical comparison for JSON-typed attribute values.
  *
  * Returns the canonical form (compact JSON if parseable, otherwise the
- * raw string). Use this on both sides of a comparison so that pretty- vs
- * compact-printed JSON does not register as a change, and so that an
+ * fixed string). Use this on both sides of a comparison so that pretty-
+ * vs compact-printed JSON does not register as a change, and so that an
  * object on one side equals its stringified form on the other side.
  */
 export function canonicalJsonValue(value: unknown): string {
-  const stringified = normalizeJsonValueForStorage(value);
-  if (stringified === '') return '';
-  try {
-    return JSON.stringify(JSON.parse(stringified));
-  } catch {
-    return stringified;
-  }
+  return normalizeJsonValueForStorage(value);
 }
 
 /**

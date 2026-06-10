@@ -85,6 +85,8 @@ newo pull-attributes         # Downloads attributes.yaml files
 newo push                    # Uploads attribute changes
 ```
 
+**JSON-typed attributes (v3.7.3+):** Attributes with `value_type: json` (e.g. the Workflow Builder canvas) are normalized on pull: invalid JSON escape sequences (like `\_` from Markdown emphasis) are stripped and the value is compacted to a single-line JSON string. This is required so that `yaml.dump` + `patchYamlToPyyaml` does not corrupt escape sequences on push and leave the Workflow Builder showing a blank canvas. The first re-pull on existing repos may produce a one-time stylistic diff (pretty → compact); subsequent pull/push cycles are stable. Change-detection compares canonical JSON on both sides, so cosmetic differences against the remote do not trigger spurious pushes.
+
 #### Integrations & Connectors
 ```bash
 newo pull-integrations       # Downloads integrations/connectors/webhooks

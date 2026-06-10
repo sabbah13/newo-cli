@@ -1,6 +1,6 @@
 /**
  * Unit tests for V2ProjectSyncStrategy internal helpers introduced by the
- * v3.7.3 push refactor (skill creation from V2 flow YAML).
+ * v3.7.4 push refactor (skill creation from V2 flow YAML).
  *
  * These cover three risk areas flagged during code review:
  *  - isAlreadyExistsApiError must not mis-match generic "does not exist"

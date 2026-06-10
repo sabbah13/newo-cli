@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [3.7.3] - 2026-05-22
+## [3.7.4] - 2026-06-10
 
 ### Added
 
@@ -20,6 +20,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`isAlreadyExistsApiError` no longer matches "does not exist".** The previous detector accepted any 400/409/422 response whose body contained the substring `"exist"`, which incorrectly classified "Skill does not exist" / "Flow doesn't exist" errors as duplicates and triggered a spurious reuse fallback. The matcher is now tightened to only `"already exists"` and `"duplicate key"`.
 - **`validate()` reports missing scripts for YAML-declared skills.** Previously `V2ProjectSyncStrategy.validate()` only checked scripts listed in the local map; skills added directly to `{FlowIdn}.yaml` since the last pull were never validated. Validation now walks the YAML when present and surfaces a `Script file not found:` error per skill, matching the new push contract.
 - **Missing-script push now fails fast with a clear path.** Instead of silently logging a `verbose` "Skipping skill without local script" and continuing (risking a flow YAML push that references a nonexistent skill), the push now aborts with `[newo_v2] Missing script for skill {project}/{agent}/{flow}/{skill}: {path}`.
+
+## [3.7.3] - 2026-05-25
+
+### Fixed
+
+- **Workflow Builder canvas blank-screen, take two** - JSON-typed attribute values that contain Markdown body text with `\_` escapes (Builder uses backslash-underscore to escape underscores) and/or structural newlines from pretty-printed JSON no longer corrupt the canvas on push. Two bugs were leaking through v3.7.1's STRING-coercion fix: (a) `yaml.dump` of a pretty-printed JSON string emitted a double-quoted scalar with `\n` escape sequences, which `patchYamlToPyyaml` then rewrote as a single-quoted scalar where `\n` became two literal chars - Builder's `JSON.parse` then choked on backslash-n as structural whitespace; (b) `\_` is not a valid JSON escape per RFC 8259 and Chrome V8's `JSON.parse` throws on it, silently blanking the Builder. Fix: `normalizeJsonValueForStorage` now strips invalid escape sequences via a quote-aware walker (`fixInvalidJsonEscapes`), then compacts via `JSON.parse` + `JSON.stringify` so the value is a single-line string that survives `yaml.dump` -> `patchYamlToPyyaml` without escape-sequence corruption. Existing pretty-printed canvases in `attributes.yaml` will be reformatted to compact form on next pull (one-time stylistic diff, no semantic loss). Change-detection (`jsonValuesEqual`) continues to canonicalize both sides so the new compact form does not trigger spurious pushes against remotes that may still be pretty. Reported by Bob in [#7](https://github.com/sabbah13/newo-cli/pull/7); 25 regression tests in `test/json-attribute-roundtrip.test.js` covering both bug families and the full pull -> dump -> patch -> reload -> `JSON.parse` pipeline.
+
+### Added
+
+- **`fixInvalidJsonEscapes(s)`** in `src/sync/json-attr-utils.ts` - quote-aware walker that strips invalid JSON escape sequences (`\_`, `\.`, etc.) inside JSON string values per RFC 8259. Preserves all valid escapes (`\" \\ \/ \b \f \n \r \t \uXXXX`) and structural characters outside strings.
 
 ## [3.7.2] - 2026-05-17
 
@@ -1065,7 +1075,8 @@ Another Item: $Price [Modifiers: modifier3]
 - GitHub Actions CI/CD integration
 - Robust authentication with token refresh
 
-[Unreleased]: https://github.com/sabbah13/newo-cli/compare/v3.7.3...HEAD
+[Unreleased]: https://github.com/sabbah13/newo-cli/compare/v3.7.4...HEAD
+[3.7.4]: https://github.com/sabbah13/newo-cli/compare/v3.7.3...v3.7.4
 [3.7.3]: https://github.com/sabbah13/newo-cli/compare/v3.7.2...v3.7.3
 [3.7.2]: https://github.com/sabbah13/newo-cli/compare/v3.7.1...v3.7.2
 [3.7.1]: https://github.com/sabbah13/newo-cli/compare/v3.7.0...v3.7.1
