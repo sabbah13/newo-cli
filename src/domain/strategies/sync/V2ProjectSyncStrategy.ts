@@ -662,6 +662,7 @@ export class V2ProjectSyncStrategy implements ISyncStrategy<ProjectMeta, LocalPr
     const metadataSync = await this.syncV2FlowYamlDefinitions(client, customer, mapData, newHashes);
     result.created += metadataSync.created;
     result.updated += metadataSync.updated;
+    result.errors.push(...metadataSync.errors);
 
     for (const change of changes) {
       try {
@@ -828,10 +829,11 @@ export class V2ProjectSyncStrategy implements ISyncStrategy<ProjectMeta, LocalPr
     customer: CustomerConfig,
     mapData: ProjectMap,
     newHashes: HashStore
-  ): Promise<{ created: number; updated: number; syncedPaths: Set<string> }> {
+  ): Promise<{ created: number; updated: number; syncedPaths: Set<string>; errors: string[] }> {
     let created = 0;
     let updated = 0;
     const syncedPaths = new Set<string>();
+    const errors: string[] = [];
 
     for (const [projectIdn, projectData] of Object.entries(mapData.projects)) {
       for (const [agentIdn, agentData] of Object.entries(projectData.agents)) {
@@ -852,122 +854,141 @@ export class V2ProjectSyncStrategy implements ISyncStrategy<ProjectMeta, LocalPr
           }
 
           for (const skill of flowDef.skills || []) {
-            const runnerType = this.normalizeRunnerType(skill.runner_type);
-            const scriptPath = await this.resolveV2FlowSkillScriptPath(
-              customer.idn,
-              projectIdn,
-              agentIdn,
-              flowIdn,
-              skill.idn,
-              runnerType,
-              skill.prompt_script
-            );
-
-            if (!(await fs.pathExists(scriptPath))) {
-              throw new Error(
-                `[newo_v2] Missing script for skill ${projectIdn}/${agentIdn}/${flowIdn}/${skill.idn}: ${scriptPath}`
+            const skillLocator = `${projectIdn}/${agentIdn}/${flowIdn}/${skill.idn}`;
+            // Per-skill failure isolation: one broken skill must not abort the
+            // push of every other project/flow in the workspace.
+            try {
+              const runnerType = this.normalizeRunnerType(skill.runner_type);
+              const scriptPath = await this.resolveV2FlowSkillScriptPath(
+                customer.idn,
+                projectIdn,
+                agentIdn,
+                flowIdn,
+                skill.idn,
+                runnerType,
+                skill.prompt_script
               );
-            }
 
-            const content = await fs.readFile(scriptPath, 'utf8');
-            const localMetadata = this.buildV2SkillMetadataFromYaml(skill, flowDef, runnerType, flowData.skills[skill.idn]);
-            this.assertSkillModelResolved(localMetadata, `${projectIdn}/${agentIdn}/${flowIdn}/${skill.idn}`);
-            const existingSkill = flowData.skills[skill.idn];
+              if (!(await fs.pathExists(scriptPath))) {
+                errors.push(
+                  `[newo_v2] Missing script for skill ${skillLocator}: ${scriptPath}`
+                );
+                continue;
+              }
 
-            if (!existingSkill) {
-              try {
-                const createdSkill = await createSkill(client, flowData.id, {
-                  idn: localMetadata.idn,
-                  title: localMetadata.title,
-                  prompt_script: content,
-                  runner_type: localMetadata.runner_type,
-                  model: localMetadata.model,
-                  parameters: localMetadata.parameters,
-                  path: localMetadata.path || ''
-                });
+              const content = await fs.readFile(scriptPath, 'utf8');
+              const localMetadata = this.buildV2SkillMetadataFromYaml(skill, flowDef, runnerType, flowData.skills[skill.idn]);
+              const existingSkill = flowData.skills[skill.idn];
 
-                flowData.skills[skill.idn] = {
-                  ...localMetadata,
-                  id: createdSkill.id
-                };
-                newHashes[scriptPath] = sha256(content);
-                syncedPaths.add(scriptPath);
-                created++;
-                this.logger.info(`[newo_v2] Created skill: ${flowIdn}/${skill.idn}`);
-              } catch (error) {
-                if (!this.isAlreadyExistsApiError(error)) {
-                  throw error;
+              if (!existingSkill) {
+                this.assertSkillModelResolved(localMetadata, skillLocator);
+                try {
+                  const createdSkill = await createSkill(client, flowData.id, {
+                    idn: localMetadata.idn,
+                    title: localMetadata.title,
+                    prompt_script: content,
+                    runner_type: localMetadata.runner_type,
+                    model: localMetadata.model,
+                    parameters: localMetadata.parameters,
+                    path: localMetadata.path || ''
+                  });
+
+                  // The create endpoint ignores inline `parameters` (verified
+                  // against the live platform) — create them explicitly.
+                  await this.createMissingSkillParameters(
+                    client,
+                    { ...localMetadata, id: createdSkill.id, parameters: [] },
+                    localMetadata
+                  );
+
+                  flowData.skills[skill.idn] = {
+                    ...localMetadata,
+                    id: createdSkill.id
+                  };
+                  newHashes[scriptPath] = sha256(content);
+                  syncedPaths.add(scriptPath);
+                  created++;
+                  this.logger.info(`[newo_v2] Created skill: ${flowIdn}/${skill.idn}`);
+                } catch (error) {
+                  if (!this.isAlreadyExistsApiError(error)) {
+                    throw error;
+                  }
+
+                  const remoteSkills = await listFlowSkills(client, flowData.id);
+                  const remoteSkill = remoteSkills.find(s => s.idn === skill.idn);
+                  if (!remoteSkill) {
+                    throw error;
+                  }
+
+                  const remoteMetadata: SkillMetadata = {
+                    id: remoteSkill.id,
+                    idn: remoteSkill.idn,
+                    title: remoteSkill.title,
+                    runner_type: remoteSkill.runner_type,
+                    model: remoteSkill.model,
+                    parameters: this.normalizeParameters(remoteSkill.parameters),
+                    path: remoteSkill.path
+                  };
+                  await this.createMissingSkillParameters(client, remoteMetadata, localMetadata);
+                  await updateSkill(client, {
+                    id: remoteSkill.id,
+                    title: localMetadata.title,
+                    idn: localMetadata.idn,
+                    prompt_script: content,
+                    runner_type: localMetadata.runner_type,
+                    model: localMetadata.model,
+                    parameters: localMetadata.parameters,
+                    path: remoteSkill.path || localMetadata.path
+                  });
+
+                  flowData.skills[skill.idn] = {
+                    ...localMetadata,
+                    id: remoteSkill.id,
+                    path: remoteSkill.path || localMetadata.path
+                  };
+                  newHashes[scriptPath] = sha256(content);
+                  syncedPaths.add(scriptPath);
+                  updated++;
+                  this.logger.info(`[newo_v2] Reused existing skill: ${flowIdn}/${skill.idn}`);
                 }
+                continue;
+              }
 
-                const remoteSkills = await listFlowSkills(client, flowData.id);
-                const remoteSkill = remoteSkills.find(s => s.idn === skill.idn);
-                if (!remoteSkill) {
-                  throw error;
-                }
+              const createdParameters = await this.createMissingSkillParameters(client, existingSkill, localMetadata);
 
-                const remoteMetadata: SkillMetadata = {
-                  id: remoteSkill.id,
-                  idn: remoteSkill.idn,
-                  title: remoteSkill.title,
-                  runner_type: remoteSkill.runner_type,
-                  model: remoteSkill.model,
-                  parameters: this.normalizeParameters(remoteSkill.parameters),
-                  path: remoteSkill.path
-                };
-                await this.createMissingSkillParameters(client, remoteMetadata, localMetadata);
+              if (createdParameters > 0 || this.skillMetadataDiffers(existingSkill, localMetadata)) {
+                this.assertSkillModelResolved(localMetadata, skillLocator);
                 await updateSkill(client, {
-                  id: remoteSkill.id,
+                  id: existingSkill.id,
                   title: localMetadata.title,
                   idn: localMetadata.idn,
                   prompt_script: content,
                   runner_type: localMetadata.runner_type,
                   model: localMetadata.model,
                   parameters: localMetadata.parameters,
-                  path: remoteSkill.path || localMetadata.path
+                  path: localMetadata.path
                 });
 
                 flowData.skills[skill.idn] = {
                   ...localMetadata,
-                  id: remoteSkill.id,
-                  path: remoteSkill.path || localMetadata.path
+                  id: existingSkill.id
                 };
                 newHashes[scriptPath] = sha256(content);
                 syncedPaths.add(scriptPath);
                 updated++;
-                this.logger.info(`[newo_v2] Reused existing skill: ${flowIdn}/${skill.idn}`);
+                this.logger.info(`[newo_v2] Updated skill metadata: ${flowIdn}/${skill.idn}`);
               }
-              continue;
-            }
-
-            const createdParameters = await this.createMissingSkillParameters(client, existingSkill, localMetadata);
-
-            if (createdParameters > 0 || this.skillMetadataDiffers(existingSkill, localMetadata)) {
-              await updateSkill(client, {
-                id: existingSkill.id,
-                title: localMetadata.title,
-                idn: localMetadata.idn,
-                prompt_script: content,
-                runner_type: localMetadata.runner_type,
-                model: localMetadata.model,
-                parameters: localMetadata.parameters,
-                path: localMetadata.path
-              });
-
-              flowData.skills[skill.idn] = {
-                ...localMetadata,
-                id: existingSkill.id
-              };
-              newHashes[scriptPath] = sha256(content);
-              syncedPaths.add(scriptPath);
-              updated++;
-              this.logger.info(`[newo_v2] Updated skill metadata: ${flowIdn}/${skill.idn}`);
+            } catch (error) {
+              errors.push(
+                `Failed to sync skill ${skillLocator}: ${error instanceof Error ? error.message : String(error)}`
+              );
             }
           }
         }
       }
     }
 
-    return { created, updated, syncedPaths };
+    return { created, updated, syncedPaths, errors };
   }
 
   private async createMissingSkillParameters(
@@ -988,14 +1009,14 @@ export class V2ProjectSyncStrategy implements ISyncStrategy<ProjectMeta, LocalPr
           name: parameter.name,
           default_value: parameter.default_value ?? ''
         });
+        created++;
+        this.logger.info(`[newo_v2] Created skill parameter: ${local.idn}/${parameter.name}`);
       } catch (error) {
         if (!this.isAlreadyExistsApiError(error)) {
           throw error;
         }
       }
       existingNames.add(parameter.name);
-      created++;
-      this.logger.info(`[newo_v2] Created skill parameter: ${local.idn}/${parameter.name}`);
     }
 
     return created;
@@ -1010,7 +1031,7 @@ export class V2ProjectSyncStrategy implements ISyncStrategy<ProjectMeta, LocalPr
    * errors and trigger an incorrect reuse fallback.
    */
   private isAlreadyExistsApiError(error: unknown): boolean {
-    const response = (error as { response?: { status?: number; data?: unknown } }).response;
+    const response = (error as { response?: { status?: number; data?: unknown } } | null | undefined)?.response;
     const status = response?.status;
     if (status !== 400 && status !== 409 && status !== 422) {
       return false;
@@ -1073,11 +1094,21 @@ export class V2ProjectSyncStrategy implements ISyncStrategy<ProjectMeta, LocalPr
   }
 
   private skillMetadataDiffers(existing: SkillMetadata, local: SkillMetadata): boolean {
+    // Compare model/parameters field-by-field, never via JSON.stringify of the
+    // raw objects: the map stores model keys in platform API order
+    // (provider_idn first) while YAML-built metadata uses model_idn first, and
+    // a key-order-sensitive comparison flags every skill as changed.
+    const paramsKey = (params: readonly SkillParameter[] | undefined): string =>
+      JSON.stringify(
+        this.normalizeParameters(params).sort((a, b) => a.name.localeCompare(b.name))
+      );
+
     return (
       existing.title !== local.title ||
       existing.runner_type !== local.runner_type ||
-      JSON.stringify(existing.model) !== JSON.stringify(local.model) ||
-      JSON.stringify(this.normalizeParameters(existing.parameters)) !== JSON.stringify(local.parameters)
+      existing.model.model_idn !== local.model.model_idn ||
+      existing.model.provider_idn !== local.model.provider_idn ||
+      paramsKey(existing.parameters) !== paramsKey(local.parameters)
     );
   }
 

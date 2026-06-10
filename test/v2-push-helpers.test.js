@@ -60,6 +60,80 @@ describe('V2ProjectSyncStrategy helpers', function () {
       const err = new Error('network down');
       assert.strictEqual(strategy.isAlreadyExistsApiError(err), false);
     });
+
+    it('returns false for null/undefined instead of throwing', function () {
+      assert.strictEqual(strategy.isAlreadyExistsApiError(null), false);
+      assert.strictEqual(strategy.isAlreadyExistsApiError(undefined), false);
+    });
+  });
+
+  describe('createMissingSkillParameters', function () {
+    const baseMetadata = {
+      id: 'sk-remote-1',
+      idn: 'sk',
+      title: 'Sk',
+      runner_type: 'guidance',
+      model: { model_idn: 'gpt-4o', provider_idn: 'openai' },
+      parameters: [{ name: 'a', default_value: '' }],
+      path: '',
+    };
+
+    it('creates only missing parameters and counts successes', async function () {
+      const strategy = makeStrategy();
+      const posted = [];
+      const client = {
+        post: async (_url, body) => {
+          posted.push(body.name);
+          return { data: { id: 'param-id' } };
+        },
+      };
+      const local = {
+        ...baseMetadata,
+        parameters: [
+          { name: 'a', default_value: '' },
+          { name: 'b', default_value: 'x' },
+        ],
+      };
+      const created = await strategy.createMissingSkillParameters(client, baseMetadata, local);
+      assert.strictEqual(created, 1);
+      assert.deepStrictEqual(posted, ['b']);
+    });
+
+    it('does NOT count a parameter that already exists remotely (swallowed 409)', async function () {
+      const strategy = makeStrategy();
+      const client = {
+        post: async () => {
+          const err = new Error('conflict');
+          err.response = { status: 409, data: { message: 'Parameter already exists' } };
+          throw err;
+        },
+      };
+      const local = {
+        ...baseMetadata,
+        parameters: [
+          { name: 'a', default_value: '' },
+          { name: 'b', default_value: '' },
+        ],
+      };
+      const created = await strategy.createMissingSkillParameters(client, baseMetadata, local);
+      assert.strictEqual(created, 0);
+    });
+
+    it('rethrows non already-exists errors', async function () {
+      const strategy = makeStrategy();
+      const client = {
+        post: async () => {
+          const err = new Error('boom');
+          err.response = { status: 500, data: { message: 'internal' } };
+          throw err;
+        },
+      };
+      const local = { ...baseMetadata, parameters: [{ name: 'new_param', default_value: '' }] };
+      await assert.rejects(
+        () => strategy.createMissingSkillParameters(client, baseMetadata, local),
+        /boom/
+      );
+    });
   });
 
   describe('assertSkillModelResolved', function () {
@@ -197,6 +271,20 @@ describe('V2ProjectSyncStrategy helpers', function () {
         ),
         true
       );
+    });
+
+    it('ignores model key order (map stores provider_idn first, YAML builds model_idn first)', function () {
+      // Regression: JSON.stringify(model) comparison flagged all 1342 skills
+      // of a live account as changed on every push.
+      const fromMap = { ...base, model: { provider_idn: 'openai', model_idn: 'gpt-4o' } };
+      const fromYaml = { ...base, model: { model_idn: 'gpt-4o', provider_idn: 'openai' } };
+      assert.strictEqual(strategy.skillMetadataDiffers(fromMap, fromYaml), false);
+    });
+
+    it('ignores parameter order', function () {
+      const a = { ...base, parameters: [{ name: 'x', default_value: '' }, { name: 'y', default_value: '1' }] };
+      const b = { ...base, parameters: [{ name: 'y', default_value: '1' }, { name: 'x', default_value: '' }] };
+      assert.strictEqual(strategy.skillMetadataDiffers(a, b), false);
     });
   });
 
