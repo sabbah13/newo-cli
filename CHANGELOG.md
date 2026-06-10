@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.7.5] - 2026-06-10
+
 ### Added
 
 - **`newo sandbox` connector selection (R1)** — new `--connector <connector_idn>` and `--integration <idn>` flags select which connector to chat through instead of always taking the first running connector of the `sandbox` integration (which made agents like Vibe Builder's `vibe_agent` unreachable from the CLI when another connector, e.g. `convo_agent_sandbox`, came first). `--list-connectors` prints the running connectors (with `--json` for machine output). When `--connector` is not found, the error lists the available running connectors. Without flags, behavior is unchanged (first running connector). Requirements doc: `newo_cli_improvement_requirements.md` (PR #2076 superagent testing).
@@ -1089,7 +1091,8 @@ Another Item: $Price [Modifiers: modifier3]
 - GitHub Actions CI/CD integration
 - Robust authentication with token refresh
 
-[Unreleased]: https://github.com/sabbah13/newo-cli/compare/v3.7.4...HEAD
+[Unreleased]: https://github.com/sabbah13/newo-cli/compare/v3.7.5...HEAD
+[3.7.5]: https://github.com/sabbah13/newo-cli/compare/v3.7.4...v3.7.5
 [3.7.4]: https://github.com/sabbah13/newo-cli/compare/v3.7.3...v3.7.4
 [3.7.3]: https://github.com/sabbah13/newo-cli/compare/v3.7.2...v3.7.3
 [3.7.2]: https://github.com/sabbah13/newo-cli/compare/v3.7.1...v3.7.2

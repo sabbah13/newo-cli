@@ -69,7 +69,7 @@ This implementation represents **Phase 3** of the product requirements:
 - ✅ **Flow Metadata Sync on push** (NEW v3.7.2) - `newo push` now reconciles flow title, events, and state_fields from local `metadata.yaml` (V1) or `{FlowIdn}.yaml` (V2) to the platform. Hash-gated full sync (create/update/delete) with new `PATCH /flows/{id}`, `PATCH /flows/events/{id}`, `PUT /flows/states/{id}` endpoints. Closes GH issue [#3](https://github.com/sabbah13/newo-cli/issues/3)
 - ✅ **Canvas blank-screen hardening, take two** (NEW v3.7.3) - JSON-typed attribute values (e.g. `project_attributes_private_dynamic_workflow_builder_canvas`) survive pull→push without breaking the Workflow Builder. `normalizeJsonValueForStorage` now strips invalid JSON escape sequences (`\_`, `\.` from Markdown body text, per RFC 8259) via a quote-aware walker (`fixInvalidJsonEscapes`), then compacts via `JSON.parse` + `JSON.stringify`. Compaction eliminates structural newlines that `yaml.dump` → `patchYamlToPyyaml` previously corrupted into literal backslash-n inside single-quoted YAML scalars. Change-detection (`jsonValuesEqual`) continues to canonicalize both sides, so the new compact form does not trigger spurious pushes. Reported by Bob in PR [#7](https://github.com/sabbah13/newo-cli/pull/7); 25 regression tests
 - ✅ **V2 Skill Creation on push** (NEW v3.7.4) - `V2ProjectSyncStrategy.push()` now creates new skills declared inline in `{FlowIdn}.yaml` (previously only existing skills could be updated). Includes race-safe "already exists" fallback via `listFlowSkills`+`updateSkill`, auto-creation of missing skill parameters, write-scoped model validation (`assertSkillModelResolved` runs only before an actual create/update, so legacy YAML without model fields doesn't block unrelated pushes), per-skill failure isolation (errors collected into `PushResult.errors` instead of aborting the whole push), tightened `isAlreadyExistsApiError` matcher (no more false positives on "does not exist"), key-order-insensitive `skillMetadataDiffers` (a `JSON.stringify` model comparison previously rewrote every skill on every push), explicit parameter creation after `createSkill` (the platform create endpoint ignores inline `parameters`), and 33 unit tests in `test/v2-push-helpers.test.js`. Live-tested end-to-end on a test account (create → verify via re-pull → idempotent no-op push)
-- ✅ **Sandbox & point-edit toolkit** (NEW v3.8.0) - Closes `newo_cli_improvement_requirements.md` (PR #2076 superagent testing). R1: `newo sandbox --connector <idn>` / `--integration <idn>` / `--list-connectors` select which running connector to chat through (previously hardcoded to the first one, making e.g. `vibe_agent` unreachable). R2: `--file` / `--stdin` for 40k–400k-char messages, `--timeout <sec>` (default stays 60), `--json` with user+agent `external_event_id` for `newo logs --event-id` correlation. R3: `newo get-skill` / `newo update-skill` — point inspection/edit of one skill (model, script) by IDN path without a pulled workspace, optional `--publish`. R4: `newo logs --name <ActionName>` client-side filter on `data.name`; help documents that turn model lives in `data.source.model`. New module `src/sync/remote-skill.ts`; 13 unit tests in `test/sandbox-skill-commands.test.js`
+- ✅ **Sandbox & point-edit toolkit** (NEW v3.7.5) - Closes `newo_cli_improvement_requirements.md` (PR #2076 superagent testing). R1: `newo sandbox --connector <idn>` / `--integration <idn>` / `--list-connectors` select which running connector to chat through (previously hardcoded to the first one, making e.g. `vibe_agent` unreachable). R2: `--file` / `--stdin` for 40k–400k-char messages, `--timeout <sec>` (default stays 60), `--json` with user+agent `external_event_id` for `newo logs --event-id` correlation. R3: `newo get-skill` / `newo update-skill` — point inspection/edit of one skill (model, script) by IDN path without a pulled workspace, optional `--publish`. R4: `newo logs --name <ActionName>` client-side filter on `data.name`; help documents that turn model lives in `data.source.model`. New module `src/sync/remote-skill.ts`; 13 unit tests in `test/sandbox-skill-commands.test.js`
 - 🔄 Future: Watch mode for lint, concrete formatting rules, plugin marketplace
 
 ### NEW: Modular Architecture (v1.9.3+)
@@ -93,7 +93,7 @@ The codebase has been refactored from monolithic files into a clean, maintainabl
   - **Customer Management (v3.5.0):** `create-customer.ts` - Programmatic customer creation
   - **Format & Export (v3.6.0):** `export.ts` - V2 bulk ZIP download
   - **Lint/Format/Check (v3.7.0):** `lint.ts`, `format.ts`, `check.ts` - DSL static analysis via `newo-dsl-analyzer`
-  - **Skill point edits (v3.8.0):** `get-skill.ts`, `update-skill.ts` - inspect/edit one skill on the platform by IDN path
+  - **Skill point edits (v3.7.5):** `get-skill.ts`, `update-skill.ts` - inspect/edit one skill on the platform by IDN path
   - Utility: `meta.ts`, `list-customers.ts`, `sandbox.ts`
 
 **Lint Module (`src/lint/`):** (NEW v3.7.0)
@@ -126,7 +126,7 @@ External dependency (v3.7.0+): `newo-dsl-analyzer` + `newo-dsl-core`. Both publi
 - **`akb.ts` (NEW v3.2.0)** - AKB knowledge base pull/push operations
 - **`migrate.ts` (NEW v3.3.0)** - Complete account migration with automated webhook creation
 - **`flow-metadata.ts` (NEW v3.7.2)** - Shared reconciler used by both V1 and V2 push paths. Compares local FlowMetadata vs the platform and emits create/update/delete API calls for flow title, events, and state_fields. Format-agnostic; V2 strategy adapts inline `V2FlowEvent`/`V2StateField` to V1-shaped FlowMetadata before calling in. Hash-gated by `metadata.yaml` SHA256 to prevent stale local trees from wiping Builder-UI events
-- **`remote-skill.ts` (NEW v3.8.0)** - Resolves a project/agent/flow/skill IDN path to platform IDs (`resolveRemoteSkill`) with descriptive errors listing available IDNs at the failing level; `parseModelFlag` parses `--model provider_idn/model_idn`. Used by `get-skill`/`update-skill`
+- **`remote-skill.ts` (NEW v3.7.5)** - Resolves a project/agent/flow/skill IDN path to platform IDs (`resolveRemoteSkill`) with descriptive errors listing available IDNs at the failing level; `parseModelFlag` parses `--model provider_idn/model_idn`. Used by `get-skill`/`update-skill`
 - **`json-attr-utils.ts` (added v3.7.1, hardened v3.7.3)** - JSON-typed attribute helpers used by both `attributes.ts` and `AttributeSyncStrategy.ts`. Coerces JSON-typed values to STRING on persist + push so the Workflow Builder canvas does not blank out. v3.7.3 adds `fixInvalidJsonEscapes` (quote-aware walker that strips invalid escapes like `\_` per RFC 8259) and compacts string values via `JSON.parse` + `JSON.stringify` to eliminate structural newlines that previously got corrupted by `yaml.dump` → `patchYamlToPyyaml`. `jsonValuesEqual` canonicalizes both sides of change-detection so pretty/compact differences do not spuriously push
 
 **Core Utilities:**
@@ -179,11 +179,11 @@ npx newo push                                  # Upload modified .guidance/.jinj
 npx newo status                                # Show modified files that would be pushed
 npx newo sandbox "<message>"                   # Test agent in sandbox chat (v3.1.0)
 npx newo sandbox --actor <id> "<message>"      # Continue existing chat conversation
-npx newo sandbox --list-connectors             # List running sandbox connectors (v3.8.0)
-npx newo sandbox "<msg>" --connector <idn>     # Chat through specific connector (v3.8.0)
-npx newo sandbox --file <path> --json --timeout 420  # Long message, JSON output, 7-min wait (v3.8.0)
-npx newo get-skill <idn> --project <p> --agent <a> --flow <f> [--json]  # Inspect live skill (v3.8.0)
-npx newo update-skill <idn> --project <p> --agent <a> --flow <f> --model <prov>/<model> --publish  # Point edit (v3.8.0)
+npx newo sandbox --list-connectors             # List running sandbox connectors (v3.7.5)
+npx newo sandbox "<msg>" --connector <idn>     # Chat through specific connector (v3.7.5)
+npx newo sandbox --file <path> --json --timeout 420  # Long message, JSON output, 7-min wait (v3.7.5)
+npx newo get-skill <idn> --project <p> --agent <a> --flow <f> [--json]  # Inspect live skill (v3.7.5)
+npx newo update-skill <idn> --project <p> --agent <a> --flow <f> --model <prov>/<model> --publish  # Point edit (v3.7.5)
 npx newo conversations                         # Download user conversations -> conversations.yaml
 npx newo import-akb <file> <persona_id>        # Import AKB articles from structured text file
 npx newo meta                                  # Get project metadata (debug command)

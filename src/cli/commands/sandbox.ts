@@ -5,12 +5,12 @@
  * Usage:
  *   npx newo sandbox "Hello" --customer <idn>               # Single message mode
  *   npx newo sandbox --actor <actor_id> "Follow up"         # Continue existing chat
- *   npx newo sandbox "ping" --connector vibe_agent          # Select specific connector (v3.8.0)
- *   npx newo sandbox --list-connectors                      # Show running sandbox connectors (v3.8.0)
- *   npx newo sandbox --file ./msg.txt --actor <id>          # Message from file (v3.8.0)
- *   cat msg.txt | npx newo sandbox --stdin                  # Message from stdin (v3.8.0)
- *   npx newo sandbox "ping" --timeout 420                   # Custom response timeout in seconds (v3.8.0)
- *   npx newo sandbox "ping" --json                          # Machine-readable output (v3.8.0)
+ *   npx newo sandbox "ping" --connector vibe_agent          # Select specific connector (v3.7.5)
+ *   npx newo sandbox --list-connectors                      # Show running sandbox connectors (v3.7.5)
+ *   npx newo sandbox --file ./msg.txt --actor <id>          # Message from file (v3.7.5)
+ *   cat msg.txt | npx newo sandbox --stdin                  # Message from stdin (v3.7.5)
+ *   npx newo sandbox "ping" --timeout 420                   # Custom response timeout in seconds (v3.7.5)
+ *   npx newo sandbox "ping" --json                          # Machine-readable output (v3.7.5)
  */
 
 import fs from 'fs-extra';
