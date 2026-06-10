@@ -23,7 +23,17 @@ import type {
 const SANDBOX_INTEGRATION_IDN = 'sandbox';
 const DEFAULT_TIMEZONE = 'America/Los_Angeles';
 const POLL_INTERVAL_MS = 1000; // 1 second
-const MAX_POLL_ATTEMPTS = 60; // Max 60 seconds wait
+const DEFAULT_TIMEOUT_MS = 60_000; // Default max wait for agent response
+
+/**
+ * Options for selecting which connector to chat through
+ */
+export interface ConnectorSelectionOptions {
+  /** Integration IDN to search connectors in (default: 'sandbox') */
+  integrationIdn?: string;
+  /** Exact connector_idn to use; when omitted, the first running connector is used */
+  connectorIdn?: string;
+}
 
 /**
  * Generate a random external ID for chat session
@@ -41,41 +51,81 @@ function generatePersonaName(): string {
 }
 
 /**
- * Find a sandbox connector from the customer's connectors list
+ * List running connectors of an integration (default: sandbox).
+ * Used by `newo sandbox --list-connectors` and connector selection.
  */
-export async function findSandboxConnector(client: AxiosInstance, verbose: boolean = false): Promise<Connector | null> {
-  if (verbose) console.log('🔍 Searching for sandbox integration...');
-
-  // First, get all integrations to find the sandbox integration
+export async function listRunningSandboxConnectors(
+  client: AxiosInstance,
+  integrationIdn: string = SANDBOX_INTEGRATION_IDN
+): Promise<Connector[]> {
   const integrations = await listIntegrations(client);
-  const sandboxIntegration = integrations.find(i => i.idn === SANDBOX_INTEGRATION_IDN);
+  const integration = integrations.find(i => i.idn === integrationIdn);
 
-  if (!sandboxIntegration) {
-    if (verbose) console.log('❌ Sandbox integration not found');
+  if (!integration) {
+    throw new Error(
+      `Integration '${integrationIdn}' not found. Available integrations: ${integrations.map(i => i.idn).join(', ') || '(none)'}`
+    );
+  }
+
+  const connectors = await listConnectors(client, integration.id);
+  return connectors.filter(c => c.status === 'running');
+}
+
+/**
+ * Find a sandbox connector from the customer's connectors list.
+ *
+ * Without options, preserves legacy behavior: first running connector of the
+ * 'sandbox' integration. With options.connectorIdn, selects that exact
+ * connector and throws a descriptive error (listing available connectors)
+ * when it is not found or not running.
+ */
+export async function findSandboxConnector(
+  client: AxiosInstance,
+  verbose: boolean = false,
+  options: ConnectorSelectionOptions = {}
+): Promise<Connector | null> {
+  const integrationIdn = options.integrationIdn || SANDBOX_INTEGRATION_IDN;
+
+  if (verbose) console.log(`🔍 Searching for ${integrationIdn} integration...`);
+
+  let runningConnectors: Connector[];
+  try {
+    runningConnectors = await listRunningSandboxConnectors(client, integrationIdn);
+  } catch (error) {
+    if (options.connectorIdn) throw error;
+    if (verbose) console.log(`❌ ${error instanceof Error ? error.message : String(error)}`);
     return null;
   }
 
-  if (verbose) console.log(`✓ Found sandbox integration: ${sandboxIntegration.id}`);
-
-  // Now get connectors for the sandbox integration
-  if (verbose) console.log('🔍 Searching for sandbox connectors...');
-  const connectors = await listConnectors(client, sandboxIntegration.id);
-  const sandboxConnectors = connectors.filter(c => c.status === 'running');
-
-  if (sandboxConnectors.length === 0) {
-    if (verbose) console.log('❌ No running sandbox connectors found');
+  if (runningConnectors.length === 0) {
+    if (options.connectorIdn) {
+      throw new Error(`No running connectors found in integration '${integrationIdn}'`);
+    }
+    if (verbose) console.log(`❌ No running ${integrationIdn} connectors found`);
     return null;
+  }
+
+  if (options.connectorIdn) {
+    const match = runningConnectors.find(c => c.connector_idn === options.connectorIdn);
+    if (!match) {
+      const available = runningConnectors.map(c => c.connector_idn).join(', ');
+      throw new Error(
+        `Connector '${options.connectorIdn}' not found among running connectors of integration '${integrationIdn}'. Available: ${available}`
+      );
+    }
+    if (verbose) console.log(`✓ Using connector: ${match.connector_idn}`);
+    return match;
   }
 
   if (verbose) {
-    console.log(`✓ Found ${sandboxConnectors.length} running sandbox connector(s)`);
-    const firstConnector = sandboxConnectors[0];
+    console.log(`✓ Found ${runningConnectors.length} running ${integrationIdn} connector(s)`);
+    const firstConnector = runningConnectors[0];
     if (firstConnector) {
       console.log(`  Using: ${firstConnector.connector_idn}`);
     }
   }
 
-  return sandboxConnectors[0] || null;
+  return runningConnectors[0] || null;
 }
 
 /**
@@ -105,7 +155,7 @@ export async function createChatSession(
   const actorResponse = await createActor(client, personaResponse.id, {
     name: personaName,
     external_id: externalId,
-    integration_idn: SANDBOX_INTEGRATION_IDN,
+    integration_idn: connector.integration_idn || SANDBOX_INTEGRATION_IDN,
     connector_idn: connector.connector_idn,
     time_zone_identifier: DEFAULT_TIMEZONE
   });
@@ -132,7 +182,10 @@ export async function sendMessage(
   text: string,
   verbose: boolean = false
 ): Promise<Date> {
-  if (verbose) console.log(`💬 Sending message: "${text}"`);
+  if (verbose) {
+    const preview = text.length > 200 ? `${text.slice(0, 200)}… (${text.length} chars)` : text;
+    console.log(`💬 Sending message: "${preview}"`);
+  }
 
   const sentAt = new Date();
 
@@ -147,6 +200,17 @@ export async function sendMessage(
 }
 
 /**
+ * Parse an act datetime that may lack timezone info (assume UTC)
+ */
+function parseActDatetimeMs(datetime: string): number {
+  let d = datetime;
+  if (!d.endsWith('Z') && !d.includes('+') && !d.includes('-', 10)) {
+    d = d + 'Z';
+  }
+  return new Date(d).getTime();
+}
+
+/**
  * Poll for new conversation acts (messages and debug info)
  * Continues polling until we get an agent response, not just any new message
  */
@@ -154,20 +218,23 @@ export async function pollForResponse(
   client: AxiosInstance,
   session: SandboxChatSession,
   messageSentAt: Date | null = null,
-  verbose: boolean = false
-): Promise<{ acts: ConversationAct[]; agentPersonaId: string | null }> {
+  verbose: boolean = false,
+  timeoutMs: number = DEFAULT_TIMEOUT_MS
+): Promise<{ acts: ConversationAct[]; agentPersonaId: string | null; userAct: ConversationAct | null }> {
   let attempts = 0;
   let agentPersonaId = session.agent_persona_id;
+  let userAct: ConversationAct | null = null;
+  const maxPollAttempts = Math.max(1, Math.ceil(timeoutMs / POLL_INTERVAL_MS));
 
-  if (verbose) console.log('⏳ Waiting for agent response...');
+  if (verbose) console.log(`⏳ Waiting for agent response (timeout: ${Math.round(timeoutMs / 1000)}s)...`);
 
   // Add small delay before first poll to allow message to be processed
   await new Promise(resolve => setTimeout(resolve, 500));
 
-  while (attempts < MAX_POLL_ATTEMPTS) {
+  while (attempts < maxPollAttempts) {
     try {
       if (verbose && attempts % 5 === 0) {
-        console.log(`  [Poll attempt ${attempts + 1}/${MAX_POLL_ATTEMPTS}] Checking for messages...`);
+        console.log(`  [Poll attempt ${attempts + 1}/${maxPollAttempts}] Checking for messages...`);
       }
 
       // Use Chat History API instead of acts API (doesn't require account_id)
@@ -221,6 +288,16 @@ export async function pollForResponse(
           }
         }
 
+        // Track the user act of our sent message (newest non-agent act at/after sentAt).
+        // Its external_event_id is the correlation key for `newo logs --event-id`.
+        for (const act of convertedActs) {
+          if (act.is_agent) continue;
+          if (messageSentAt && parseActDatetimeMs(act.datetime) - messageSentAt.getTime() <= -100) continue;
+          if (!userAct || parseActDatetimeMs(act.datetime) >= parseActDatetimeMs(userAct.datetime)) {
+            userAct = act;
+          }
+        }
+
         // Filter for agent messages that came AFTER our message was sent
         const agentMessages = convertedActs.filter(act => {
           if (!act.is_agent) return false;
@@ -262,7 +339,7 @@ export async function pollForResponse(
           // Return ONLY the single newest agent message (first one, since API returns newest first)
           const latestAgentMessage = agentMessages[0];
           if (latestAgentMessage) {
-            return { acts: [latestAgentMessage], agentPersonaId };
+            return { acts: [latestAgentMessage], agentPersonaId, userAct };
           }
         } else if (verbose && attempts % 10 === 0) {
           console.log(`  No new agent messages yet (checked ${response.items.length} total messages, sentAt: ${messageSentAt?.toISOString()}), continuing...`);
@@ -280,7 +357,7 @@ export async function pollForResponse(
   }
 
   if (verbose) console.log('⏱️  Timeout waiting for response');
-  return { acts: [], agentPersonaId };
+  return { acts: [], agentPersonaId, userAct };
 }
 
 /**

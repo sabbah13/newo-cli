@@ -1,15 +1,27 @@
 /**
  * Sandbox Chat Command Handler
  * Supports both single-command and interactive modes
+ *
+ * Usage:
+ *   npx newo sandbox "Hello" --customer <idn>               # Single message mode
+ *   npx newo sandbox --actor <actor_id> "Follow up"         # Continue existing chat
+ *   npx newo sandbox "ping" --connector vibe_agent          # Select specific connector (v3.8.0)
+ *   npx newo sandbox --list-connectors                      # Show running sandbox connectors (v3.8.0)
+ *   npx newo sandbox --file ./msg.txt --actor <id>          # Message from file (v3.8.0)
+ *   cat msg.txt | npx newo sandbox --stdin                  # Message from stdin (v3.8.0)
+ *   npx newo sandbox "ping" --timeout 420                   # Custom response timeout in seconds (v3.8.0)
+ *   npx newo sandbox "ping" --json                          # Machine-readable output (v3.8.0)
  */
 
-import type { MultiCustomerConfig, CliArgs } from '../../types.js';
+import fs from 'fs-extra';
+import type { MultiCustomerConfig, CliArgs, ConversationAct, SandboxChatSession } from '../../types.js';
 import { makeClient } from '../../api.js';
 import { getValidAccessToken } from '../../auth.js';
 import { selectSingleCustomer } from '../customer-selection.js';
 import { getChatHistory } from '../../api.js';
 import {
   findSandboxConnector,
+  listRunningSandboxConnectors,
   createChatSession,
   sendMessage,
   pollForResponse,
@@ -17,19 +29,77 @@ import {
   formatDebugInfo
 } from '../../sandbox/chat.js';
 
+const DEFAULT_TIMEOUT_SECONDS = 60;
+
+interface SandboxOptions {
+  quiet: boolean;
+  json: boolean;
+  verbose: boolean;
+  timeoutMs: number;
+  integrationIdn: string | undefined;
+  connectorIdn: string | undefined;
+}
+
+interface SandboxJsonResult {
+  actor_id: string;
+  persona_id: string | null;
+  connector_idn: string;
+  external_event_id: string | null;
+  user_external_event_id: string | null;
+  agent_external_event_id: string | null;
+  response: string | null;
+  elapsed_ms: number;
+  timed_out: boolean;
+  flow_idn: string | null;
+  skill_idn: string | null;
+  session_id: string | null;
+}
+
+/**
+ * Normalize an act's external_event_id: the chat-history converter falls back
+ * to the placeholder 'chat_history' when the API omits the field.
+ */
+function actEventId(act: ConversationAct | null | undefined): string | null {
+  if (!act) return null;
+  const id = act.external_event_id;
+  return id && id !== 'chat_history' ? id : null;
+}
+
+/**
+ * Read message text from --file, --stdin, or positional argument
+ */
+async function resolveMessage(args: CliArgs): Promise<string | null> {
+  if (args.file) {
+    const filePath = String(args.file);
+    if (!(await fs.pathExists(filePath))) {
+      throw new Error(`Message file not found: ${filePath}`);
+    }
+    return await fs.readFile(filePath, 'utf8');
+  }
+
+  if (args.stdin) {
+    const chunks: Buffer[] = [];
+    for await (const chunk of process.stdin) {
+      chunks.push(Buffer.from(chunk));
+    }
+    return Buffer.concat(chunks).toString('utf8');
+  }
+
+  const messageArg = args._[1];
+  return messageArg === undefined ? null : String(messageArg);
+}
+
 /**
  * Handle sandbox command
- * Usage:
- *   npx newo sandbox "Hello" --customer <idn>              # Single message mode
- *   npx newo sandbox --actor <actor_id> "Follow up"       # Continue existing chat
- *   npx newo sandbox --interactive                        # Interactive mode (TBD)
  */
 export async function handleSandboxCommand(
   customerConfig: MultiCustomerConfig,
   args: CliArgs,
   verbose: boolean
 ): Promise<void> {
-  const quiet: boolean = Boolean(args.quiet || args.q);
+  const json: boolean = Boolean(args.json);
+  // --json implies quiet logging: stdout must stay machine-readable
+  const quiet: boolean = Boolean(args.quiet || args.q) || json;
 
   // Save original console functions
   const originalConsoleLog = console.log;
@@ -68,6 +138,15 @@ export async function handleSandboxCommand(
       console.warn = originalConsoleWarn;
     }
 
+    const integrationIdn = args.integration ? String(args.integration) : undefined;
+    const connectorIdn = args.connector ? String(args.connector) : undefined;
+
+    // List running connectors and exit
+    if (args['list-connectors']) {
+      await listConnectorsCommand(client, integrationIdn, json);
+      return;
+    }
+
     // Check for interactive mode
     const interactive = args.interactive || args.i;
     if (interactive) {
@@ -78,33 +157,44 @@ export async function handleSandboxCommand(
       process.exit(1);
     }
 
+    const timeoutSeconds = args.timeout ? parseFloat(String(args.timeout)) : DEFAULT_TIMEOUT_SECONDS;
+    if (!Number.isFinite(timeoutSeconds) || timeoutSeconds <= 0) {
+      if (!quiet) console.error(`❌ Invalid --timeout value: ${args.timeout} (expected positive number of seconds)`);
+      process.exit(1);
+    }
+
+    const options: SandboxOptions = {
+      quiet,
+      json,
+      verbose: quiet ? false : verbose,
+      timeoutMs: timeoutSeconds * 1000,
+      integrationIdn,
+      connectorIdn
+    };
+
     // Check if continuing existing chat
     const actorId = args.actor as string | undefined;
 
-    // Extract message from arguments (position depends on whether --actor is used)
-    const messageArg = args._[1];
-    if (!messageArg) {
+    const message = await resolveMessage(args);
+    if (message === null) {
       if (!quiet) {
         console.log('❌ Message is required');
-        console.log('Usage: npx newo sandbox "your message" [--actor <id>]');
-        console.log('   or: npx newo sandbox --actor <id> "your message"');
+        console.log('Usage: npx newo sandbox "your message" [--actor <id>] [--connector <idn>]');
+        console.log('   or: npx newo sandbox --file <path> [--actor <id>]');
+        console.log('   or: cat msg.txt | npx newo sandbox --stdin [--actor <id>]');
       }
       process.exit(1);
     }
 
-    // Convert to string (minimist may parse numbers)
-    const message = String(messageArg);
     if (message.trim() === '') {
       if (!quiet) console.log('❌ Message cannot be empty');
       process.exit(1);
     }
 
     if (actorId) {
-      // Continue existing chat
-      await continueExistingChat(client, actorId, message, verbose, quiet, originalConsoleLog, originalConsoleError, originalConsoleWarn);
+      await continueExistingChat(client, actorId, message, options, originalConsoleLog);
     } else {
-      // Start new chat
-      await startNewChat(client, message, verbose, quiet, originalConsoleLog, originalConsoleError, originalConsoleWarn);
+      await startNewChat(client, message, options, originalConsoleLog);
     }
 
   } catch (error: any) {
@@ -132,31 +222,102 @@ export async function handleSandboxCommand(
 }
 
 /**
+ * Print running connectors of the (sandbox) integration
+ */
+async function listConnectorsCommand(
+  client: any,
+  integrationIdn: string | undefined,
+  asJson: boolean
+): Promise<void> {
+  const connectors = await listRunningSandboxConnectors(client, integrationIdn);
+
+  if (asJson) {
+    console.log(JSON.stringify(
+      connectors.map(c => ({
+        connector_idn: c.connector_idn,
+        integration_idn: c.integration_idn,
+        title: c.title,
+        status: c.status
+      })),
+      null,
+      2
+    ));
+    return;
+  }
+
+  if (connectors.length === 0) {
+    console.log(`No running connectors found in integration '${integrationIdn || 'sandbox'}'`);
+    return;
+  }
+
+  console.log(`🔌 Running connectors in integration '${integrationIdn || 'sandbox'}':\n`);
+  for (const c of connectors) {
+    console.log(`   ${c.connector_idn}${c.title ? `  (${c.title})` : ''}`);
+  }
+  console.log(`\n💡 Use: npx newo sandbox "your message" --connector <connector_idn>`);
+}
+
+/**
+ * Build and print the --json result object
+ */
+function printJsonResult(
+  session: SandboxChatSession,
+  acts: ConversationAct[],
+  userAct: ConversationAct | null,
+  elapsedMs: number,
+  print: typeof console.log
+): void {
+  const agentAct = acts.find(a => a.is_agent) || null;
+
+  const jsonResult: SandboxJsonResult = {
+    actor_id: session.user_actor_id,
+    persona_id: session.user_persona_id !== 'unknown' ? session.user_persona_id : null,
+    connector_idn: session.connector_idn,
+    // external_event_id of the user turn is the correlation key for `newo logs --event-id`
+    external_event_id: actEventId(userAct),
+    user_external_event_id: actEventId(userAct),
+    agent_external_event_id: actEventId(agentAct),
+    response: agentAct ? (agentAct.source_text || agentAct.original_text || null) : null,
+    elapsed_ms: elapsedMs,
+    timed_out: agentAct === null,
+    flow_idn: agentAct && agentAct.flow_idn !== 'unknown' ? agentAct.flow_idn : null,
+    skill_idn: agentAct && agentAct.skill_idn !== 'unknown' ? agentAct.skill_idn : null,
+    session_id: agentAct && agentAct.session_id !== 'unknown' ? agentAct.session_id : null
+  };
+
+  print(JSON.stringify(jsonResult, null, 2));
+}
+
+/**
  * Start a new sandbox chat and send a message
  */
 async function startNewChat(
   client: any,
   message: string,
-  verbose: boolean,
-  quiet: boolean = false,
-  originalConsoleLog: typeof console.log = console.log,
-  _originalConsoleError: typeof console.error = console.error,
-  _originalConsoleWarn: typeof console.warn = console.warn
+  options: SandboxOptions,
+  originalConsoleLog: typeof console.log
 ): Promise<void> {
+  const { quiet, json, verbose, timeoutMs } = options;
+
   if (!quiet) console.log('🔧 Starting new sandbox chat...\n');
 
-  // Find sandbox connector
-  const connector = await findSandboxConnector(client, quiet ? false : verbose);
+  // Find sandbox connector (throws with available list when --connector not found)
+  const selection: { integrationIdn?: string; connectorIdn?: string } = {};
+  if (options.integrationIdn) selection.integrationIdn = options.integrationIdn;
+  if (options.connectorIdn) selection.connectorIdn = options.connectorIdn;
+  const connector = await findSandboxConnector(client, verbose, selection);
   if (!connector) {
     if (!quiet) {
       console.error('❌ No running sandbox connector found');
       console.error('   Please ensure you have a sandbox connector configured in your NEWO project');
+    } else if (json) {
+      originalConsoleLog(JSON.stringify({ error: 'No running sandbox connector found' }));
     }
     process.exit(1);
   }
 
   // Create chat session
-  const session = await createChatSession(client, connector, quiet ? false : verbose);
+  const session = await createChatSession(client, connector, verbose);
 
   if (!quiet) {
     console.log(`\n📋 Chat Session Created:`);
@@ -165,16 +326,23 @@ async function startNewChat(
     console.log(`   Connector: ${session.connector_idn}`);
     console.log(`   External ID: ${session.external_id}\n`);
     console.log(`📤 You: ${message}\n`);
-  } else {
+  } else if (!json) {
     // In quiet mode, output Chat ID FIRST to stdout
     originalConsoleLog(`CHAT_ID:${session.user_actor_id}`);
     originalConsoleLog(`You: ${message}`);
   }
 
-  const sentAt = await sendMessage(client, session, message, quiet ? false : verbose);
+  const startedAt = Date.now();
+  const sentAt = await sendMessage(client, session, message, verbose);
 
   // Poll for response
-  const { acts, agentPersonaId } = await pollForResponse(client, session, sentAt, quiet ? false : verbose);
+  const { acts, agentPersonaId, userAct } = await pollForResponse(client, session, sentAt, verbose, timeoutMs);
+  const elapsedMs = Date.now() - startedAt;
+
+  if (json) {
+    printJsonResult(session, acts, userAct, elapsedMs, originalConsoleLog);
+    return;
+  }
 
   if (acts.length === 0) {
     if (!quiet) {
@@ -215,33 +383,34 @@ async function startNewChat(
     return; // Exit early, showing only messages
   }
 
-  // Display debug information (skip in quiet mode)
-  if (!quiet) {
-    if (verbose) {
-      console.log('\n📊 Debug Information:');
-      console.log(formatDebugInfo(acts));
-      console.log('');
-    } else {
-      // Show condensed debug info for single-command mode
-      console.log('📊 Debug Summary:');
-      const agentActs = acts.filter(a => a.is_agent);
-      if (agentActs.length > 0) {
-        const lastAct = agentActs[agentActs.length - 1];
-        if (lastAct) {
-          console.log(`   Flow: ${lastAct.flow_idn || 'N/A'}`);
-          console.log(`   Skill: ${lastAct.skill_idn || 'N/A'}`);
-          console.log(`   Session: ${lastAct.session_id}`);
+  // Display debug information
+  if (verbose) {
+    console.log('\n📊 Debug Information:');
+    console.log(formatDebugInfo(acts));
+    console.log('');
+  } else {
+    // Show condensed debug info for single-command mode
+    console.log('📊 Debug Summary:');
+    const agentActs = acts.filter(a => a.is_agent);
+    if (agentActs.length > 0) {
+      const lastAct = agentActs[agentActs.length - 1];
+      if (lastAct) {
+        console.log(`   Flow: ${lastAct.flow_idn || 'N/A'}`);
+        console.log(`   Skill: ${lastAct.skill_idn || 'N/A'}`);
+        console.log(`   Session: ${lastAct.session_id}`);
+        if (actEventId(userAct)) {
+          console.log(`   Event ID (user turn): ${actEventId(userAct)}`);
         }
-        console.log(`   Acts Processed: ${acts.length} (${agentActs.length} agent, ${acts.length - agentActs.length} system)`);
       }
-      console.log('');
+      console.log(`   Acts Processed: ${acts.length} (${agentActs.length} agent, ${acts.length - agentActs.length} system)`);
     }
-
-    // Show continuation info
-    console.log(`💡 To continue this conversation:`);
-    console.log(`   npx newo sandbox --actor ${session.user_actor_id} "your next message"`);
     console.log('');
   }
+
+  // Show continuation info
+  console.log(`💡 To continue this conversation:`);
+  console.log(`   npx newo sandbox --actor ${session.user_actor_id} "your next message"`);
+  console.log('');
 }
 
 /**
@@ -251,12 +420,11 @@ async function continueExistingChat(
   client: any,
   actorId: string,
   message: string,
-  verbose: boolean,
-  quiet: boolean = false,
-  originalConsoleLog: typeof console.log = console.log,
-  _originalConsoleError: typeof console.error = console.error,
-  _originalConsoleWarn: typeof console.warn = console.warn
+  options: SandboxOptions,
+  originalConsoleLog: typeof console.log
 ): Promise<void> {
+  const { quiet, json, verbose, timeoutMs } = options;
+
   if (!quiet) {
     console.log(`💬 Continuing chat...`);
     console.log(`   Chat ID: ${actorId}\n`);
@@ -283,25 +451,32 @@ async function continueExistingChat(
   }
 
   // Create a temporary session for the existing chat
-  const session: any = {
+  const session: SandboxChatSession = {
     user_actor_id: actorId,
     user_persona_id: 'unknown', // Not needed for continuation
     agent_persona_id: null,
-    connector_idn: 'sandbox',
+    connector_idn: options.connectorIdn || 'sandbox',
     session_id: null,
     external_id: 'continuation'
   };
 
   // Send message (use original console in quiet mode)
   if (quiet) {
-    originalConsoleLog(`You: ${message}`);
+    if (!json) originalConsoleLog(`You: ${message}`);
   } else {
     console.log(`📤 You: ${message}\n`);
   }
-  const sentAt = await sendMessage(client, session, message, quiet ? false : verbose);
+  const startedAt = Date.now();
+  const sentAt = await sendMessage(client, session, message, verbose);
 
   // Poll for response using timestamp-based filtering
-  const { acts } = await pollForResponse(client, session, sentAt, quiet ? false : verbose);
+  const { acts, userAct } = await pollForResponse(client, session, sentAt, verbose, timeoutMs);
+  const elapsedMs = Date.now() - startedAt;
+
+  if (json) {
+    printJsonResult(session, acts, userAct, elapsedMs, originalConsoleLog);
+    return;
+  }
 
   if (acts.length === 0) {
     if (!quiet) {
@@ -351,6 +526,9 @@ async function continueExistingChat(
           console.log(`   Flow: ${lastAct.flow_idn || 'N/A'}`);
           console.log(`   Skill: ${lastAct.skill_idn || 'N/A'}`);
           console.log(`   Session: ${lastAct.session_id}`);
+          if (actEventId(userAct)) {
+            console.log(`   Event ID (user turn): ${actEventId(userAct)}`);
+          }
         }
         console.log(`   Acts Processed: ${acts.length} (${agentActs.length} agent, ${acts.length - agentActs.length} user)`);
       }

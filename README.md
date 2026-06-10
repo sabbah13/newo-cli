@@ -9,6 +9,8 @@
 
 Sync NEWO "Project → Agent → Flow → Skills" structure to local files with:
 - 🆕 **V2 skill creation on push** (v3.7.4) - adding a skill inline to a `newo_v2` `{FlowIdn}.yaml` and pushing now creates it on the platform (previously only updates of existing skills worked)
+- 🆕 **Sandbox connector selection + automation** (v3.8.0) - `newo sandbox --connector <idn>`, `--list-connectors`, `--file`/`--stdin` for long messages, `--timeout`, and `--json` with `external_event_id` for log correlation
+- 🆕 **Point skill edits** (v3.8.0) - `newo get-skill` / `newo update-skill` inspect and modify a single skill (model, script) on the platform without a pulled workspace, with optional `--publish`
 - 🆕 **Canvas blank-screen hardening** (v3.7.3) - JSON-typed attributes (e.g. Workflow Builder canvas) with Markdown `\_` escapes or structural newlines no longer corrupt the canvas on push ([#7](https://github.com/sabbah13/newo-cli/pull/7))
 - 🆕 **Flow metadata sync** (v3.7.2) - `newo push` now reconciles flow title, events, and state_fields from local `metadata.yaml` to the platform (closes [#3](https://github.com/sabbah13/newo-cli/issues/3))
 - 🆕 **Dual format support** (v3.6.0) - `cli_v1` (native) and `newo_v2` (platform compatible), auto-detected per customer
@@ -150,11 +152,74 @@ NEWO_REFRESH_URL=custom_refresh_endpoint   # Custom refresh endpoint
 | `newo push [--format <fmt>]` | Upload local changes to NEWO | • Works with both formats<br>• Hash-based change detection<br>• Library skill updates<br>• Publishes flows automatically |
 | `newo status [--format <fmt>]` | Show modified files | • Format-aware status<br>• Multiple file warnings<br>• Per-customer status |
 | `newo export [--output <file>]` | Download V2 bulk ZIP from platform | • Complete organization export<br>• Projects, agents, flows, skills, attributes, AKB<br>• Compatible with platform UI import |
-| `newo sandbox` | Test agents in sandbox chat mode | • Single-command mode for automation<br>• Multi-turn conversation support<br>• Debug info for agent development |
+| `newo sandbox` | Test agents in sandbox chat mode | • Single-command mode for automation<br>• Multi-turn conversation support<br>• Debug info for agent development<br>• v3.8.0: `--connector`, `--list-connectors`, `--file`/`--stdin`, `--timeout`, `--json` |
+| `newo get-skill` / `newo update-skill` | Inspect / point-edit one skill on the platform (NEW v3.8.0) | • No pulled workspace required<br>• `--model <provider>/<model>`, `--script <file>`<br>• Optional `--publish` |
 | `newo conversations` | Pull conversation history | • User personas and chat history<br>• YAML format output<br>• Pagination support |
 | `newo list-customers` | List configured customers | • Shows default customer<br>• Multi-customer discovery |
 | `newo import-akb` | Import knowledge base articles | • Structured text parsing<br>• Bulk article import<br>• Validation and error reporting |
 | `newo meta` | Get project metadata (debug) | • Project structure analysis<br>• Metadata validation |
+
+### Sandbox Connector Selection & Automation (NEW v3.8.0)
+
+`newo sandbox` previously always chatted through the **first** running connector of the `sandbox` integration, making other agents (e.g. a Vibe Builder behind a `vibe_agent` connector) unreachable from the CLI. v3.8.0 adds connector selection plus automation-friendly I/O:
+
+```bash
+newo sandbox --list-connectors                          # show running sandbox connectors
+newo sandbox "ping" --connector vibe_agent              # chat through a specific connector
+newo sandbox "ping" --integration sandbox --connector vibe_agent   # explicit pair (default integration: sandbox)
+
+newo sandbox --file ./chunk1.txt --actor <id> --json    # long message from file, machine-readable output
+cat chunk1.txt | newo sandbox --stdin --actor <id>      # message from stdin
+newo sandbox "ping" --timeout 420                       # wait up to 7 minutes for slow agent turns (default: 60s)
+```
+
+`--json` output includes the correlation keys for `newo logs`:
+
+```json
+{
+  "actor_id": "…", "persona_id": "…", "connector_idn": "vibe_agent",
+  "external_event_id": "…",          // user turn — use with: newo logs --event-id <id>
+  "user_external_event_id": "…", "agent_external_event_id": "…",
+  "response": "…", "elapsed_ms": 12345, "timed_out": false,
+  "flow_idn": "VibeFlow", "skill_idn": "…", "session_id": "…"
+}
+```
+
+Without `--connector`, behavior is unchanged (first running connector), so existing scripts keep working. When the requested connector is missing, the error lists the available running connectors.
+
+This makes agent integration tests scriptable in plain bash: send chunks via `newo sandbox --file … --json`, then verify behavior via `newo logs --event-id … --json` — no more ad-hoc Node scripts importing `dist/api.js`.
+
+### Point Skill Inspection & Edits (NEW v3.8.0)
+
+Inspect or modify a **single skill** directly on the platform by IDN path — no pulled `newo_customers/` workspace required, nothing else gets touched:
+
+```bash
+# What lives on the platform right now? (model, runner_type, parameters, prompt_script)
+newo get-skill structured_generation --project vibe --agent VibeAgent --flow VibeFlow [--json]
+
+# Temporarily switch a model, publish, run tests, switch back:
+newo update-skill structured_generation --project vibe --agent VibeAgent --flow VibeFlow \
+    --model google/gemini25_pro --publish
+# …run your tests…
+newo update-skill structured_generation --project vibe --agent VibeAgent --flow VibeFlow \
+    --model openai/gpt54 --publish
+
+# Replace a skill script from a file (draft only, without --publish):
+newo update-skill get_memory --project vibe --agent VibeAgent --flow VibeFlow --script ./patched.nsl
+```
+
+- `--model <provider_idn>/<model_idn>` and `--script <file>` can be combined; everything else (title, parameters, runner) is preserved.
+- `--publish` publishes the flow after the update (same as push); without it the change stays draft. `--publish-description "<text>"` sets the publish note.
+- If a pulled local workspace exists for the project, the CLI warns that it now diverges from the platform.
+
+### Logs: Action-Name Filter (NEW v3.8.0)
+
+```bash
+newo logs --type call --name Gen --json        # only Gen action calls
+newo logs --name GetMemory --hours 24          # only GetMemory calls, last 24h
+```
+
+`--name` filters by `data.name` client-side (the API has no such query param). Note: the **model used for a turn** is in `data.source.model` of the `--json` output — do not infer it from actor/agent names.
 
 ### Flow Metadata Sync (NEW v3.7.2)
 
