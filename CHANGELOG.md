@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.7.4] - 2026-06-10
+
+### Added
+
+- **V2 push now creates new skills from inline flow YAML definitions.** Previously the `newo_v2` push path could only update content of skills already known to the local project map; a skill added locally to `{FlowIdn}.yaml` after the last pull was silently ignored, leaving its `.nsl`/`.nslg` script with no way to reach the platform. `V2ProjectSyncStrategy.push()` now reconciles inline skill metadata before iterating script changes: missing remote skills are created via `POST /api/v1/designer/flows/{flowId}/skills`, race-condition duplicates (already-exists on create) fall back to fetching the remote skill via `listFlowSkills` and updating it, and missing skill parameters are filled in via `POST /api/v1/designer/flows/skills/{skillId}/parameters`. The local project map and SHA256 hash store are updated atomically after the reconciliation pass.
+- **Strict model validation before V2 skill writes.** New `assertSkillModelResolved` helper throws a descriptive error ("Set either skill.model.* or flow default_model_idn/default_provider_idn") when neither the inline skill nor the flow declares a model/provider, instead of letting the platform return a generic 4xx with no hint about which YAML field is missing.
+- **33 unit tests** in `test/v2-push-helpers.test.js` covering `isAlreadyExistsApiError`, `assertSkillModelResolved`, `normalizeRunnerType`, `normalizeParameters`, `skillMetadataDiffers`, `buildV2SkillMetadataFromYaml`, and `createMissingSkillParameters` (stubbed API client). Regression-locks the false-positive matcher fix, the model-validation contract, the parameter-creation counting, and the model-key-order false positive.
+
+### Fixed
+
+- **`isAlreadyExistsApiError` no longer matches "does not exist".** The previous detector accepted any 400/409/422 response whose body contained the substring `"exist"`, which incorrectly classified "Skill does not exist" / "Flow doesn't exist" errors as duplicates and triggered a spurious reuse fallback. The matcher is now tightened to only `"already exists"` and `"duplicate key"`.
+- **`validate()` reports missing scripts for YAML-declared skills.** Previously `V2ProjectSyncStrategy.validate()` only checked scripts listed in the local map; skills added directly to `{FlowIdn}.yaml` since the last pull were never validated. Validation now walks the YAML when present and surfaces a `Script file not found:` error per skill, matching the new push contract.
+- **Missing-script skills are reported, not silently skipped.** Instead of a `verbose`-only "Skipping skill without local script" log, the push now records `[newo_v2] Missing script for skill {project}/{agent}/{flow}/{skill}: {path}` in the push errors. Failures are isolated per skill: one broken skill no longer aborts the push of every other flow/project in the workspace.
+- **Model validation only runs before actual platform writes.** `assertSkillModelResolved` fires only when a skill is about to be created or its metadata updated — a pre-existing flow YAML without `skill.model.*` / flow `default_model_idn` no longer blocks pushes of unrelated, untouched skills.
+- **Parameter-creation count is no longer inflated by already-existing parameters.** `createMissingSkillParameters` incremented its counter (and logged "Created skill parameter") even when the platform answered "already exists", which spuriously triggered a follow-up `updateSkill` call. Count and log now happen only on successful creation.
+- **`isAlreadyExistsApiError` no longer throws on `null`/`undefined` errors** (optional chaining on `.response`), which previously masked the original failure inside catch handlers.
+- **`skillMetadataDiffers` no longer flags every skill as changed.** The model comparison used `JSON.stringify`, which is key-order-sensitive: the project map stores `{provider_idn, model_idn}` (platform API order) while YAML-built metadata uses `{model_idn, provider_idn}`. Verified against a live account: every push rewrote all 1342 skills. Model is now compared field-by-field and parameters are compared order-insensitively (sorted by name).
+- **Skill parameters are now created explicitly after `createSkill`.** The platform's create endpoint ignores inline `parameters` in the request body (verified against the live platform) — newly created skills silently lost their YAML-declared parameters. The create path now calls `POST /flows/skills/{skillId}/parameters` per parameter, same as the update path.
+
 ## [3.7.3] - 2026-05-25
 
 ### Fixed
@@ -1061,7 +1080,8 @@ Another Item: $Price [Modifiers: modifier3]
 - GitHub Actions CI/CD integration
 - Robust authentication with token refresh
 
-[Unreleased]: https://github.com/sabbah13/newo-cli/compare/v3.7.3...HEAD
+[Unreleased]: https://github.com/sabbah13/newo-cli/compare/v3.7.4...HEAD
+[3.7.4]: https://github.com/sabbah13/newo-cli/compare/v3.7.3...v3.7.4
 [3.7.3]: https://github.com/sabbah13/newo-cli/compare/v3.7.2...v3.7.3
 [3.7.2]: https://github.com/sabbah13/newo-cli/compare/v3.7.1...v3.7.2
 [3.7.1]: https://github.com/sabbah13/newo-cli/compare/v3.7.0...v3.7.1
