@@ -14,7 +14,7 @@
  */
 
 import type { AxiosInstance } from 'axios';
-import type { MultiCustomerConfig, LogEntry, LogLevel, LogType, LogsQueryParams, CliArgs } from '../../types.js';
+import type { MultiCustomerConfig, LogEntry, LogLevel, LogType, LogsQueryParams, LogsResponse, CliArgs } from '../../types.js';
 import { makeClient, getLogs } from '../../api.js';
 import { getValidAccessToken } from '../../auth.js';
 import { requireSingleCustomer } from '../customer-selection.js';
@@ -32,6 +32,8 @@ const colors = {
   white: '\x1b[37m',
   gray: '\x1b[90m'
 };
+
+type GetLogsFn = (client: AxiosInstance, params: LogsQueryParams) => Promise<LogsResponse>;
 
 function getLevelColor(level: LogLevel): string {
   switch (level) {
@@ -186,19 +188,65 @@ function filterByName(logs: readonly LogEntry[], nameFilter: string | null): Log
   return logs.filter(log => log.data['name'] === nameFilter);
 }
 
-async function fetchAndDisplayLogs(
+export async function collectLogsForDisplay(
+  client: AxiosInstance,
+  params: LogsQueryParams,
+  nameFilter: string | null = null,
+  getLogsFn: GetLogsFn = getLogs
+): Promise<LogEntry[]> {
+  if (!nameFilter) {
+    const response = await getLogsFn(client, params);
+    return [...response.items];
+  }
+
+  const pageSize = Number.isFinite(params.per) && params.per && params.per > 0 ? params.per : 50;
+  let page = Number.isFinite(params.page) && params.page && params.page > 0 ? params.page : 1;
+  const logs: LogEntry[] = [];
+
+  while (true) {
+    const response = await getLogsFn(client, {
+      ...params,
+      page,
+      per: pageSize
+    });
+
+    logs.push(...filterByName(response.items, nameFilter));
+
+    if (response.items.length < pageSize) {
+      break;
+    }
+
+    page++;
+  }
+
+  return logs;
+}
+
+export async function fetchAndDisplayLogs(
   client: AxiosInstance,
   params: LogsQueryParams,
   asJson: boolean,
   raw: boolean,
-  nameFilter: string | null = null
+  nameFilter: string | null = null,
+  getLogsFn: GetLogsFn = getLogs
 ): Promise<void> {
   try {
-    const response = await getLogs(client, params);
-    const logs = filterByName(response.items, nameFilter);
+    const logs = await collectLogsForDisplay(client, params, nameFilter, getLogsFn);
 
     if (asJson) {
       console.log(JSON.stringify(logs, null, 2));
+      return;
+    }
+
+    // --raw is a machine-readable JSONL contract: stdout must contain only
+    // one JSON object per log line, with no banners or empty-result text.
+    if (raw) {
+      const sortedLogs = [...logs].sort((a, b) =>
+        new Date(a.datetime).getTime() - new Date(b.datetime).getTime()
+      );
+      for (const log of sortedLogs) {
+        console.log(JSON.stringify(log));
+      }
       return;
     }
 
@@ -218,11 +266,7 @@ async function fetchAndDisplayLogs(
     const useColors = process.stdout.isTTY !== false;
 
     for (const log of sortedLogs) {
-      if (raw) {
-        console.log(JSON.stringify(log));
-      } else {
-        console.log(formatLogEntry(log, useColors));
-      }
+      console.log(formatLogEntry(log, useColors));
     }
 
     console.log(`\n✅ Displayed ${logs.length} log entries`);
