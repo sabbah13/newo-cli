@@ -77,6 +77,8 @@ newo push                    # Uploads changed .guidance/.jinja files
 newo status                  # Shows what would be pushed
 ```
 
+**New V2 skills on push (v3.7.4+):** In `newo_v2` format you can add a skill inline to a flow's `{FlowIdn}.yaml`, drop its `.nsl`/`.nslg` script next to it, and `newo push` will create it on the platform (previously only updates of already-pulled skills worked). Each new skill must resolve a model - set `skill.model.*` inline or the flow's `default_model_idn` / `default_provider_idn`, or push reports a clear error for that skill (other skills still push).
+
 #### Customer & Project Attributes
 ```bash
 newo pull-attributes         # Downloads attributes.yaml files
@@ -180,6 +182,27 @@ newo sandbox --actor <chat-id> "I want 2 large pepperoni"
 # With debug output
 newo sandbox "Test message" --verbose
 ```
+
+**Connector selection & automation (v3.7.5+):** By default `newo sandbox` chats through the *first* running connector of the `sandbox` integration. To target a specific one (e.g. a Vibe Builder behind `vibe_agent`), and for automation:
+
+```bash
+newo sandbox --list-connectors                          # show running connectors (--json for machine output)
+newo sandbox "ping" --connector vibe_agent              # chat through a specific connector
+newo sandbox --file ./long-message.txt --json          # send a large message from a file, machine-readable output
+cat msg.txt | newo sandbox --stdin --timeout 420 --json # from stdin, 7-minute response timeout
+```
+
+The `--json` output includes `external_event_id` (user + agent turns), which correlates a chat turn with its logs: `newo logs --event-id <id> --name Gen --json` (the turn's model is in `data.source.model`, not the actor/agent name).
+
+**Point skill edits without a workspace (v3.7.5+):** Inspect or change a single skill on the platform by IDN path, no pull required - handy for "switch model → test → switch back":
+
+```bash
+newo get-skill <skill-idn> --project <p> --agent <a> --flow <f> [--json]
+newo update-skill <skill-idn> --project <p> --agent <a> --flow <f> --model openai/gpt4o [--publish]
+newo update-skill <skill-idn> --project <p> --agent <a> --flow <f> --script ./patched.nsl --publish
+```
+
+Changes are draft-only unless `--publish` is passed; if a pulled local workspace exists it warns that it now diverges (run `newo pull` to resync).
 
 ---
 

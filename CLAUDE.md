@@ -79,7 +79,7 @@ The codebase has been refactored from monolithic files into a clean, maintainabl
 - `cli.ts` - Main CLI entry point with command routing using switch/case pattern
 - `errors.ts` - Centralized error handling and user-friendly messages
 - `customer-selection.ts` - Customer management, selection logic, and interactive prompts
-- `commands/` - Individual command handlers (37 modular commands):
+- `commands/` - Individual command handlers (45 modular commands):
   - Core: `pull.ts`, `push.ts`, `status.ts`, `help.ts`
   - Data: `conversations.ts`, `pull-attributes.ts`, `import-akb.ts`
   - Entity Management: `create-agent.ts`, `create-flow.ts`, `create-skill.ts`, `create-project.ts`
