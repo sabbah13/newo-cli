@@ -12,6 +12,8 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'fs-extra';
+import path from 'node:path';
 
 import {
   findSandboxConnector,
@@ -19,6 +21,7 @@ import {
   pollForResponse
 } from '../dist/sandbox/chat.js';
 import { resolveRemoteSkill, parseModelFlag } from '../dist/sync/remote-skill.js';
+import { findLocalProjectWorkspace } from '../dist/cli/commands/update-skill.js';
 
 /**
  * Build a fake axios client backed by a routes map: url -> response data.
@@ -237,5 +240,21 @@ test('parseModelFlag parses provider/model pairs', () => {
 test('parseModelFlag rejects malformed values', () => {
   for (const bad of ['gpt54', 'openai/', '/gpt54', 'a/b/c', '']) {
     assert.throws(() => parseModelFlag(bad), /Invalid --model value/);
+  }
+});
+
+test('findLocalProjectWorkspace detects pulled newo_v2 workspaces', async () => {
+  const customerIdn = 'unit_update_skill_v2';
+  const projectIdn = 'V2Project';
+  const customerRoot = path.join(process.cwd(), 'newo_customers', customerIdn);
+  const v2ProjectPath = path.join(customerRoot, projectIdn);
+
+  await fs.remove(customerRoot);
+  try {
+    await fs.ensureDir(v2ProjectPath);
+    const found = await findLocalProjectWorkspace(customerIdn, projectIdn);
+    assert.equal(found, v2ProjectPath);
+  } finally {
+    await fs.remove(customerRoot);
   }
 });

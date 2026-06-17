@@ -17,9 +17,25 @@ import { makeClient, updateSkill, publishFlow } from '../../api.js';
 import { getValidAccessToken } from '../../auth.js';
 import { resolveRemoteSkill, parseModelFlag } from '../../sync/remote-skill.js';
 import { projectDir } from '../../fsutil.js';
+import { v2ProjectDir } from '../../format/paths-v2.js';
 import type { MultiCustomerConfig, CliArgs, Skill, PublishFlowRequest } from '../../types.js';
 
 const USAGE = 'Usage: newo update-skill <skill-idn> --project <project-idn> --agent <agent-idn> --flow <flow-idn> [--model <provider>/<model>] [--script <file>] [--publish] [--publish-description "<text>"] [--customer <idn>]';
+
+export async function findLocalProjectWorkspace(customerIdn: string, projectIdn: string): Promise<string | null> {
+  const candidates = [
+    projectDir(customerIdn, projectIdn),
+    v2ProjectDir(customerIdn, projectIdn)
+  ];
+
+  for (const candidate of candidates) {
+    if (await fs.pathExists(candidate)) {
+      return candidate;
+    }
+  }
+
+  return null;
+}
 
 export async function handleUpdateSkillCommand(
   customerConfig: MultiCustomerConfig,
@@ -92,8 +108,8 @@ export async function handleUpdateSkillCommand(
   console.log('✅ Skill updated (draft)');
 
   // Warn when a pulled local workspace exists: it now diverges from the platform
-  const localProjectDir = projectDir(selectedCustomer.idn, project.idn);
-  if (await fs.pathExists(localProjectDir)) {
+  const localProjectDir = await findLocalProjectWorkspace(selectedCustomer.idn, project.idn);
+  if (localProjectDir) {
     console.warn(`⚠️  Local workspace exists at ${localProjectDir} and now differs from the platform.`);
     console.warn(`   Run 'newo pull' to sync it, or remember to revert this change.`);
   }
