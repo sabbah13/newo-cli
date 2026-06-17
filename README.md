@@ -217,9 +217,12 @@ newo update-skill get_memory --project vibe --agent VibeAgent --flow VibeFlow --
 ```bash
 newo logs --type call --name Gen --json        # only Gen action calls
 newo logs --name GetMemory --hours 24          # only GetMemory calls, last 24h
+newo logs --type call --raw | jq '.data.name'  # JSONL stream, one log per line, for piping
 ```
 
 `--name` filters by `data.name` client-side (the API has no such query param). Note: the **model used for a turn** is in `data.source.model` of the `--json` output — do not infer it from actor/agent names.
+
+`--raw` emits **JSONL** — one JSON object per log line (oldest-first), with no banners or "no logs found" text — so stdout is a clean stream for `jq`/piping. This differs from `--json`, which prints a single pretty-printed JSON array.
 
 ### Flow Metadata Sync (NEW v3.7.2)
 
