@@ -40,6 +40,7 @@ import type {
 } from '../../../types.js';
 import type { LocalProjectData, LocalAgentData, LocalFlowData, LocalSkillData, ApiClientFactory } from './ProjectSyncStrategy.js';
 import fs from 'fs-extra';
+import path from 'path';
 import {
   listProjects,
   listAgents,
@@ -104,6 +105,14 @@ import { isContentDifferent } from '../../../sync/skill-files.js';
 import yaml from 'js-yaml';
 import { patchYamlToPyyaml } from '../../../format/yaml-patch.js';
 import type { RunnerType, SkillParameter } from '../../../types.js';
+
+interface V2FlowSkillTarget {
+  projectIdn: string;
+  agentIdn: string;
+  flowIdn: string;
+  skillIdn: string;
+  skillData: SkillMetadata | undefined;
+}
 
 /**
  * V2ProjectSyncStrategy - same API, newo_v2 file layout
@@ -684,7 +693,7 @@ export class V2ProjectSyncStrategy implements ISyncStrategy<ProjectMeta, LocalPr
           const isLibrary = change.path.includes('/libraries/');
           const count = isLibrary
             ? await this.pushV2LibrarySkillUpdate(client, change, mapData, newHashes)
-            : await this.pushV2SkillUpdate(client, change, mapData, newHashes);
+            : await this.pushV2SkillUpdate(client, change, mapData, newHashes, customer.idn);
           result.updated += count;
         }
       } catch (error) {
@@ -1140,26 +1149,16 @@ export class V2ProjectSyncStrategy implements ISyncStrategy<ProjectMeta, LocalPr
     client: AxiosInstance,
     change: ChangeItem<LocalProjectData>,
     mapData: ProjectMap,
-    newHashes: HashStore
+    newHashes: HashStore,
+    customerIdn: string
   ): Promise<number> {
-    // Parse V2 path to extract entity hierarchy
-    // Path: .../newo_customers/{cust}/{proj}/agents/{agent}/flows/{flow}/skills/{skillFile}
-    const pathParts = change.path.split('/');
-    const skillFileName = pathParts[pathParts.length - 1] || '';
-    const skillIdn = skillFileName.replace(/\.(nsl|nslg|jinja|guidance)$/, '');
-    // skills/ -> flow/ -> flows/ -> agent/ -> agents/ -> project/
-    const flowIdn = pathParts[pathParts.length - 3] || '';
-    const agentIdn = pathParts[pathParts.length - 5] || '';
-    const projectIdn = pathParts[pathParts.length - 7] || '';
+    const target =
+      await this.resolveV2SkillTargetForScriptPath(customerIdn, change.path, mapData) ||
+      this.resolveV2SkillTargetFromCanonicalPath(change.path, mapData);
+    const skillData = target?.skillData;
 
-    // Look up skill in map
-    const projectData = mapData.projects[projectIdn];
-    const agentData = projectData?.agents[agentIdn];
-    const flowData = agentData?.flows[flowIdn];
-    const skillData = flowData?.skills[skillIdn];
-
-    if (!skillData) {
-      throw new Error(`Skill ${skillIdn} not found in project map (path: ${change.path})`);
+    if (!target || !skillData) {
+      throw new Error(`Skill not found in project map (path: ${change.path})`);
     }
 
     // Read updated script content
@@ -1178,8 +1177,90 @@ export class V2ProjectSyncStrategy implements ISyncStrategy<ProjectMeta, LocalPr
     });
 
     newHashes[change.path] = sha256(content);
-    this.logger.info(`[newo_v2] Pushed: ${skillIdn}`);
+    this.logger.info(`[newo_v2] Pushed: ${target.skillIdn}`);
     return 1;
+  }
+
+  private normalizePathForComparison(filePath: string): string {
+    return path.resolve(filePath).replace(/\\/g, '/');
+  }
+
+  private async resolveV2SkillTargetForScriptPath(
+    customerIdn: string,
+    scriptPath: string,
+    mapData: ProjectMap
+  ): Promise<V2FlowSkillTarget | null> {
+    const normalizedScriptPath = this.normalizePathForComparison(scriptPath);
+
+    for (const [projectIdn, projectData] of Object.entries(mapData.projects)) {
+      for (const [agentIdn, agentData] of Object.entries(projectData.agents)) {
+        for (const [flowIdn, flowData] of Object.entries(agentData.flows)) {
+          const flowYamlPath = v2FlowYamlPath(customerIdn, projectIdn, agentIdn, flowIdn);
+          if (!(await fs.pathExists(flowYamlPath))) {
+            continue;
+          }
+
+          let flowDef;
+          try {
+            flowDef = await parseV2FlowYaml(flowYamlPath);
+          } catch {
+            continue;
+          }
+
+          for (const skill of flowDef.skills || []) {
+            const runnerType = this.normalizeRunnerType(skill.runner_type || flowData.skills[skill.idn]?.runner_type);
+            const resolvedScriptPath = await this.resolveV2FlowSkillScriptPath(
+              customerIdn,
+              projectIdn,
+              agentIdn,
+              flowIdn,
+              skill.idn,
+              runnerType,
+              skill.prompt_script
+            );
+
+            if (this.normalizePathForComparison(resolvedScriptPath) === normalizedScriptPath) {
+              return {
+                projectIdn,
+                agentIdn,
+                flowIdn,
+                skillIdn: skill.idn,
+                skillData: flowData.skills[skill.idn]
+              };
+            }
+          }
+        }
+      }
+    }
+
+    return null;
+  }
+
+  private resolveV2SkillTargetFromCanonicalPath(
+    scriptPath: string,
+    mapData: ProjectMap
+  ): V2FlowSkillTarget | null {
+    // Parse canonical V2 path:
+    // .../newo_customers/{cust}/{proj}/agents/{agent}/flows/{flow}/skills/{skillFile}
+    const pathParts = scriptPath.split('/');
+    const skillFileName = pathParts[pathParts.length - 1] || '';
+    const skillIdn = skillFileName.replace(/\.(nsl|nslg|jinja|guidance)$/, '');
+    // skills/ -> flow/ -> flows/ -> agent/ -> agents/ -> project/
+    const flowIdn = pathParts[pathParts.length - 3] || '';
+    const agentIdn = pathParts[pathParts.length - 5] || '';
+    const projectIdn = pathParts[pathParts.length - 7] || '';
+
+    const projectData = mapData.projects[projectIdn];
+    const agentData = projectData?.agents[agentIdn];
+    const flowData = agentData?.flows[flowIdn];
+
+    return {
+      projectIdn,
+      agentIdn,
+      flowIdn,
+      skillIdn,
+      skillData: flowData?.skills[skillIdn]
+    };
   }
 
   /**

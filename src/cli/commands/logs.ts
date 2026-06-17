@@ -14,7 +14,7 @@
  */
 
 import type { AxiosInstance } from 'axios';
-import type { MultiCustomerConfig, LogEntry, LogLevel, LogType, LogsQueryParams, CliArgs } from '../../types.js';
+import type { MultiCustomerConfig, LogEntry, LogLevel, LogType, LogsQueryParams, LogsResponse, CliArgs } from '../../types.js';
 import { makeClient, getLogs } from '../../api.js';
 import { getValidAccessToken } from '../../auth.js';
 import { requireSingleCustomer } from '../customer-selection.js';
@@ -32,6 +32,8 @@ const colors = {
   white: '\x1b[37m',
   gray: '\x1b[90m'
 };
+
+type GetLogsFn = (client: AxiosInstance, params: LogsQueryParams) => Promise<LogsResponse>;
 
 function getLevelColor(level: LogLevel): string {
   switch (level) {
@@ -106,7 +108,13 @@ export async function handleLogsCommand(
   // Select customer
   const selectedCustomer = requireSingleCustomer(customerConfig, args.customer as string | undefined);
 
-  console.log(`📊 Fetching logs for ${selectedCustomer.idn}...`);
+  // Keep stdout machine-readable when JSON output is requested (for piping to jq etc.)
+  const machineOutput = Boolean(args.json || args.raw);
+  if (machineOutput) {
+    process.env.NEWO_QUIET_MODE = 'true'; // suppress auth logging on stdout
+  } else {
+    console.log(`📊 Fetching logs for ${selectedCustomer.idn}...`);
+  }
 
   // Get access token and create client
   const token = await getValidAccessToken(selectedCustomer);
@@ -164,26 +172,81 @@ export async function handleLogsCommand(
   const follow = Boolean(args.follow || args.f);
   const asJson = Boolean(args.json);
   const raw = Boolean(args.raw);
+  // --name filters by data.name (e.g. action name like Gen or GetMemory).
+  // The API has no such query param, so it is applied client-side.
+  const nameFilter = args.name ? String(args.name) : null;
 
   if (follow) {
-    await tailLogs(client, params, asJson);
+    await tailLogs(client, params, asJson, nameFilter);
   } else {
-    await fetchAndDisplayLogs(client, params, asJson, raw);
+    await fetchAndDisplayLogs(client, params, asJson, raw, nameFilter);
   }
 }
 
-async function fetchAndDisplayLogs(
+function filterByName(logs: readonly LogEntry[], nameFilter: string | null): LogEntry[] {
+  if (!nameFilter) return [...logs];
+  return logs.filter(log => log.data['name'] === nameFilter);
+}
+
+export async function collectLogsForDisplay(
+  client: AxiosInstance,
+  params: LogsQueryParams,
+  nameFilter: string | null = null,
+  getLogsFn: GetLogsFn = getLogs
+): Promise<LogEntry[]> {
+  if (!nameFilter) {
+    const response = await getLogsFn(client, params);
+    return [...response.items];
+  }
+
+  const pageSize = Number.isFinite(params.per) && params.per && params.per > 0 ? params.per : 50;
+  let page = Number.isFinite(params.page) && params.page && params.page > 0 ? params.page : 1;
+  const logs: LogEntry[] = [];
+
+  while (true) {
+    const response = await getLogsFn(client, {
+      ...params,
+      page,
+      per: pageSize
+    });
+
+    logs.push(...filterByName(response.items, nameFilter));
+
+    if (response.items.length < pageSize) {
+      break;
+    }
+
+    page++;
+  }
+
+  return logs;
+}
+
+export async function fetchAndDisplayLogs(
   client: AxiosInstance,
   params: LogsQueryParams,
   asJson: boolean,
-  raw: boolean
+  raw: boolean,
+  nameFilter: string | null = null,
+  getLogsFn: GetLogsFn = getLogs
 ): Promise<void> {
   try {
-    const response = await getLogs(client, params);
-    const logs = response.items;
+    const logs = await collectLogsForDisplay(client, params, nameFilter, getLogsFn);
 
     if (asJson) {
       console.log(JSON.stringify(logs, null, 2));
+      return;
+    }
+
+    // --raw is a machine-readable JSONL contract: stdout must contain only
+    // one JSON object per log line, with no banners or empty-result text.
+    if (raw) {
+      const sortedLogs = [...logs].sort((a, b) =>
+        new Date(a.datetime).getTime() - new Date(b.datetime).getTime()
+      );
+      for (const log of sortedLogs) {
+        console.log(JSON.stringify(log));
+      }
       return;
     }
 
@@ -203,11 +266,7 @@ async function fetchAndDisplayLogs(
     const useColors = process.stdout.isTTY !== false;
 
     for (const log of sortedLogs) {
-      if (raw) {
-        console.log(JSON.stringify(log));
-      } else {
-        console.log(formatLogEntry(log, useColors));
-      }
+      console.log(formatLogEntry(log, useColors));
     }
 
     console.log(`\n✅ Displayed ${logs.length} log entries`);
@@ -220,7 +279,8 @@ async function fetchAndDisplayLogs(
 async function tailLogs(
   client: AxiosInstance,
   params: LogsQueryParams,
-  asJson: boolean
+  asJson: boolean,
+  nameFilter: string | null = null
 ): Promise<void> {
   console.log('🔄 Watching for new logs (Ctrl+C to stop)...\n');
 
@@ -241,7 +301,7 @@ async function tailLogs(
       };
 
       const response = await getLogs(client, pollParams);
-      const logs = response.items;
+      const logs = filterByName(response.items, nameFilter);
 
       // Filter out already seen logs and sort by time
       const newLogs = logs
@@ -304,6 +364,7 @@ Filter Options:
   --flow <idn>          Filter by flow IDN
   --skill <idn>         Filter by skill IDN
   --message <text>      Search in log messages
+  --name <ActionName>   Filter by action name in data.name, e.g. Gen, GetMemory (client-side)
   --event-id <uuid>     Filter by external event ID
   --runtime-id <uuid>   Filter by runtime context ID
   --actor-id <uuid>     Filter by user actor ID
@@ -325,5 +386,12 @@ Examples:
   newo logs --type call --skill CreateActor    # Skill calls for CreateActor
   newo logs --flow CACreatorFlow --follow      # Tail logs for specific flow
   newo logs --json --per 100                   # Get 100 logs as JSON
+  newo logs --type call --name Gen --json      # Only Gen action calls
+
+Notes:
+  The model used for a turn is in data.source.model of the --json output —
+  do NOT infer it from actor/agent names.
+  external_event_id (newo sandbox --json) correlates a chat turn with its
+  logs: newo logs --event-id <id>
 `);
 }

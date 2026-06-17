@@ -21,6 +21,8 @@ import { handleDeleteAgentCommand } from './cli/commands/delete-agent.js';
 import { handleCreateFlowCommand } from './cli/commands/create-flow.js';
 import { handleDeleteFlowCommand } from './cli/commands/delete-flow.js';
 import { handleCreateSkillCommand } from './cli/commands/create-skill.js';
+import { handleGetSkillCommand } from './cli/commands/get-skill.js';
+import { handleUpdateSkillCommand } from './cli/commands/update-skill.js';
 import { handleDeleteSkillCommand } from './cli/commands/delete-skill.js';
 import { handleCreateProjectCommand } from './cli/commands/create-project.js';
 import { handleCreateCustomerCommand } from './cli/commands/create-customer.js';
@@ -183,6 +185,14 @@ async function main(): Promise<void> {
 
       case 'create-skill':
         await handleCreateSkillCommand(customerConfig, args, verbose);
+        break;
+
+      case 'get-skill':
+        await handleGetSkillCommand(customerConfig, args, verbose);
+        break;
+
+      case 'update-skill':
+        await handleUpdateSkillCommand(customerConfig, args, verbose);
         break;
 
       case 'delete-skill':

@@ -17,6 +17,11 @@ Core Commands:
   newo conversations [--customer <idn>] [--all] # download user conversations -> conversations.yaml
   newo sandbox "<message>" [--customer <idn>]   # test agent in sandbox - single message mode
   newo sandbox --actor <id> "message"           # continue existing sandbox conversation
+  newo sandbox --list-connectors                # list running sandbox connectors (NEW v3.7.5)
+  newo sandbox "<msg>" --connector <idn>        # chat through a specific connector (NEW v3.7.5)
+  newo sandbox --file <path> | --stdin          # send long messages from file/stdin (NEW v3.7.5)
+  newo get-skill <idn> --project <p> --agent <a> --flow <f> [--json]   # inspect live skill on platform (NEW v3.7.5)
+  newo update-skill <idn> --project <p> --agent <a> --flow <f> [--model <prov>/<model>] [--script <file>] [--publish]  # point-edit skill (NEW v3.7.5)
   newo pull-attributes [--customer <idn>]       # download customer + project attributes
   newo list-customers                           # list available customers
   newo meta [--customer <idn>]                  # get project metadata (debug)
@@ -77,6 +82,8 @@ Analytics & Monitoring (NEW):
   newo logs --type <types>                                   # filter by type: system, operation, call (comma-separated)
   newo logs --flow <idn> --skill <idn>                       # filter by flow and/or skill
   newo logs --message <text>                                 # search in log messages
+  newo logs --name <ActionName>                              # filter by action name in data.name, e.g. Gen, GetMemory (NEW v3.7.5)
+  newo logs --event-id <uuid>                                # filter by external event ID (correlate with sandbox --json)
   newo logs --follow, -f                                     # tail mode - continuously poll for new logs
   newo logs --json                                           # output logs as JSON array
   newo logs --raw                                            # output each log as single JSON line (for piping)
@@ -95,6 +102,12 @@ Flags:
   --verbose, -v                # enable detailed logging and progress information
   --quiet, -q                  # minimal output for automation (sandbox only)
   --actor <id>                 # continue existing sandbox chat with actor/chat ID
+  --connector <idn>            # sandbox: select connector by connector_idn (default: first running)
+  --integration <idn>          # sandbox: integration to search connectors in (default: sandbox)
+  --file <path>                # sandbox: read message text from file
+  --stdin                      # sandbox: read message text from stdin
+  --timeout <seconds>          # sandbox: max wait for agent response (default: 60)
+  --json                       # sandbox: machine-readable output incl. external_event_id (user+agent turns)
   --confirm                    # confirm destructive operations without prompting
   --no-publish                 # skip automatic flow publishing during push operations
   --output, -o <file>          # output file path (for export command)
@@ -201,6 +214,22 @@ Usage Examples:
   newo sandbox --actor abc123... "I want 2 large pizzas"         # Continue conversation
   newo sandbox "Test query" --verbose                            # With debug info
   newo sandbox "Test query" --quiet                              # For automation/scripts
+
+  # Sandbox connector selection + automation (NEW v3.7.5):
+  newo sandbox --list-connectors                                 # Show running sandbox connectors
+  newo sandbox "ping" --connector vibe_agent                     # Chat through specific connector
+  newo sandbox --file ./chunk1.txt --actor abc123... --json      # Long message from file, JSON output
+  cat msg.txt | newo sandbox --stdin --timeout 420 --json        # From stdin with 7-minute timeout
+  # --json output: {actor_id, persona_id, external_event_id, user_external_event_id,
+  #                 agent_external_event_id, response, elapsed_ms, timed_out, ...}
+  # Correlate a turn with its logs: newo logs --event-id <external_event_id> --json
+
+  # Live skill inspection / point edits (NEW v3.7.5):
+  newo get-skill structured_generation --project vibe --agent VibeAgent --flow VibeFlow            # View live state
+  newo get-skill structured_generation --project vibe --agent VibeAgent --flow VibeFlow --json     # As JSON
+  newo update-skill structured_generation --project vibe --agent VibeAgent --flow VibeFlow \\
+      --model openai/gpt54 --publish                             # Switch model and publish
+  newo update-skill my_skill --project p --agent a --flow f --script ./patched.nsl --publish       # Replace script
 
   # Analytics logs (NEW v3.5.0):
   newo logs                                                      # Last 1 hour of logs
