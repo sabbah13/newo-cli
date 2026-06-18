@@ -107,7 +107,13 @@ newo push-akb                # Uploads AKB articles
 ```bash
 newo conversations           # Downloads conversation history
 # View in newo_customers/{idn}/conversations.yaml
+
+# v3.7.6+: pull a single session's dialog transcript by platform session_id
+newo conversations --session-id <uuid>          # writes conversation-<uuid>.yaml + prints the dialog
+newo conversations --session-id <uuid> --json   # chronicle to stdout for piping
 ```
+
+**Session transcript (v3.7.6+):** `--session-id` resolves the session via `user-personas?session_id=…` then pulls the actor's `chat/history` (the direct `acts?session_id=…` endpoint needs a logged-in user token, not an api-key one). The session must belong to the configured account — conversations are scoped per customer, so use the API key of the account that owns the session.
 
 ---
 

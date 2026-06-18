@@ -15,6 +15,7 @@ Core Commands:
   newo diff [--customer <idn>]                  # show differences between local and remote
   newo logs [--customer <idn>]                  # fetch and display analytics logs from platform
   newo conversations [--customer <idn>] [--all] # download user conversations -> conversations.yaml
+  newo conversations --session-id <uuid> [--json] # pull one session's dialog transcript (v3.7.6)
   newo sandbox "<message>" [--customer <idn>]   # test agent in sandbox - single message mode
   newo sandbox --actor <id> "message"           # continue existing sandbox conversation
   newo sandbox --list-connectors                # list running sandbox connectors (NEW v3.7.5)
@@ -65,6 +66,7 @@ Advanced Components (NSL Focus):
 
 Enterprise Features:
   newo conversations [--customer <idn>] [--all]             # download conversation history
+  newo conversations --session-id <uuid> [--json]           # pull one session's dialog transcript (NEW v3.7.6)
   newo pull-attributes [--customer <idn>]                   # sync customer attributes
   newo import-akb <file> <persona_id>                       # import knowledge base articles
   newo pull-integrations [--customer <idn>]                 # download integrations and connectors → ./newo_customers/<idn>/integrations/

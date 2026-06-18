@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.7.6] - 2026-06-18
+
+### Added
+
+- **`newo conversations --session-id <uuid>`** — fetch the act chronicle (dialog transcript) for a single conversation session by its platform `session_id` (e.g. the Session Id from an assessor report or the Conversations UI). Default output writes `newo_customers/{idn}/conversation-{session_id}.yaml` and prints the dialog to the console; `--json` emits the chronicle (`{session_id, personas, actor_ids, total_acts, acts[]}`) to stdout for piping. New `pullConversationBySession()` in `src/sync/conversations.ts`.
+- **`session_id` support on the conversations BFF helpers** — `listUserPersonas()` now accepts an optional `sessionId` forwarded as the `session_id` query param to `GET /api/v1/bff/conversations/user-personas`. `getConversationActs()` / `ConversationActsParams` gained `session_id` and made `user_actor_id` optional.
+
+Resolution works with an api-key token via two steps — `user-personas?session_id=…` resolves the persona/actor, then `chat/history?user_actor_id=…` returns the transcript (the direct `acts?session_id=…` endpoint needs a logged-in user token). The transcript is scoped to the resolved actor(s); service actors (`program_timer`, `magic_browser`) are excluded.
+
 ## [3.7.5] - 2026-06-17
 
 ### Added
@@ -1092,7 +1101,8 @@ Another Item: $Price [Modifiers: modifier3]
 - GitHub Actions CI/CD integration
 - Robust authentication with token refresh
 
-[Unreleased]: https://github.com/sabbah13/newo-cli/compare/v3.7.5...HEAD
+[Unreleased]: https://github.com/sabbah13/newo-cli/compare/v3.7.6...HEAD
+[3.7.6]: https://github.com/sabbah13/newo-cli/compare/v3.7.5...v3.7.6
 [3.7.5]: https://github.com/sabbah13/newo-cli/compare/v3.7.4...v3.7.5
 [3.7.4]: https://github.com/sabbah13/newo-cli/compare/v3.7.3...v3.7.4
 [3.7.3]: https://github.com/sabbah13/newo-cli/compare/v3.7.2...v3.7.3

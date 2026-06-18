@@ -308,3 +308,141 @@ export async function pullConversations(
   console.log(`   Aggregate: ${aggregateYamlPath(customer.idn)}`);
   console.log(`   Per-persona: newo_customers/${customer.idn}/conversations/<id>.json`);
 }
+
+// ── Single-session conversation chronicle ──
+
+/** One turn of a session chronicle (a row in the Conversations UI). */
+export interface SessionChronicleAct {
+  readonly datetime: string;
+  readonly speaker: 'agent' | 'user';
+  readonly type: string;
+  readonly message: string;
+  readonly flow_idn?: string;
+  readonly skill_idn?: string;
+  readonly external_event_id?: string;
+  readonly runtime_context_id?: string;
+}
+
+export interface SessionChronicle {
+  readonly session_id: string;
+  readonly personas: ReadonlyArray<{ readonly id: string; readonly name: string }>;
+  readonly actor_ids: readonly string[];
+  readonly total_acts: number;
+  readonly acts: readonly SessionChronicleAct[];
+  readonly generated_at: string;
+}
+
+// Integrations whose actors are bookkeeping, not part of the dialog transcript.
+const SERVICE_INTEGRATIONS = new Set(['program_timer', 'magic_browser']);
+
+type NormalizedAct = {
+  datetime: string;
+  is_agent: boolean;
+  type: string;
+  message: string;
+  flow_idn?: string;
+  skill_idn?: string;
+  external_event_id?: string;
+  runtime_context_id?: string;
+};
+
+function normalizeChatItem(item: any): NormalizedAct {
+  const isAgent = item.is_agent === true;
+  const out: NormalizedAct = {
+    datetime: item.datetime || item.created_at || item.timestamp || '1970-01-01T00:00:00.000Z',
+    is_agent: isAgent,
+    type: item.type || (isAgent ? 'agent_message' : 'user_message'),
+    message: item.payload?.text || item.message || item.content || item.text || ''
+  };
+  if (item.flow_idn && item.flow_idn !== 'unknown') out.flow_idn = item.flow_idn;
+  if (item.skill_idn && item.skill_idn !== 'unknown') out.skill_idn = item.skill_idn;
+  if (item.external_event_id) out.external_event_id = item.external_event_id;
+  if (item.runtime_context_id) out.runtime_context_id = item.runtime_context_id;
+  return out;
+}
+
+function buildSessionActs(raw: NormalizedAct[]): SessionChronicleAct[] {
+  const sorted = [...raw].sort((a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime());
+  return sorted.map(act => {
+    const out: SessionChronicleAct = {
+      datetime: act.datetime,
+      speaker: act.is_agent ? 'agent' : 'user',
+      type: act.type,
+      message: act.message
+    };
+    if (act.flow_idn) (out as any).flow_idn = act.flow_idn;
+    if (act.skill_idn) (out as any).skill_idn = act.skill_idn;
+    if (act.external_event_id) (out as any).external_event_id = act.external_event_id;
+    if (act.runtime_context_id) (out as any).runtime_context_id = act.runtime_context_id;
+    return out;
+  });
+}
+
+/**
+ * Fetch the act chronicle (dialog) for a single conversation session.
+ *
+ * Two-step resolution that works with an api-key-exchanged token:
+ *   1. GET user-personas?session_id=...  — server-side filters to the persona(s)
+ *      tied to this session (this query DOES honor session_id for api-key tokens).
+ *   2. For each non-service actor, GET chat/history?user_actor_id=... (paginated)
+ *      for the transcript.
+ *
+ * Why not the direct acts?session_id endpoint the Builder UI uses: it returns
+ * 403 "account_id field missing" for api-key-exchanged tokens (it needs a
+ * logged-in user token). chat/history also does not carry per-act session_id,
+ * so the session→transcript link is made through persona/actor, not by
+ * filtering acts on session_id. As a result the transcript is scoped to the
+ * resolved actor(s); for per-session personas (e.g. sandbox/test runs) that is
+ * exactly one session, but a long-lived actor may span several sessions.
+ */
+export async function pullConversationBySession(
+  client: AxiosInstance,
+  sessionId: string,
+  verbose: boolean = false
+): Promise<SessionChronicle> {
+  // 1. Resolve personas tied to this session (server-side filtered).
+  const personas: UserPersona[] = [];
+  let page = 1;
+  const perPage = 50;
+  while (true) {
+    const response = await listUserPersonas(client, page, perPage, sessionId);
+    personas.push(...response.items);
+    if (verbose) console.log(`📋 personas page ${page}: ${response.items.length}`);
+    if (response.items.length < perPage) break;
+    page++;
+  }
+
+  // 2. For each persona's non-service actors, pull chat history.
+  const allActs: NormalizedAct[] = [];
+  const actorIds: string[] = [];
+  for (const persona of personas) {
+    const dialogActors = persona.actors.filter(a => !SERVICE_INTEGRATIONS.has(a.integration_idn));
+    for (const actor of dialogActors) {
+      actorIds.push(actor.id);
+      let actPage = 1;
+      const actsPerPage = 200;
+      const maxPages = 50;
+      while (actPage <= maxPages) {
+        const response = await getChatHistory(client, {
+          user_actor_id: actor.id,
+          page: actPage,
+          per: actsPerPage
+        });
+        const items = response.items || [];
+        for (const item of items) allActs.push(normalizeChatItem(item));
+        if (verbose) console.log(`💬 chat persona=${persona.name} actor=${actor.integration_idn} page ${actPage}: ${items.length}`);
+        if (items.length < actsPerPage) break;
+        actPage++;
+      }
+    }
+  }
+
+  return {
+    session_id: sessionId,
+    personas: personas.map(p => ({ id: p.id, name: p.name })),
+    actor_ids: actorIds,
+    total_acts: allActs.length,
+    acts: buildSessionActs(allActs),
+    generated_at: new Date().toISOString()
+  };
+}

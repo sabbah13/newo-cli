@@ -286,9 +286,13 @@ export async function deleteProjectAttribute(
 
 // Conversation API Functions
 
-export async function listUserPersonas(client: AxiosInstance, page: number = 1, per: number = 50): Promise<UserPersonaResponse> {
+export async function listUserPersonas(client: AxiosInstance, page: number = 1, per: number = 50, sessionId?: string): Promise<UserPersonaResponse> {
+  const params: Record<string, any> = { page, per };
+  // Server-side filter: when present, only personas tied to this conversation
+  // session are returned (mirrors the Conversations UI session view).
+  if (sessionId) params.session_id = sessionId;
   const response = await client.get<UserPersonaResponse>('/api/v1/bff/conversations/user-personas', {
-    params: { page, per }
+    params
   });
   return response.data;
 }
@@ -482,10 +486,20 @@ export async function sendChatMessage(client: AxiosInstance, actorId: string, me
 export async function getConversationActs(client: AxiosInstance, params: ConversationActsParams): Promise<ConversationActsResponse> {
   const queryParams: Record<string, any> = {
     user_persona_id: params.user_persona_id,
-    user_actor_id: params.user_actor_id,
     per: params.per || 100,
     page: params.page || 1
   };
+
+  // user_actor_id is optional: the session view (session_id + user_persona_id)
+  // does not require it, matching the Conversations UI request.
+  if (params.user_actor_id) {
+    queryParams.user_actor_id = params.user_actor_id;
+  }
+
+  // Server-side filter for a single conversation session.
+  if (params.session_id) {
+    queryParams.session_id = params.session_id;
+  }
 
   // Only add agent_persona_id if provided
   if (params.agent_persona_id) {

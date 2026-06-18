@@ -711,7 +711,8 @@ export interface SendChatMessageRequest {
 
 export interface ConversationActsParams {
   user_persona_id: string;
-  user_actor_id: string;
+  user_actor_id?: string; // Optional - omitted for the session_id view
+  session_id?: string; // Server-side filter for a single conversation session
   agent_persona_id?: string; // Optional - can be omitted for first poll
   per?: number;
   page?: number;

@@ -8,6 +8,7 @@
 **NEWO CLI** - Professional command-line tool for NEWO AI Agent development. Features **modular architecture**, **IDN-based file management**, and **comprehensive multi-customer support**.
 
 Sync NEWO "Project → Agent → Flow → Skills" structure to local files with:
+- 🆕 **Conversation by session** (v3.7.6) - `newo conversations --session-id <uuid>` pulls the act chronicle (dialog transcript) for one session by its platform `session_id`
 - 🆕 **V2 skill creation on push** (v3.7.4) - adding a skill inline to a `newo_v2` `{FlowIdn}.yaml` and pushing now creates it on the platform (previously only updates of existing skills worked)
 - 🆕 **Sandbox connector selection + automation** (v3.7.5) - `newo sandbox --connector <idn>`, `--list-connectors`, `--file`/`--stdin` for long messages, `--timeout`, and `--json` with `external_event_id` for log correlation
 - 🆕 **Point skill edits** (v3.7.5) - `newo get-skill` / `newo update-skill` inspect and modify a single skill (model, script) on the platform without a pulled workspace, with optional `--publish`
@@ -154,7 +155,7 @@ NEWO_REFRESH_URL=custom_refresh_endpoint   # Custom refresh endpoint
 | `newo export [--output <file>]` | Download V2 bulk ZIP from platform | • Complete organization export<br>• Projects, agents, flows, skills, attributes, AKB<br>• Compatible with platform UI import |
 | `newo sandbox` | Test agents in sandbox chat mode | • Single-command mode for automation<br>• Multi-turn conversation support<br>• Debug info for agent development<br>• v3.7.5: `--connector`, `--list-connectors`, `--file`/`--stdin`, `--timeout`, `--json` |
 | `newo get-skill` / `newo update-skill` | Inspect / point-edit one skill on the platform (NEW v3.7.5) | • No pulled workspace required<br>• `--model <provider>/<model>`, `--script <file>`<br>• Optional `--publish` |
-| `newo conversations` | Pull conversation history | • User personas and chat history<br>• YAML format output<br>• Pagination support |
+| `newo conversations` | Pull conversation history | • User personas and chat history<br>• YAML format output<br>• Pagination support<br>• v3.7.6: `--session-id <uuid>` pulls one session's transcript |
 | `newo list-customers` | List configured customers | • Shows default customer<br>• Multi-customer discovery |
 | `newo import-akb` | Import knowledge base articles | • Structured text parsing<br>• Bulk article import<br>• Validation and error reporting |
 | `newo meta` | Get project metadata (debug) | • Project structure analysis<br>• Metadata validation |
@@ -223,6 +224,20 @@ newo logs --type call --raw | jq '.data.name'  # JSONL stream, one log per line,
 `--name` filters by `data.name` client-side (the API has no such query param). Note: the **model used for a turn** is in `data.source.model` of the `--json` output — do not infer it from actor/agent names.
 
 `--raw` emits **JSONL** — one JSON object per log line (oldest-first), with no banners or "no logs found" text — so stdout is a clean stream for `jq`/piping. This differs from `--json`, which prints a single pretty-printed JSON array.
+
+### Conversation by Session (NEW v3.7.6)
+
+Pull the act chronicle (dialog transcript) for a **single conversation session** by its platform `session_id` — the Session Id you get from an assessor report or the Conversations UI:
+
+```bash
+newo conversations --session-id 2976cae0-e335-4b42-b067-96e31284a1ce          # save conversation-<id>.yaml + print dialog
+newo conversations --session-id <uuid> --json > session.json                  # machine-readable chronicle to stdout
+newo conversations --session-id <uuid> --customer <idn>                       # pick account in multi-customer setups
+```
+
+The `--json` chronicle is `{ session_id, personas[], actor_ids[], total_acts, acts[] }`, where each act is `{ datetime, speaker: "agent"|"user", type, message, flow_idn?, skill_idn?, external_event_id?, runtime_context_id? }` sorted oldest-first.
+
+**How it resolves** (works with an api-key token): `user-personas?session_id=<id>` finds the persona/actor, then `chat/history?user_actor_id=<id>` returns the transcript — the direct `acts?session_id=<id>` endpoint needs a logged-in user token. The transcript is scoped to the resolved actor(s); service actors (`program_timer`, `magic_browser`) are excluded. The session must belong to the **configured account** (conversations are scoped per customer).
 
 ### Flow Metadata Sync (NEW v3.7.2)
 
