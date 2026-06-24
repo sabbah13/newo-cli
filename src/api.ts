@@ -581,19 +581,33 @@ export async function getAkbTopics(
 }
 
 // Project update
+// NOTE: the single-project resource is `by-id/{id}` and mutations go through PATCH.
+// The legacy `PUT /api/v1/designer/projects/{id}` route is dead (404). PATCH defaults
+// any omitted field (e.g. an empty body flips is_auto_update_enabled to false), so
+// callers must send the FULL object they want to preserve — see handleUpdateProjectCommand.
 export async function updateProject(
   client: AxiosInstance,
   projectId: string,
   updateData: Partial<{
+    idn: string;
     title: string;
-    description: string;
+    description: string | null;
+    version: string | null;
     is_auto_update_enabled: boolean;
     registry_idn: string;
     registry_item_idn: string | null;
     registry_item_version: string | null;
   }>
 ): Promise<void> {
-  await client.put(`/api/v1/designer/projects/${projectId}`, updateData);
+  await client.patch(`/api/v1/designer/projects/by-id/${projectId}`, updateData);
+}
+
+// Force-update a project to its registry source (the Builder's "Force Update Project"
+// action). Re-syncs the project's content from its registry_idn/registry_item_idn.
+// Captured from the Builder: POST /api/v1/designer/projects/by-id/{id}/force-update
+// with an empty body; responds 200 with `null`.
+export async function forceUpdateProject(client: AxiosInstance, projectId: string): Promise<void> {
+  await client.post(`/api/v1/designer/projects/by-id/${projectId}/force-update`);
 }
 
 // Agent update

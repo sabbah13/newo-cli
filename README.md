@@ -8,6 +8,7 @@
 **NEWO CLI** - Professional command-line tool for NEWO AI Agent development. Features **modular architecture**, **IDN-based file management**, and **comprehensive multi-customer support**.
 
 Sync NEWO "Project → Agent → Flow → Skills" structure to local files with:
+- 🆕 **Project version & force-update** (v3.7.7) - `newo update-project <idn> --version <semver>` sets the displayed Builder project version after a deploy; `--force-update` re-syncs the project from its registry (the Builder's "Force Update Project" action)
 - 🆕 **Conversation by session** (v3.7.6) - `newo conversations --session-id <uuid>` pulls the act chronicle (dialog transcript) for one session by its platform `session_id`
 - 🆕 **V2 skill creation on push** (v3.7.4) - adding a skill inline to a `newo_v2` `{FlowIdn}.yaml` and pushing now creates it on the platform (previously only updates of existing skills worked)
 - 🆕 **Sandbox connector selection + automation** (v3.7.5) - `newo sandbox --connector <idn>`, `--list-connectors`, `--file`/`--stdin` for long messages, `--timeout`, and `--json` with `external_event_id` for log correlation
@@ -239,6 +240,26 @@ The `--json` chronicle is `{ session_id, personas[], actor_ids[], total_acts, ac
 
 **How it resolves** (works with an api-key token): `user-personas?session_id=<id>` finds the persona/actor, then `chat/history?user_actor_id=<id>` returns the transcript — the direct `acts?session_id=<id>` endpoint needs a logged-in user token. The transcript is scoped to the resolved actor(s); service actors (`program_timer`, `magic_browser`) are excluded. The session must belong to the **configured account** (conversations are scoped per customer).
 
+### Project Version & Force-Update (NEW v3.7.7)
+
+After deploying a project template into a customer account, the **displayed project version** in the Builder (`builder.newo.ai/projects`) can stay stale. `newo update-project` sets it so the label matches what was deployed:
+
+```bash
+newo update-project naf --version 4.5.2                         # set the displayed version
+newo update-project naf --version 4.5.2 --json                  # machine-readable effective state
+newo update-project naf --force-update                          # re-sync project content from its registry
+newo update-project naf --force-update --version 4.5.2          # force-update, then set the label
+newo update-project naf --version 4.5.2 --auto-update false     # also change other project fields
+```
+
+**What sets the version:** the displayed value is the project's `version` field — **not** `registry_item_version`, and **not** content push (`newo push` never writes it). Setting it is a pure metadata/label update: it does **not** pull or re-sync skills/flows/attributes, so it composes cleanly right after a content push.
+
+**How it works:** the platform's single-project resource is `by-id/{id}`, and its PATCH is **not** a true partial (an empty body flips `is_auto_update_enabled` to `false`). So the command **GETs** the current meta, overlays only the requested fields, and **PATCHes the full object back** — mirroring the Builder's "Manage → update to <version>" call.
+
+**`--force-update`** fires the Builder's "Force Update Project" action (`POST /api/v1/designer/projects/by-id/{id}/force-update`), re-syncing the project's content from its registry. It can run standalone or alongside `--version`; when combined, force-update runs **first** so an explicit `--version` still wins the displayed label. At least one of `--version` (/other fields) or `--force-update` must be passed.
+
+`--json` emits `{ idn, version, registry_item_version, is_auto_update_enabled, force_updated }`. Non-published versions trigger a non-fatal warning (you may be labeling a working-copy version).
+
 ### Flow Metadata Sync (NEW v3.7.2)
 
 `newo push` now reconciles **flow-level metadata** — title, `events:`, and `state_fields:` — from local YAML to the platform. Before v3.7.2 push only uploaded skill scripts, so edits to a flow's `metadata.yaml` (V1) or `{FlowIdn}.yaml` (V2) silently never reached the platform; events added via `newo create-event` could appear to disappear after a pull → push cycle. Closes [#3](https://github.com/sabbah13/newo-cli/issues/3).
@@ -391,6 +412,7 @@ newo verify --source SOURCE_IDN --dest DEST_IDN
 |---------|-------------|----------|
 | **Project Management** |||
 | `newo create-project <idn>` | Create new project on platform | • Automatic project initialization<br>• Metadata configuration<br>• Version control support |
+| `newo update-project <idn> --version <semver>` | Set displayed project version / force-update (NEW v3.7.7) | • GET→merge→PATCH `by-id/{id}` (full object)<br>• `--force-update` re-syncs from registry<br>• Pure metadata — no content re-sync<br>• `--json` effective state |
 | **Agent Management** |||
 | `newo create-agent <idn> --project <pid>` | Create agent locally | • Local folder structure<br>• Metadata generation<br>• Persona assignment support |
 | `newo delete-agent <aid> --project <pid> --confirm` | Delete agent locally | • Safety confirmation required<br>• Local-only deletion<br>• Push to sync platform |

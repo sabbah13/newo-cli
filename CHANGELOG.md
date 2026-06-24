@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`newo update-project <project-idn> --version <semver>`** — set a customer project's displayed Builder version (`builder.newo.ai/projects`) after a deploy, so the account label matches the deployed template version instead of staying stale. Optional `--auto-update <true|false>`, `--registry-item-version <semver|null>`, `--title`, `--description`, and `--json`. This is a pure metadata/label update — it does NOT pull or re-sync skills/flows/attributes, so it composes cleanly after a content `newo push`. The displayed value is governed by the project's `version` field (NOT `registry_item_version`, and NOT content push, which never writes it). New `src/cli/commands/update-project.ts` with pure, testable helpers `buildProjectUpdateBody` / `applyProjectUpdate`; 8 unit tests in `test/update-project.test.js` (fake axios).
+- **`newo update-project --force-update`** — fires the Builder's "Force Update Project" action (`POST /api/v1/designer/projects/by-id/{id}/force-update`), re-syncing the project's content from its registry. Can run standalone or alongside `--version` (force-update runs first, so an explicit `--version` still wins the displayed label). New `forceUpdateProject()` in `src/api.ts`; `--version` is now optional as long as `--force-update` (or another field) is passed. Captured from the Builder: empty POST body, 200 → `null`.
+
+### Fixed
+
+- **`updateProject` in `src/api.ts` pointed at a dead route.** The single-project resource moved to `by-id/{id}`: the legacy `PUT /api/v1/designer/projects/{id}` now 404s. Changed to **`PATCH /api/v1/designer/projects/by-id/{id}`** and added `version` (plus `idn`) to the allowed update fields. That PATCH is **not** a true partial — omitting a field resets it to a default (an empty body flips `is_auto_update_enabled` to `false`), so `update-project` always GETs the current meta, overlays only the requested changes, and PATCHes the full object back (mirrors the Builder's "Manage → update to <version>" call).
+
 ## [3.7.6] - 2026-06-18
 
 ### Added

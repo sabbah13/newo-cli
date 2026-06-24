@@ -46,6 +46,7 @@ Project Management:
   newo list-registries [--customer <idn>]                                   # list available project registries (production, staging, etc.)
   newo list-registry-items <registry-idn> [--all]                           # list available project templates in a registry
   newo add-project <idn> --item <template-idn> [--registry <registry>] [--version <v>] [--auto-update]  # install project from registry template
+  newo update-project <idn> [--version <semver>] [--force-update] [--auto-update <true|false>] [--registry-item-version <v|null>] [--json]  # set displayed project version / force-update from registry
 
 Entity Management (Full Lifecycle Support):
   newo create-agent <idn> --project <project-idn> [--title <title>] [--description <desc>]    # create agent → push to platform ✅

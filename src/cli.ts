@@ -45,6 +45,7 @@ import { handleCreateWebhooksCommand } from './cli/commands/create-webhooks.js';
 import { handleListRegistriesCommand } from './cli/commands/list-registries.js';
 import { handleListRegistryItemsCommand } from './cli/commands/list-registry-items.js';
 import { handleAddProjectCommand } from './cli/commands/add-project.js';
+import { handleUpdateProjectCommand } from './cli/commands/update-project.js';
 import { handleWatchCommand } from './cli/commands/watch.js';
 import { handleDiffCommand } from './cli/commands/diff.js';
 import { handleLogsCommand } from './cli/commands/logs.js';
@@ -278,6 +279,10 @@ async function main(): Promise<void> {
 
       case 'add-project':
         await handleAddProjectCommand(customerConfig, args, verbose);
+        break;
+
+      case 'update-project':
+        await handleUpdateProjectCommand(customerConfig, args, verbose);
         break;
 
       case 'watch':

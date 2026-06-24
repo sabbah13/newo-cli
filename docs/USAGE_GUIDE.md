@@ -210,6 +210,17 @@ newo update-skill <skill-idn> --project <p> --agent <a> --flow <f> --script ./pa
 
 Changes are draft-only unless `--publish` is passed; if a pulled local workspace exists it warns that it now diverges (run `newo pull` to resync).
 
+**Set the displayed project version after a deploy (v3.7.7+):** After pushing a project template into a customer account, the displayed version in the Builder (`builder.newo.ai/projects`) can stay stale. Set it so the label matches the deployed template — this is a pure metadata update (no content re-sync), so it composes after a content `newo push`:
+
+```bash
+newo update-project naf --version 4.5.2 --customer <idn>     # set the displayed version
+newo update-project naf --version 4.5.2 --json               # machine-readable effective state
+newo update-project naf --force-update                       # re-sync project content from its registry
+newo update-project naf --force-update --version 4.5.2       # force-update, then set the label
+```
+
+The displayed value is the project's `version` field — not `registry_item_version`, and not content push (which never writes it). The command GETs the current project meta, overlays only the fields you pass, and PATCHes the full object back (the platform PATCH is not a true partial — an empty body would reset `is_auto_update_enabled`). `--force-update` fires the Builder's "Force Update Project" action and runs before the version PATCH, so an explicit `--version` still wins the label.
+
 ---
 
 ### Scenario 6: Multi-Customer Workflow
@@ -404,6 +415,7 @@ For new users or migrating from old CLI:
 | `newo list-registries` | List available registries |
 | `newo list-registry-items` | List templates in registry |
 | `newo add-project` | Install project from registry |
+| `newo update-project` | Set displayed project version / force-update from registry (v3.7.7+) |
 
 ---
 
