@@ -15,7 +15,9 @@ Core Commands:
   newo diff [--customer <idn>]                  # show differences between local and remote
   newo logs [--customer <idn>]                  # fetch and display analytics logs from platform
   newo conversations [--customer <idn>] [--all] # download user conversations -> conversations.yaml
-  newo conversations --session-id <uuid> [--json] # pull one session's dialog transcript (v3.7.6)
+  newo session <uuid> [--json]                  # ⭐ RECOMMENDED: one session's dialog (transcript + thoughts + system logs), fast
+  newo session <uuid> --full [--max-logs <n>] [--pad-end <min>] # + low-level execution trace (skill/NSL calls); heavier
+  newo conversations --session-id <uuid> [--full] # long form of the above (--session-id <uuid> == session <uuid>)
   newo sandbox "<message>" [--customer <idn>]   # test agent in sandbox - single message mode
   newo sandbox --actor <id> "message"           # continue existing sandbox conversation
   newo sandbox --list-connectors                # list running sandbox connectors (NEW v3.7.5)

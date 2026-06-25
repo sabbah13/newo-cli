@@ -486,20 +486,10 @@ export async function sendChatMessage(client: AxiosInstance, actorId: string, me
 export async function getConversationActs(client: AxiosInstance, params: ConversationActsParams): Promise<ConversationActsResponse> {
   const queryParams: Record<string, any> = {
     user_persona_id: params.user_persona_id,
+    user_actor_id: params.user_actor_id,
     per: params.per || 100,
     page: params.page || 1
   };
-
-  // user_actor_id is optional: the session view (session_id + user_persona_id)
-  // does not require it, matching the Conversations UI request.
-  if (params.user_actor_id) {
-    queryParams.user_actor_id = params.user_actor_id;
-  }
-
-  // Server-side filter for a single conversation session.
-  if (params.session_id) {
-    queryParams.session_id = params.session_id;
-  }
 
   // Only add agent_persona_id if provided
   if (params.agent_persona_id) {

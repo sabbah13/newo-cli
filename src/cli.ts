@@ -11,6 +11,7 @@ import { handlePullCommand } from './cli/commands/pull.js';
 import { handlePushCommand } from './cli/commands/push.js';
 import { handleStatusCommand } from './cli/commands/status.js';
 import { handleConversationsCommand } from './cli/commands/conversations.js';
+import { handleSessionCommand } from './cli/commands/session.js';
 import { handleMetaCommand } from './cli/commands/meta.js';
 import { handlePullAttributesCommand } from './cli/commands/pull-attributes.js';
 import { handleImportAkbCommand } from './cli/commands/import-akb.js';
@@ -150,6 +151,10 @@ async function main(): Promise<void> {
 
       case 'conversations':
         await handleConversationsCommand(customerConfig, args, verbose);
+        break;
+
+      case 'session':
+        await handleSessionCommand(customerConfig, args, verbose);
         break;
 
       case 'sandbox':

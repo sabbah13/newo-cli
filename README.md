@@ -9,7 +9,7 @@
 
 Sync NEWO "Project → Agent → Flow → Skills" structure to local files with:
 - 🆕 **Project version & force-update** (v3.7.7) - `newo update-project <idn> --version <semver>` sets the displayed Builder project version after a deploy; `--force-update` re-syncs the project from its registry (the Builder's "Force Update Project" action)
-- 🆕 **Conversation by session** (v3.7.6) - `newo conversations --session-id <uuid>` pulls the act chronicle (dialog transcript) for one session by its platform `session_id`
+- 🆕 **Get one session** (v3.7.6) - `newo session <uuid>` pulls one session's dialog (transcript + agent `THOUGHTS` + system logs) by its platform `session_id`; add `--full` for the low-level skill-call execution trace
 - 🆕 **V2 skill creation on push** (v3.7.4) - adding a skill inline to a `newo_v2` `{FlowIdn}.yaml` and pushing now creates it on the platform (previously only updates of existing skills worked)
 - 🆕 **Sandbox connector selection + automation** (v3.7.5) - `newo sandbox --connector <idn>`, `--list-connectors`, `--file`/`--stdin` for long messages, `--timeout`, and `--json` with `external_event_id` for log correlation
 - 🆕 **Point skill edits** (v3.7.5) - `newo get-skill` / `newo update-skill` inspect and modify a single skill (model, script) on the platform without a pulled workspace, with optional `--publish`
@@ -157,6 +157,7 @@ NEWO_REFRESH_URL=custom_refresh_endpoint   # Custom refresh endpoint
 | `newo sandbox` | Test agents in sandbox chat mode | • Single-command mode for automation<br>• Multi-turn conversation support<br>• Debug info for agent development<br>• v3.7.5: `--connector`, `--list-connectors`, `--file`/`--stdin`, `--timeout`, `--json` |
 | `newo get-skill` / `newo update-skill` | Inspect / point-edit one skill on the platform (NEW v3.7.5) | • No pulled workspace required<br>• `--model <provider>/<model>`, `--script <file>`<br>• Optional `--publish` |
 | `newo conversations` | Pull conversation history | • User personas and chat history<br>• YAML format output<br>• Pagination support<br>• v3.7.6: `--session-id <uuid>` pulls one session's transcript |
+| `newo session <uuid>` | Inspect one session | • ⭐ Dialog view by default (transcript + `THOUGHTS` + system logs), fast<br>• `--full` adds the skill-call execution trace (`--max-logs`, `--pad-end`)<br>• `--json` for piping |
 | `newo list-customers` | List configured customers | • Shows default customer<br>• Multi-customer discovery |
 | `newo import-akb` | Import knowledge base articles | • Structured text parsing<br>• Bulk article import<br>• Validation and error reporting |
 | `newo meta` | Get project metadata (debug) | • Project structure analysis<br>• Metadata validation |
@@ -226,19 +227,33 @@ newo logs --type call --raw | jq '.data.name'  # JSONL stream, one log per line,
 
 `--raw` emits **JSONL** — one JSON object per log line (oldest-first), with no banners or "no logs found" text — so stdout is a clean stream for `jq`/piping. This differs from `--json`, which prints a single pretty-printed JSON array.
 
-### Conversation by Session (NEW v3.7.6)
+### Get One Session (NEW v3.7.6)
 
-Pull the act chronicle (dialog transcript) for a **single conversation session** by its platform `session_id` — the Session Id you get from an assessor report or the Conversations UI:
+Inspect a **single conversation session** by its platform `session_id` (the Session Id from an assessor report or the Conversations UI). The short command is `newo session <uuid>`.
+
+#### ⭐ Recommended: the dialog view (fast)
 
 ```bash
-newo conversations --session-id 2976cae0-e335-4b42-b067-96e31284a1ce          # save conversation-<id>.yaml + print dialog
-newo conversations --session-id <uuid> --json > session.json                  # machine-readable chronicle to stdout
-newo conversations --session-id <uuid> --customer <idn>                       # pick account in multi-customer setups
+newo session 30557d03-4542-41ba-9413-7d9e1a19e364        # save conversation-<id>.yaml + print the dialog
+newo session <uuid> --json > session.json               # machine-readable, to stdout
+newo session <uuid> --customer <idn>                     # pick account in multi-customer setups
 ```
 
-The `--json` chronicle is `{ session_id, personas[], actor_ids[], total_acts, acts[] }`, where each act is `{ datetime, speaker: "agent"|"user", type, message, flow_idn?, skill_idn?, external_event_id?, runtime_context_id? }` sorted oldest-first.
+This is the default and what you want **first**. It's fast (one `chat/history` fetch, no log scan). For **some** sessions the resolved actor's `chat/history` also includes the agent's **`THOUGHTS:`** reasoning and **system-log** lines (booking payloads, availability, SMS, the end-of-session summary) — but this varies by session/persona: other sessions return only the spoken turns. The richer narrative (formatted `thoughts_footnote`, `analyze_conversation`, the report) lives in the UI-only `acts` layer, which is not api-key-reachable (see below). The `--json` shape is `{ session_id, personas[], actor_ids[], total_acts, acts[] }`, each act `{ datetime, speaker: "agent"|"user", type, message, … }`, oldest-first.
 
-**How it resolves** (works with an api-key token): `user-personas?session_id=<id>` finds the persona/actor, then `chat/history?user_actor_id=<id>` returns the transcript — the direct `acts?session_id=<id>` endpoint needs a logged-in user token. The transcript is scoped to the resolved actor(s); service actors (`program_timer`, `magic_browser`) are excluded. The session must belong to the **configured account** (conversations are scoped per customer).
+#### `--full`: add the low-level execution trace (heavier)
+
+```bash
+newo session <uuid> --full                  # dialog + every skill/NSL call (flow_idn, skill_idn, model, timing)
+newo session <uuid> --full --max-logs 3000  # cap the trace fetch (default 20000); progress is printed as it runs
+newo session <uuid> --full --pad-end 20     # collect logs up to 20 min past the last turn (post-call report)
+```
+
+Use `--full` only when you need the under-the-hood trace. A busy session can have **tens of thousands** of skill calls, so the trace is fetched with progress output and bounded by `--max-logs` (default 20000; `partial: true` is set when the cap is hit). Output: `conversation-<id>-full.yaml` with a merged `timeline[]` of dialog messages (`kind: message`) and trace entries (`kind: call`/`operation`), linked by `external_event_id`.
+
+> Long form: `newo conversations --session-id <uuid> [--full]` is identical to `newo session <uuid> [--full]`.
+
+**How it resolves** (works with an api-key token): `user-personas?session_id=<id>` finds the persona/actor, then `chat/history?user_actor_id=<id>` returns the transcript and `analytics/logs` (scoped to the actor within the session window) the trace. The direct `acts?session_id=<id>` endpoint — the one the Builder UI uses for its full chronicle — needs a logged-in user token (its api-key token has an empty `account_id` and the endpoint hangs), so a few UI-only act layers (formatted `analyze_conversation`, recordings) are not included; see [docs/SESSION_CHRONICLE_PLATFORM_ASK.md](docs/SESSION_CHRONICLE_PLATFORM_ASK.md). Everything is scoped to the resolved actor(s); service actors (`program_timer`, `magic_browser`) are excluded. The session must belong to the **configured account**.
 
 ### Project Version & Force-Update (NEW v3.7.7)
 

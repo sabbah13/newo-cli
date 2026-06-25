@@ -7,7 +7,7 @@
  *  - Skips personas already fully fetched (resume support) unless --force passed via env NEWO_CONV_FORCE=1
  *  - Graceful on partial failure: individual persona errors do not abort the batch, state is preserved
  */
-import { listUserPersonas, getChatHistory } from '../api.js';
+import { listUserPersonas, getChatHistory, getLogs } from '../api.js';
 import { writeFileSafe } from '../fsutil.js';
 import fs from 'fs-extra';
 import path from 'path';
@@ -443,6 +443,220 @@ export async function pullConversationBySession(
     actor_ids: actorIds,
     total_acts: allActs.length,
     acts: buildSessionActs(allActs),
+    generated_at: new Date().toISOString()
+  };
+}
+
+// ── Full session view (api-key reachable: chat/history + analytics/logs) ──
+//
+// The Builder Conversations UI renders the full chronicle from
+// GET /bff/conversations/acts, which is NOT reachable with an api-key token
+// (its account_id claim is empty → the endpoint hangs). See
+// docs/SESSION_CHRONICLE_PLATFORM_ASK.md.
+//
+// This assembles the richest view that IS reachable with an api-key token:
+//   1. chat/history → the dialog turns (what was said), each carrying an
+//      external_event_id (the only cross-link to logs; chat items carry no
+//      session_id / runtime_context_id).
+//   2. analytics/logs scoped to the resolved actor(s) within the session's time
+//      window → the execution trace (every skill/NSL call + LLM `Gen`, with
+//      flow_idn, skill_idn, model, parameters, result, timing).
+// The two streams are merged into one chronological timeline.
+//
+// What this canNOT show (acts-only): the formatted thoughts_footnote reasoning,
+// analyze_conversation acts, the end-of-session report + semaphore analysis, and
+// recording URLs. Those require the platform-side account_id fix.
+
+/** One row of the merged full-session timeline. */
+export interface SessionFullEntry {
+  readonly datetime: string;
+  readonly kind: 'message' | 'call' | 'operation' | 'event';
+  readonly speaker?: 'agent' | 'user';
+  readonly text?: string;
+  readonly name?: string; // log action name (e.g. Gen, set, SendMessage)
+  readonly flow_idn?: string;
+  readonly skill_idn?: string;
+  readonly model?: string; // provider_idn/model_idn
+  readonly level?: string;
+  readonly external_event_id?: string;
+}
+
+export interface SessionFullChronicle {
+  readonly session_id: string;
+  readonly personas: ReadonlyArray<{ readonly id: string; readonly name: string }>;
+  readonly actor_ids: readonly string[];
+  readonly window: { readonly from: string; readonly to: string } | null;
+  readonly total_messages: number;
+  readonly total_log_entries: number;
+  readonly partial: boolean; // true if any pagination cap was hit
+  readonly timeline: readonly SessionFullEntry[];
+  readonly generated_at: string;
+}
+
+/**
+ * Parse a platform datetime. Platform timestamps are UTC but `chat/history`
+ * omits the timezone suffix (e.g. "2026-06-22T12:31:27.952000"); treat any
+ * tz-less string as UTC so the log window lines up with the (Z-suffixed) logs.
+ */
+function parseActDatetime(dt: string): number {
+  const hasTz = /[zZ]$|[+-]\d{2}:?\d{2}$/.test(dt);
+  const ms = Date.parse(hasTz ? dt : `${dt}Z`);
+  return Number.isNaN(ms) ? 0 : ms;
+}
+
+/** Pull skill/flow/model fields from a log entry, tolerating nested shapes. */
+function logEntryFields(entry: any): { name?: string; flow_idn?: string; skill_idn?: string; model?: string } {
+  const data = entry.data || {};
+  const source = data.source || {};
+  const context = data.context || {};
+  const out: { name?: string; flow_idn?: string; skill_idn?: string; model?: string } = {};
+  if (data.name) out.name = String(data.name);
+  const flow = data.flow_idn || context.flow_idn;
+  if (flow) out.flow_idn = String(flow);
+  const skill = data.skill_idn || source.skill_idn;
+  if (skill) out.skill_idn = String(skill);
+  const model = source.model;
+  if (model && (model.provider_idn || model.model_idn)) {
+    out.model = `${model.provider_idn ?? '?'}/${model.model_idn ?? '?'}`;
+  }
+  return out;
+}
+
+/**
+ * Assemble the fullest api-key-reachable view of a single session.
+ *
+ * @param padEndMinutes how far past the last dialog turn to keep collecting
+ *   logs (the post-call report/assessment fires minutes after the last turn).
+ * @param maxLogEntries total log-entry budget across all actors. Busy sessions
+ *   can have tens of thousands of skill calls; this bounds the fetch (and the
+ *   YAML size). When hit, `partial` is set true.
+ */
+export async function pullSessionFull(
+  client: AxiosInstance,
+  sessionId: string,
+  verbose: boolean = false,
+  padEndMinutes: number = 10,
+  maxLogEntries: number = 20000
+): Promise<SessionFullChronicle> {
+  // Progress is shown in the normal (non-JSON) path; --json sets NEWO_QUIET_MODE.
+  const quiet = process.env.NEWO_QUIET_MODE === 'true';
+  const progress = (msg: string) => { if (!quiet || verbose) console.log(msg); };
+
+  // 1. Resolve personas/actors tied to this session.
+  const personas: UserPersona[] = [];
+  let page = 1;
+  const perPage = 50;
+  while (true) {
+    const response = await listUserPersonas(client, page, perPage, sessionId);
+    personas.push(...response.items);
+    if (response.items.length < perPage) break;
+    page++;
+  }
+
+  const actorIds: string[] = [];
+  for (const persona of personas) {
+    for (const actor of persona.actors.filter(a => !SERVICE_INTEGRATIONS.has(a.integration_idn))) {
+      actorIds.push(actor.id);
+    }
+  }
+  progress(`   resolved ${personas.length} persona(s), ${actorIds.length} dialog actor(s)`);
+
+  // 2. Dialog turns from chat/history.
+  const messageEntries: SessionFullEntry[] = [];
+  let messagesPartial = false;
+  for (const actorId of actorIds) {
+    let actPage = 1;
+    const actsPerPage = 200;
+    const maxPages = 50;
+    while (actPage <= maxPages) {
+      const response = await getChatHistory(client, { user_actor_id: actorId, page: actPage, per: actsPerPage });
+      const items = response.items || [];
+      for (const item of items as any[]) {
+        const entry: SessionFullEntry = {
+          datetime: item.datetime || item.created_at || '1970-01-01T00:00:00.000Z',
+          kind: 'message',
+          speaker: item.is_agent === true ? 'agent' : 'user',
+          text: item.payload?.text || item.message || item.content || item.text || ''
+        };
+        if (item.external_event_id) (entry as any).external_event_id = item.external_event_id;
+        messageEntries.push(entry);
+      }
+      if (verbose) console.log(`💬 chat actor=${actorId} page ${actPage}: ${items.length}`);
+      if (items.length < actsPerPage) break;
+      actPage++;
+      if (actPage > maxPages) messagesPartial = true;
+    }
+  }
+  progress(`   collected ${messageEntries.length} dialog message(s)`);
+
+  // 3. Time window from the dialog turns (pad the tail for the post-call report).
+  let window: { from: string; to: string } | null = null;
+  const times = messageEntries.map(e => parseActDatetime(e.datetime)).filter(n => n > 0);
+  if (times.length > 0) {
+    const from = new Date(Math.min(...times) - 5_000).toISOString();
+    const to = new Date(Math.max(...times) + padEndMinutes * 60_000).toISOString();
+    window = { from, to };
+  }
+
+  // 4. Execution trace from analytics/logs, scoped to actor(s) within the window.
+  //    Shared budget across actors so a busy session can't run for many minutes.
+  const logEntries: SessionFullEntry[] = [];
+  let logsPartial = false;
+  if (window) {
+    progress(`   fetching execution trace in window ${window.from} .. ${window.to} (cap ${maxLogEntries})...`);
+    outer:
+    for (const actorId of actorIds) {
+      let logPage = 1;
+      const logsPerPage = 100;
+      const maxLogPages = 200;
+      while (logPage <= maxLogPages) {
+        const response = await getLogs(client, {
+          user_actor_ids: actorId,
+          from_datetime: window.from,
+          to_datetime: window.to,
+          per: logsPerPage,
+          page: logPage
+        });
+        const items = response.items || [];
+        for (const entry of items as any[]) {
+          const f = logEntryFields(entry);
+          const row: SessionFullEntry = {
+            datetime: entry.datetime || '1970-01-01T00:00:00.000Z',
+            kind: entry.log_type === 'operation' ? 'operation' : entry.log_type === 'event' ? 'event' : 'call'
+          };
+          if (f.name) (row as any).name = f.name;
+          if (f.flow_idn) (row as any).flow_idn = f.flow_idn;
+          if (f.skill_idn) (row as any).skill_idn = f.skill_idn;
+          if (f.model) (row as any).model = f.model;
+          if (entry.level) (row as any).level = entry.level;
+          if (entry.data?.external_event_id) (row as any).external_event_id = entry.data.external_event_id;
+          logEntries.push(row);
+        }
+        if (verbose) console.log(`📊 logs actor=${actorId} page ${logPage}: ${items.length}`);
+        else if (logEntries.length % 1000 < logsPerPage) progress(`   …trace ${logEntries.length} entries`);
+        if (logEntries.length >= maxLogEntries) { logsPartial = true; progress(`   ⚠️  log cap ${maxLogEntries} reached — stopping (use a higher cap to fetch all)`); break outer; }
+        if (items.length < logsPerPage) break;
+        logPage++;
+        if (logPage > maxLogPages) logsPartial = true;
+      }
+    }
+    progress(`   collected ${logEntries.length} log entr${logEntries.length === 1 ? 'y' : 'ies'}`);
+  }
+
+  // 5. Merge into one chronological timeline.
+  const timeline = [...messageEntries, ...logEntries].sort(
+    (a, b) => parseActDatetime(a.datetime) - parseActDatetime(b.datetime)
+  );
+
+  return {
+    session_id: sessionId,
+    personas: personas.map(p => ({ id: p.id, name: p.name })),
+    actor_ids: actorIds,
+    window,
+    total_messages: messageEntries.length,
+    total_log_entries: logEntries.length,
+    partial: messagesPartial || logsPartial,
+    timeline,
     generated_at: new Date().toISOString()
   };
 }
