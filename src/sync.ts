@@ -4,7 +4,8 @@
 
 // Re-export from specialized modules
 export { saveCustomerAttributes } from './sync/attributes.js';
-export { pullConversations } from './sync/conversations.js';
+export { pullConversations, pullConversationBySession, pullSessionFull } from './sync/conversations.js';
+export type { SessionChronicle, SessionChronicleAct, SessionFullChronicle, SessionFullEntry } from './sync/conversations.js';
 export { status } from './sync/status.js';
 export { pullSingleProject, pullAll } from './sync/projects.js';
 export { pushChanged } from './sync/push.js';
