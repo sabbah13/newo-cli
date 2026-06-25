@@ -11,6 +11,7 @@ import { handlePullCommand } from './cli/commands/pull.js';
 import { handlePushCommand } from './cli/commands/push.js';
 import { handleStatusCommand } from './cli/commands/status.js';
 import { handleConversationsCommand } from './cli/commands/conversations.js';
+import { handleSessionCommand } from './cli/commands/session.js';
 import { handleMetaCommand } from './cli/commands/meta.js';
 import { handlePullAttributesCommand } from './cli/commands/pull-attributes.js';
 import { handleImportAkbCommand } from './cli/commands/import-akb.js';
@@ -45,6 +46,7 @@ import { handleCreateWebhooksCommand } from './cli/commands/create-webhooks.js';
 import { handleListRegistriesCommand } from './cli/commands/list-registries.js';
 import { handleListRegistryItemsCommand } from './cli/commands/list-registry-items.js';
 import { handleAddProjectCommand } from './cli/commands/add-project.js';
+import { handleUpdateProjectCommand } from './cli/commands/update-project.js';
 import { handleWatchCommand } from './cli/commands/watch.js';
 import { handleDiffCommand } from './cli/commands/diff.js';
 import { handleLogsCommand } from './cli/commands/logs.js';
@@ -149,6 +151,10 @@ async function main(): Promise<void> {
 
       case 'conversations':
         await handleConversationsCommand(customerConfig, args, verbose);
+        break;
+
+      case 'session':
+        await handleSessionCommand(customerConfig, args, verbose);
         break;
 
       case 'sandbox':
@@ -278,6 +284,10 @@ async function main(): Promise<void> {
 
       case 'add-project':
         await handleAddProjectCommand(customerConfig, args, verbose);
+        break;
+
+      case 'update-project':
+        await handleUpdateProjectCommand(customerConfig, args, verbose);
         break;
 
       case 'watch':

@@ -15,6 +15,9 @@ Core Commands:
   newo diff [--customer <idn>]                  # show differences between local and remote
   newo logs [--customer <idn>]                  # fetch and display analytics logs from platform
   newo conversations [--customer <idn>] [--all] # download user conversations -> conversations.yaml
+  newo session <uuid> [--json]                  # ⭐ RECOMMENDED: one session's dialog (transcript + thoughts + system logs), fast
+  newo session <uuid> --full [--max-logs <n>] [--pad-end <min>] # + low-level execution trace (skill/NSL calls); heavier
+  newo conversations --session-id <uuid> [--full] # long form of the above (--session-id <uuid> == session <uuid>)
   newo sandbox "<message>" [--customer <idn>]   # test agent in sandbox - single message mode
   newo sandbox --actor <id> "message"           # continue existing sandbox conversation
   newo sandbox --list-connectors                # list running sandbox connectors (NEW v3.7.5)
@@ -45,6 +48,7 @@ Project Management:
   newo list-registries [--customer <idn>]                                   # list available project registries (production, staging, etc.)
   newo list-registry-items <registry-idn> [--all]                           # list available project templates in a registry
   newo add-project <idn> --item <template-idn> [--registry <registry>] [--version <v>] [--auto-update]  # install project from registry template
+  newo update-project <idn> [--version <semver>] [--force-update] [--auto-update <true|false>] [--registry-item-version <v|null>] [--json]  # set displayed project version / force-update from registry
 
 Entity Management (Full Lifecycle Support):
   newo create-agent <idn> --project <project-idn> [--title <title>] [--description <desc>]    # create agent → push to platform ✅
@@ -65,6 +69,7 @@ Advanced Components (NSL Focus):
 
 Enterprise Features:
   newo conversations [--customer <idn>] [--all]             # download conversation history
+  newo conversations --session-id <uuid> [--json]           # pull one session's dialog transcript (NEW v3.7.6)
   newo pull-attributes [--customer <idn>]                   # sync customer attributes
   newo import-akb <file> <persona_id>                       # import knowledge base articles
   newo pull-integrations [--customer <idn>]                 # download integrations and connectors → ./newo_customers/<idn>/integrations/
