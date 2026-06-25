@@ -114,7 +114,8 @@ export function fixInvalidJsonEscapes(s: string): string {
  *
  * - `null` / `undefined` → `''`
  * - object → compact JSON string (`JSON.stringify(value)`)
- * - string → fix invalid escapes (e.g. `\_` → `_`), then compact via
+ * - string → repair invalid escapes (e.g. `\_` → `\\_`, preserving the literal
+ *            text), then compact via
  *            JSON.parse + JSON.stringify. If parsing still fails after
  *            fixing escapes, return the fixed string as-is.
  * - other → `String(value)`
