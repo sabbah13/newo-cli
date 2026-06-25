@@ -8,7 +8,7 @@
 **NEWO CLI** - Professional command-line tool for NEWO AI Agent development. Features **modular architecture**, **IDN-based file management**, and **comprehensive multi-customer support**.
 
 Sync NEWO "Project → Agent → Flow → Skills" structure to local files with:
-- 🆕 **Project version & force-update** (v3.7.7) - `newo update-project <idn> --version <semver>` sets the displayed Builder project version after a deploy; `--force-update` re-syncs the project from its registry (the Builder's "Force Update Project" action)
+- 🆕 **Project version & force-update** (v3.7.6) - `newo update-project <idn> --version <semver>` sets the displayed Builder project version after a deploy; `--force-update` re-syncs the project from its registry (the Builder's "Force Update Project" action)
 - 🆕 **Get one session** (v3.7.6) - `newo session <uuid>` pulls one session's dialog (transcript + agent `THOUGHTS` + system logs) by its platform `session_id`; add `--full` for the low-level skill-call execution trace
 - 🆕 **V2 skill creation on push** (v3.7.4) - adding a skill inline to a `newo_v2` `{FlowIdn}.yaml` and pushing now creates it on the platform (previously only updates of existing skills worked)
 - 🆕 **Sandbox connector selection + automation** (v3.7.5) - `newo sandbox --connector <idn>`, `--list-connectors`, `--file`/`--stdin` for long messages, `--timeout`, and `--json` with `external_event_id` for log correlation
@@ -255,7 +255,7 @@ Use `--full` only when you need the under-the-hood trace. A busy session can hav
 
 **How it resolves** (works with an api-key token): `user-personas?session_id=<id>` finds the persona/actor, then `chat/history?user_actor_id=<id>` returns the transcript and `analytics/logs` (scoped to the actor within the session window) the trace. The direct `acts?session_id=<id>` endpoint — the one the Builder UI uses for its full chronicle — needs a logged-in user token (its api-key token has an empty `account_id` and the endpoint hangs), so a few UI-only act layers (formatted `analyze_conversation`, recordings) are not included; see [docs/SESSION_CHRONICLE_PLATFORM_ASK.md](docs/SESSION_CHRONICLE_PLATFORM_ASK.md). Everything is scoped to the resolved actor(s); service actors (`program_timer`, `magic_browser`) are excluded. The session must belong to the **configured account**.
 
-### Project Version & Force-Update (NEW v3.7.7)
+### Project Version & Force-Update (NEW v3.7.6)
 
 After deploying a project template into a customer account, the **displayed project version** in the Builder (`builder.newo.ai/projects`) can stay stale. `newo update-project` sets it so the label matches what was deployed:
 
@@ -427,7 +427,7 @@ newo verify --source SOURCE_IDN --dest DEST_IDN
 |---------|-------------|----------|
 | **Project Management** |||
 | `newo create-project <idn>` | Create new project on platform | • Automatic project initialization<br>• Metadata configuration<br>• Version control support |
-| `newo update-project <idn> --version <semver>` | Set displayed project version / force-update (NEW v3.7.7) | • GET→merge→PATCH `by-id/{id}` (full object)<br>• `--force-update` re-syncs from registry<br>• Pure metadata — no content re-sync<br>• `--json` effective state |
+| `newo update-project <idn> --version <semver>` | Set displayed project version / force-update (NEW v3.7.6) | • GET→merge→PATCH `by-id/{id}` (full object)<br>• `--force-update` re-syncs from registry<br>• Pure metadata — no content re-sync<br>• `--json` effective state |
 | **Agent Management** |||
 | `newo create-agent <idn> --project <pid>` | Create agent locally | • Local folder structure<br>• Metadata generation<br>• Persona assignment support |
 | `newo delete-agent <aid> --project <pid> --confirm` | Delete agent locally | • Safety confirmation required<br>• Local-only deletion<br>• Push to sync platform |

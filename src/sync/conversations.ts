@@ -407,7 +407,7 @@ export async function pullConversationBySession(
   while (true) {
     const response = await listUserPersonas(client, page, perPage, sessionId);
     personas.push(...response.items);
-    if (verbose) console.log(`📋 personas page ${page}: ${response.items.length}`);
+    if (verbose) console.error(`📋 personas page ${page}: ${response.items.length}`);
     if (response.items.length < perPage) break;
     page++;
   }
@@ -430,7 +430,7 @@ export async function pullConversationBySession(
         });
         const items = response.items || [];
         for (const item of items) allActs.push(normalizeChatItem(item));
-        if (verbose) console.log(`💬 chat persona=${persona.name} actor=${actor.integration_idn} page ${actPage}: ${items.length}`);
+        if (verbose) console.error(`💬 chat persona=${persona.name} actor=${actor.integration_idn} page ${actPage}: ${items.length}`);
         if (items.length < actsPerPage) break;
         actPage++;
       }
@@ -540,7 +540,9 @@ export async function pullSessionFull(
 ): Promise<SessionFullChronicle> {
   // Progress is shown in the normal (non-JSON) path; --json sets NEWO_QUIET_MODE.
   const quiet = process.env.NEWO_QUIET_MODE === 'true';
-  const progress = (msg: string) => { if (!quiet || verbose) console.log(msg); };
+  // Progress/diagnostics go to stderr so they never corrupt --json stdout
+  // (which carries only the final JSON object).
+  const progress = (msg: string) => { if (!quiet || verbose) console.error(msg); };
 
   // 1. Resolve personas/actors tied to this session.
   const personas: UserPersona[] = [];
@@ -581,7 +583,7 @@ export async function pullSessionFull(
         if (item.external_event_id) (entry as any).external_event_id = item.external_event_id;
         messageEntries.push(entry);
       }
-      if (verbose) console.log(`💬 chat actor=${actorId} page ${actPage}: ${items.length}`);
+      if (verbose) console.error(`💬 chat actor=${actorId} page ${actPage}: ${items.length}`);
       if (items.length < actsPerPage) break;
       actPage++;
       if (actPage > maxPages) messagesPartial = true;
@@ -632,7 +634,7 @@ export async function pullSessionFull(
           if (entry.data?.external_event_id) (row as any).external_event_id = entry.data.external_event_id;
           logEntries.push(row);
         }
-        if (verbose) console.log(`📊 logs actor=${actorId} page ${logPage}: ${items.length}`);
+        if (verbose) console.error(`📊 logs actor=${actorId} page ${logPage}: ${items.length}`);
         else if (logEntries.length % 1000 < logsPerPage) progress(`   …trace ${logEntries.length} entries`);
         if (logEntries.length >= maxLogEntries) { logsPartial = true; progress(`   ⚠️  log cap ${maxLogEntries} reached — stopping (use a higher cap to fetch all)`); break outer; }
         if (items.length < logsPerPage) break;
