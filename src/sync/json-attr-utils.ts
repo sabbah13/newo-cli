@@ -35,8 +35,9 @@
  *    JSON.parse is strict: it throws SyntaxError on `\_`, silently
  *    blanking the Builder.
  *
- * The fix for (3) and (4): for `value_type: json` string values, strip
- * invalid escape sequences then compact via JSON.parse + JSON.stringify.
+ * The fix for (3) and (4): for `value_type: json` string values, repair
+ * invalid escape sequences (escaping the stray backslash so the literal
+ * text is preserved) then compact via JSON.parse + JSON.stringify.
  * Compaction removes structural newlines and re-serializes all string
  * values with only valid JSON escapes, producing a single-line string
  * that round-trips through YAML without corruption.
@@ -59,7 +60,10 @@ export function isJsonValueType(valueType: unknown): boolean {
  * Per RFC 8259, valid escape sequences inside a JSON string are:
  *   \" \\ \/ \b \f \n \r \t \uXXXX
  * Anything else (e.g. `\_` `\.` from Markdown) is invalid and causes
- * JSON.parse to throw. Fix: drop the backslash (e.g. `\_` → `_`).
+ * JSON.parse to throw. Fix: escape the stray backslash (e.g. `\_` →
+ * `\\_`), which JSON.parse decodes back to the literal `\_` — preserving
+ * the Markdown escape rather than dropping it to a bare `_` (which would
+ * let paired underscores render as italics in the Builder).
  *
  * Only modifies characters inside JSON string values (tracks quote
  * context). Structural characters outside strings are untouched.
@@ -77,7 +81,11 @@ export function fixInvalidJsonEscapes(s: string): string {
         if (VALID_ESCAPES.has(next)) {
           result.push(c, next);
         } else {
-          result.push(next); // drop the backslash — \_ → _, etc.
+          // Escape the stray backslash instead of dropping it, so the
+          // literal text is preserved (\_ → \\_, which JSON.parse decodes
+          // back to \_). Dropping it (\_ → _) silently alters Markdown:
+          // paired underscores then render as emphasis/italics in Builder.
+          result.push('\\', '\\', next);
         }
         i += 2;
         continue;
@@ -106,7 +114,8 @@ export function fixInvalidJsonEscapes(s: string): string {
  *
  * - `null` / `undefined` → `''`
  * - object → compact JSON string (`JSON.stringify(value)`)
- * - string → fix invalid escapes (e.g. `\_` → `_`), then compact via
+ * - string → repair invalid escapes (e.g. `\_` → `\\_`, preserving the literal
+ *            text), then compact via
  *            JSON.parse + JSON.stringify. If parsing still fails after
  *            fixing escapes, return the fixed string as-is.
  * - other → `String(value)`

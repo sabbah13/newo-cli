@@ -223,11 +223,16 @@ test('compact JSON string with embedded \\n inside string fields round-trips int
 // fixInvalidJsonEscapes
 // ---------------------------------------------------------------------------
 
-test('fixInvalidJsonEscapes: strips \\_ → _ inside JSON strings', () => {
-  // \_ is not a valid JSON escape sequence (RFC 8259); drop the backslash.
+test('fixInvalidJsonEscapes: escapes \\_ → \\\\_ inside JSON strings (preserves Markdown)', () => {
+  // \_ is not a valid JSON escape sequence (RFC 8259). Escape the stray
+  // backslash rather than dropping it, so JSON.parse decodes back to the
+  // literal \_ — dropping to bare _ would let paired underscores render
+  // as italics/emphasis in the Builder.
   const input  = '{"text": "\\_bold\\_"}';
-  const expect = '{"text": "_bold_"}';
+  const expect = '{"text": "\\\\_bold\\\\_"}';
   assert.equal(fixInvalidJsonEscapes(input), expect);
+  // result is valid JSON that decodes back to the original literal text
+  assert.equal(JSON.parse(fixInvalidJsonEscapes(input)).text, '\\_bold\\_');
 });
 
 test('fixInvalidJsonEscapes: preserves all valid JSON escape sequences', () => {
@@ -242,7 +247,7 @@ test('fixInvalidJsonEscapes: does not touch structural characters outside string
 
 test('fixInvalidJsonEscapes: handles multiple bad escapes in one value', () => {
   const input  = '{"md": "\\_ **Bold** \\. end"}';
-  const expect = '{"md": "_ **Bold** . end"}';
+  const expect = '{"md": "\\\\_ **Bold** \\\\. end"}';
   assert.equal(fixInvalidJsonEscapes(input), expect);
 });
 
@@ -267,7 +272,8 @@ test('Bug 3.7.2-a: pretty-printed canvas survives pull→push without blanking B
 
 test('Bug 3.7.2-b: canvas with \\_ Markdown escapes survives pull→push without blanking Builder', () => {
   // The platform stores canvas body with Markdown \_ for emphasis.
-  // \_ is invalid JSON; after normalizeJsonValueForStorage it must be gone.
+  // \_ is invalid JSON; after normalizeJsonValueForStorage it must become
+  // valid JSON with the \_ preserved (escaped, not dropped to bare _).
   const badEscape = '\\_';  // backslash (0x5C) + underscore
   const canvasWithMarkdown =
     '{"title":"Builder","description":"' + badEscape + ' **Intro** ' + badEscape + ' Notes"}';
@@ -278,7 +284,10 @@ test('Bug 3.7.2-b: canvas with \\_ Markdown escapes survives pull→push without
   const yaml = persistJsonAttr(canvasWithMarkdown, 'json');
   const reloaded = loadAttr(yaml);
   assert.doesNotThrow(() => JSON.parse(reloaded.value),
-    'JSON.parse must succeed after normalization (\\_ stripped)');
+    'JSON.parse must succeed after normalization (\\_ escaped)');
+  // and the Markdown escape is preserved (not dropped to a bare _)
+  assert.ok(JSON.parse(reloaded.value).description.includes('\\_'),
+    'literal \\_ must be preserved through the round-trip');
 });
 
 // ---------------------------------------------------------------------------

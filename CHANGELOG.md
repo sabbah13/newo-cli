@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.7.7] - 2026-06-25
+
+### Fixed
+
+- **JSON-typed attribute Markdown escapes are now preserved, not dropped.** `fixInvalidJsonEscapes` previously repaired invalid JSON escapes (`\_`, `\.` from Markdown body text) by *dropping* the backslash (`\_` → `_`). That produced valid JSON (the v3.7.3 blank-Builder fix held) but silently altered the text: once `\_` became a bare `_`, paired underscores rendered as italics/emphasis in the Workflow Builder (observed on a live customer canvas). The repair now *escapes* the stray backslash instead (`\_` → `\\_`), which `JSON.parse` decodes back to the literal `\_` — equally valid JSON, but byte-faithful to the authored Markdown. Note: a pull/push cycle now restores the previously-dropped backslash, so the first push after upgrading may rewrite affected canvas attributes once. Reported by Bob in PR [#11](https://github.com/sabbah13/newo-cli/pull/11); 25 json-attribute round-trip tests assert the faithful output and `\_` round-trip preservation.
+
 ## [3.7.6] - 2026-06-25
 
 ### Added
@@ -1109,7 +1115,8 @@ Another Item: $Price [Modifiers: modifier3]
 - GitHub Actions CI/CD integration
 - Robust authentication with token refresh
 
-[Unreleased]: https://github.com/sabbah13/newo-cli/compare/v3.7.6...HEAD
+[Unreleased]: https://github.com/sabbah13/newo-cli/compare/v3.7.7...HEAD
+[3.7.7]: https://github.com/sabbah13/newo-cli/compare/v3.7.6...v3.7.7
 [3.7.6]: https://github.com/sabbah13/newo-cli/compare/v3.7.5...v3.7.6
 [3.7.5]: https://github.com/sabbah13/newo-cli/compare/v3.7.4...v3.7.5
 [3.7.4]: https://github.com/sabbah13/newo-cli/compare/v3.7.3...v3.7.4
