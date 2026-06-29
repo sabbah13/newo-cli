@@ -71,8 +71,11 @@ async function main(): Promise<void> {
 
   if (verbose) console.log(`🔍 Command parsed: "${cmd}"`);
 
-  // Handle help command first - no env or customer config needed
-  if (!cmd || ['help', '-h', '--help'].includes(cmd)) {
+  // Handle help first — no env or customer config needed. We must also catch
+  // the --help / -h *flag* on any subcommand (e.g. `newo push --help`):
+  // otherwise it falls through to the switch and EXECUTES the command, which
+  // for push/conversations/etc. is a destructive live action.
+  if (!cmd || ['help', '-h', '--help'].includes(cmd) || args.help || args.h) {
     handleHelpCommand();
     return;
   }

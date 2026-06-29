@@ -9,7 +9,8 @@ import { fileURLToPath } from 'node:url';
 
 import {
   collectLogsForDisplay,
-  fetchAndDisplayLogs
+  fetchAndDisplayLogs,
+  tailLogs
 } from '../dist/cli/commands/logs.js';
 
 function logEntry(id, name, datetime = '2026-06-16T10:00:00.000Z') {
@@ -141,21 +142,45 @@ test('collectLogsForDisplay paginates when filtering by data.name', async () => 
   assert.deepEqual(logs.map(log => log.log_id), ['3']);
 });
 
-test('collectLogsForDisplay fetches a single page without name filter', async () => {
+test('collectLogsForDisplay paginates even without a name filter', async () => {
+  const calls = [];
+  const pages = {
+    1: [logEntry('1', 'A'), logEntry('2', 'B')],
+    2: [logEntry('3', 'C'), logEntry('4', 'D')],
+    3: [logEntry('5', 'E')] // short page → end of data
+  };
+
+  const logs = await collectLogsForDisplay(
+    {},
+    { page: 1, per: 2 },
+    null,
+    async (_client, params) => {
+      calls.push(params.page);
+      return { items: pages[params.page] || [] };
+    }
+  );
+
+  assert.deepEqual(calls, [1, 2, 3]);
+  assert.deepEqual(logs.map(log => log.log_id), ['1', '2', '3', '4', '5']);
+});
+
+test('collectLogsForDisplay respects the --max budget', async () => {
   const calls = [];
 
   const logs = await collectLogsForDisplay(
     {},
-    { page: 2, per: 2 },
+    { page: 1, per: 2 },
     null,
     async (_client, params) => {
       calls.push(params.page);
-      return { items: [logEntry('2', 'Gen')] };
-    }
+      return { items: [logEntry(`${params.page}a`, 'A'), logEntry(`${params.page}b`, 'B')] };
+    },
+    3 // maxItems budget
   );
 
-  assert.deepEqual(calls, [2]);
-  assert.deepEqual(logs.map(log => log.log_id), ['2']);
+  assert.equal(logs.length, 3);
+  // page 1 → 2 items (< budget), page 2 → 4 total ≥ budget → stop and slice to 3.
+  assert.deepEqual(calls, [1, 2]);
 });
 
 test('fetchAndDisplayLogs --raw prints only JSONL records', async () => {
@@ -166,12 +191,15 @@ test('fetchAndDisplayLogs --raw prints only JSONL records', async () => {
       false,
       true,
       null,
-      async () => ({
-        items: [
-          logEntry('2', 'Gen', '2026-06-16T10:00:02.000Z'),
-          logEntry('1', 'Gen', '2026-06-16T10:00:01.000Z')
-        ]
-      })
+      async (_client, params) =>
+        params.page === 1
+          ? {
+              items: [
+                logEntry('2', 'Gen', '2026-06-16T10:00:02.000Z'),
+                logEntry('1', 'Gen', '2026-06-16T10:00:01.000Z')
+              ]
+            }
+          : { items: [] } // short page → end of data (pagination terminates)
     );
   });
 
@@ -195,17 +223,61 @@ test('fetchAndDisplayLogs --raw prints nothing for empty results', async () => {
   assert.deepEqual(lines, []);
 });
 
+test('tailLogs --for resolves on its own', async () => {
+  const start = Date.now();
+  await captureConsoleLog(async () => {
+    await tailLogs(
+      {},
+      { from_datetime: '2026-06-16T10:00:00.000Z' },
+      true,
+      null,
+      { forMs: 80, pollIntervalMs: 10, getLogsFn: async () => ({ items: [] }) }
+    );
+  });
+  const elapsed = Date.now() - start;
+  assert.ok(elapsed >= 60, `ran ~forMs (was ${elapsed}ms)`);
+  assert.ok(elapsed < 3000, `returned promptly (was ${elapsed}ms)`);
+});
+
+test('tailLogs --max-events stops after N new events', async () => {
+  let seq = 0;
+  const lines = await captureConsoleLog(async () => {
+    await tailLogs(
+      {},
+      { from_datetime: '2026-06-16T10:00:00.000Z' },
+      true,
+      null,
+      {
+        maxEvents: 2,
+        pollIntervalMs: 5,
+        getLogsFn: async () => ({
+          items: [
+            logEntry(`e${seq++}`, 'G', '2026-06-16T10:00:01.000Z'),
+            logEntry(`e${seq++}`, 'G', '2026-06-16T10:00:02.000Z'),
+            logEntry(`e${seq++}`, 'G', '2026-06-16T10:00:03.000Z')
+          ]
+        })
+      }
+    );
+  });
+  const jsonLines = lines.filter((l) => l.startsWith('{'));
+  assert.equal(jsonLines.length, 2, 'stopped after maxEvents');
+});
+
 test('CLI logs --raw emits only JSONL records', async () => {
   await withMockNewoApi(
     (method, url) => {
       assert.equal(method, 'GET');
       assert.equal(url.pathname, '/api/v1/analytics/logs');
+      const page = Number(url.searchParams.get('page') || '1');
       return {
         body: {
-          items: [
-            logEntry('2', 'Gen', '2026-06-16T10:00:02.000Z'),
-            logEntry('1', 'Gen', '2026-06-16T10:00:01.000Z')
-          ]
+          items: page === 1
+            ? [
+                logEntry('2', 'Gen', '2026-06-16T10:00:02.000Z'),
+                logEntry('1', 'Gen', '2026-06-16T10:00:01.000Z')
+              ]
+            : [] // short page → end of data (pagination terminates)
         }
       };
     },
