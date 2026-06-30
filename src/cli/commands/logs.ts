@@ -175,11 +175,19 @@ export async function handleLogsCommand(
   // --name filters by data.name (e.g. action name like Gen or GetMemory).
   // The API has no such query param, so it is applied client-side.
   const nameFilter = args.name ? String(args.name) : null;
+  // --max caps total entries fetched across pages. --for / --max-events
+  // bound --follow so an autonomous run terminates on its own.
+  const maxItems = args.max ? parseInt(String(args.max), 10) : undefined;
+  const forSec = args.for ? parseInt(String(args.for), 10) : undefined;
+  const maxEvents = args['max-events'] ? parseInt(String(args['max-events']), 10) : undefined;
 
   if (follow) {
-    await tailLogs(client, params, asJson, nameFilter);
+    await tailLogs(client, params, asJson, nameFilter, {
+      ...(forSec && forSec > 0 ? { forMs: forSec * 1000 } : {}),
+      ...(maxEvents && maxEvents > 0 ? { maxEvents } : {})
+    });
   } else {
-    await fetchAndDisplayLogs(client, params, asJson, raw, nameFilter);
+    await fetchAndDisplayLogs(client, params, asJson, raw, nameFilter, getLogs, maxItems);
   }
 }
 
@@ -188,21 +196,27 @@ function filterByName(logs: readonly LogEntry[], nameFilter: string | null): Log
   return logs.filter(log => log.data['name'] === nameFilter);
 }
 
+// Default total-entry budget when --max is not given. Before this, a query
+// without --name fetched exactly one page, so --per/--hours silently
+// dropped everything past the first page. We now paginate by default but cap
+// the pull so a broad query on a busy customer can't run away.
+const DEFAULT_MAX_ENTRIES = 1000;
+
 export async function collectLogsForDisplay(
   client: AxiosInstance,
   params: LogsQueryParams,
   nameFilter: string | null = null,
-  getLogsFn: GetLogsFn = getLogs
+  getLogsFn: GetLogsFn = getLogs,
+  maxItems?: number
 ): Promise<LogEntry[]> {
-  if (!nameFilter) {
-    const response = await getLogsFn(client, params);
-    return [...response.items];
-  }
-
   const pageSize = Number.isFinite(params.per) && params.per && params.per > 0 ? params.per : 50;
   let page = Number.isFinite(params.page) && params.page && params.page > 0 ? params.page : 1;
+  const budget = maxItems && maxItems > 0 ? maxItems : DEFAULT_MAX_ENTRIES;
   const logs: LogEntry[] = [];
 
+  // Always paginate. The name filter is applied per page and is a no-op when
+  // null, so this path now serves both filtered and unfiltered queries. Stop at
+  // a short page (end of data) or once the budget is reached.
   while (true) {
     const response = await getLogsFn(client, {
       ...params,
@@ -212,6 +226,9 @@ export async function collectLogsForDisplay(
 
     logs.push(...filterByName(response.items, nameFilter));
 
+    if (logs.length >= budget) {
+      return logs.slice(0, budget);
+    }
     if (response.items.length < pageSize) {
       break;
     }
@@ -228,10 +245,11 @@ export async function fetchAndDisplayLogs(
   asJson: boolean,
   raw: boolean,
   nameFilter: string | null = null,
-  getLogsFn: GetLogsFn = getLogs
+  getLogsFn: GetLogsFn = getLogs,
+  maxItems?: number
 ): Promise<void> {
   try {
-    const logs = await collectLogsForDisplay(client, params, nameFilter, getLogsFn);
+    const logs = await collectLogsForDisplay(client, params, nameFilter, getLogsFn, maxItems);
 
     if (asJson) {
       console.log(JSON.stringify(logs, null, 2));
@@ -276,74 +294,108 @@ export async function fetchAndDisplayLogs(
   }
 }
 
-async function tailLogs(
+export interface TailOptions {
+  /** Stop after this many milliseconds (bound --follow). */
+  forMs?: number;
+  /** Stop after emitting this many new events. */
+  maxEvents?: number;
+  /** Poll cadence; defaults to 2000ms. Lowered in tests. */
+  pollIntervalMs?: number;
+  /** Injected for tests. */
+  getLogsFn?: GetLogsFn;
+}
+
+export async function tailLogs(
   client: AxiosInstance,
   params: LogsQueryParams,
   asJson: boolean,
-  nameFilter: string | null = null
+  nameFilter: string | null = null,
+  opts: TailOptions = {}
 ): Promise<void> {
+  const getLogsFn = opts.getLogsFn ?? getLogs;
+  const pollInterval = opts.pollIntervalMs ?? 2000;
+
   console.log('🔄 Watching for new logs (Ctrl+C to stop)...\n');
 
   const seenLogIds = new Set<string>();
   let lastCheckTime = params.from_datetime || new Date(Date.now() - 60 * 60 * 1000).toISOString();
   const useColors = process.stdout.isTTY !== false;
+  let emitted = 0;
 
-  // Poll interval (2 seconds)
-  const pollInterval = 2000;
+  // Resolve on: --for elapsed, --max-events reached, or SIGINT. Without any
+  // bound this still tails forever (interactive UX), but autonomous callers can
+  // now pass --for/--max-events so the process exits on its own.
+  await new Promise<void>((resolve) => {
+    let finished = false;
+    let intervalId: ReturnType<typeof setInterval> | undefined;
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
-  const poll = async () => {
-    try {
-      const pollParams: LogsQueryParams = {
-        ...params,
-        from_datetime: lastCheckTime,
-        page: 1,
-        per: 100
-      };
+    const finish = () => {
+      if (finished) return;
+      finished = true;
+      if (intervalId) clearInterval(intervalId);
+      if (timeoutId) clearTimeout(timeoutId);
+      process.removeListener('SIGINT', onSigint);
+      resolve();
+    };
 
-      const response = await getLogs(client, pollParams);
-      const logs = filterByName(response.items, nameFilter);
+    const poll = async () => {
+      try {
+        const pollParams: LogsQueryParams = {
+          ...params,
+          from_datetime: lastCheckTime,
+          page: 1,
+          per: 100
+        };
 
-      // Filter out already seen logs and sort by time
-      const newLogs = logs
-        .filter(log => !seenLogIds.has(log.log_id))
-        .sort((a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime());
+        const response = await getLogsFn(client, pollParams);
+        const logs = filterByName(response.items, nameFilter);
 
-      for (const log of newLogs) {
-        seenLogIds.add(log.log_id);
+        const newLogs = logs
+          .filter(log => !seenLogIds.has(log.log_id))
+          .sort((a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime());
 
-        if (asJson) {
-          console.log(JSON.stringify(log));
-        } else {
-          console.log(formatLogEntryCompact(log, useColors));
+        for (const log of newLogs) {
+          if (finished) break;
+          seenLogIds.add(log.log_id);
+
+          if (asJson) {
+            console.log(JSON.stringify(log));
+          } else {
+            console.log(formatLogEntryCompact(log, useColors));
+          }
+
+          const logTime = new Date(log.datetime);
+          const lastTime = new Date(lastCheckTime);
+          if (logTime > lastTime) {
+            lastCheckTime = log.datetime;
+          }
+
+          emitted++;
+          if (opts.maxEvents && emitted >= opts.maxEvents) {
+            finish();
+            return;
+          }
         }
-
-        // Update last check time to the newest log we've seen
-        const logTime = new Date(log.datetime);
-        const lastTime = new Date(lastCheckTime);
-        if (logTime > lastTime) {
-          lastCheckTime = log.datetime;
-        }
+      } catch {
+        // Silently ignore poll errors to avoid spamming the console.
       }
-    } catch (error: unknown) {
-      // Silently ignore poll errors to avoid spamming the console
+    };
+
+    const onSigint = () => {
+      console.log('\n\n👋 Stopped watching logs');
+      finish();
+    };
+    process.on('SIGINT', onSigint);
+
+    if (opts.forMs && opts.forMs > 0) {
+      timeoutId = setTimeout(finish, opts.forMs);
     }
-  };
 
-  // Initial poll
-  await poll();
-
-  // Set up interval for continuous polling
-  const intervalId = setInterval(poll, pollInterval);
-
-  // Handle Ctrl+C gracefully
-  process.on('SIGINT', () => {
-    clearInterval(intervalId);
-    console.log('\n\n👋 Stopped watching logs');
-    process.exit(0);
+    void poll().then(() => {
+      if (!finished) intervalId = setInterval(poll, pollInterval);
+    });
   });
-
-  // Keep the process running
-  await new Promise(() => {});
 }
 
 export function printLogsHelp(): void {
@@ -375,9 +427,14 @@ Output Options:
   --raw                 Output each log as a single JSON line
   --per <n>             Number of logs per page (default: 50)
   --page <n>            Page number (default: 1)
+  --max <n>             Max total entries to fetch across pages (default: 1000).
+                        Without this, results paginate to the end of data or the
+                        default budget — older queries stopped after one page.
 
 Live Tailing:
   --follow, -f          Continuously poll for new logs (like tail -f)
+  --for <seconds>       With --follow: stop after N seconds (for scripts/CI)
+  --max-events <n>      With --follow: stop after N new events seen
 
 Examples:
   newo logs                                    # Last 1 hour of logs

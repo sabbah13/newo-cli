@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`newo logs --max <n>`** — caps the total number of log entries fetched across pages (default 1000). Pairs with the pagination fix below: a bare `newo logs` / `--hours` query now walks pages until the data ends or this budget is reached, instead of silently stopping after the first page.
+- **`newo logs --follow --for <seconds>` / `--max-events <n>`** — bound `--follow` so it terminates on its own after a time limit or after N new events, instead of running until `Ctrl+C`. Without either flag the interactive tail is unchanged. Makes `--follow` usable from scripts/CI.
+
+### Fixed
+
+- **`newo <subcommand> --help` no longer executes the subcommand.** The dispatcher matched only the positional command, so `newo push --help` fell through the `switch` to `handlePushCommand` and ran a real push/publish (and `conversations --help` downloaded, etc.). The `--help` / `-h` flag is now caught before the command switch (and before env/auth), so `newo <anything> --help` always prints help safely.
+- **`newo logs` paginated only when `--name` was set.** Without a `--name` filter it fetched a single page, so `--per` / `--hours` silently dropped everything past the first page. It now always paginates (bounded by `--max`, default 1000).
+- **`newo logs --follow` never terminated.** It awaited an unresolved promise and only exited on `SIGINT`, hanging any non-interactive caller. It can now be bounded via `--for` / `--max-events` (see Added).
+- **`newo meta` exited 1 when no project id was configured.** It now resolves the project from the projects list (uses the sole project, otherwise prints the candidates to stderr) and exits 0, so scripts no longer treat a healthy account as a failure.
+
 ## [3.7.7] - 2026-06-25
 
 ### Fixed
