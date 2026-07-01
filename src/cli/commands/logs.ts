@@ -9,6 +9,7 @@
  *   newo logs --type call                  # Only skill calls
  *   newo logs --flow CACreatorFlow         # Filter by flow
  *   newo logs --skill CreateActor          # Filter by skill
+ *   newo logs --agent-persona-id <uuid>    # Filter by agent persona
  *   newo logs --follow                     # Tail mode (poll for new logs)
  *   newo logs --json                       # Output as JSON
  */
@@ -168,6 +169,7 @@ export async function handleLogsCommand(
   if (args['runtime-id']) params.runtime_context_id = String(args['runtime-id']);
   if (args['actor-id']) params.user_actor_ids = String(args['actor-id']);
   if (args['persona-id']) params.user_persona_ids = String(args['persona-id']);
+  if (args['agent-persona-id']) params.agent_persona_ids = String(args['agent-persona-id']);
 
   const follow = Boolean(args.follow || args.f);
   const asJson = Boolean(args.json);
@@ -421,6 +423,8 @@ Filter Options:
   --runtime-id <uuid>   Filter by runtime context ID
   --actor-id <uuid>     Filter by user actor ID
   --persona-id <uuid>   Filter by user persona ID
+  --agent-persona-id <uuid>
+                        Filter by agent persona ID
 
 Output Options:
   --json                Output logs as JSON
@@ -444,6 +448,7 @@ Examples:
   newo logs --flow CACreatorFlow --follow      # Tail logs for specific flow
   newo logs --json --per 100                   # Get 100 logs as JSON
   newo logs --type call --name Gen --json      # Only Gen action calls
+  newo logs --agent-persona-id <uuid>          # Logs for one agent persona
 
 Notes:
   The model used for a turn is in data.source.model of the --json output —

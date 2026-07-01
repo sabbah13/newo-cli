@@ -89,6 +89,7 @@ Analytics & Monitoring (NEW):
   newo logs --message <text>                                 # search in log messages
   newo logs --name <ActionName>                              # filter by action name in data.name, e.g. Gen, GetMemory (NEW v3.7.5)
   newo logs --event-id <uuid>                                # filter by external event ID (correlate with sandbox --json)
+  newo logs --agent-persona-id <uuid>                        # filter by agent persona ID
   newo logs --follow, -f                                     # tail mode - continuously poll for new logs
   newo logs --json                                           # output logs as JSON array
   newo logs --raw                                            # output each log as single JSON line (for piping)
