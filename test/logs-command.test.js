@@ -364,3 +364,14 @@ test('CLI logs --agent-persona-id forwards agent_persona_ids to the API', async 
     }
   );
 });
+
+test('CLI logs --help prints logs-specific help, not the global summary', async () => {
+  const result = await runCli(['logs', '--help'], {});
+
+  assert.equal(result.code, 0, result.stderr);
+  assert.match(result.stdout, /Usage: newo logs \[options\]/);
+  assert.match(result.stdout, /--agent-persona-id <uuid>\s+Filter by agent persona ID/);
+  assert.match(result.stdout, /--event-id <uuid>\s+Filter by external event ID/);
+  // Must NOT fall through to the global multi-command help screen.
+  assert.doesNotMatch(result.stdout, /NEWO CLI - Multi-Customer Support/);
+});
