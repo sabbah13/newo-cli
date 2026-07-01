@@ -419,12 +419,11 @@ Filter Options:
   --skill <idn>         Filter by skill IDN
   --message <text>      Search in log messages
   --name <ActionName>   Filter by action name in data.name, e.g. Gen, GetMemory (client-side)
-  --event-id <uuid>     Filter by external event ID
-  --runtime-id <uuid>   Filter by runtime context ID
-  --actor-id <uuid>     Filter by user actor ID
-  --persona-id <uuid>   Filter by user persona ID
-  --agent-persona-id <uuid>
-                        Filter by agent persona ID
+  --event-id <uuid>           Filter by external event ID
+  --runtime-id <uuid>         Filter by runtime context ID
+  --actor-id <uuid>           Filter by user actor ID
+  --persona-id <uuid>         Filter by user persona ID
+  --agent-persona-id <uuid>   Filter by agent persona ID
 
 Output Options:
   --json                Output logs as JSON

@@ -356,6 +356,7 @@ test('CLI logs --agent-persona-id forwards agent_persona_ids to the API', async 
 
       assert.equal(result.code, 0, result.stderr);
       assert.equal(result.stderr, '');
+      assert.deepEqual(JSON.parse(result.stdout), []);
 
       const logRequests = requests.filter(request => request.pathname === '/api/v1/analytics/logs');
       assert.equal(logRequests.length, 1);

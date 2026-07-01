@@ -9,9 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **`newo logs --agent-persona-id <uuid>`** — filter logs by agent persona, matching the `Agent` field in the Builder UI's own Conversations/Logs filter panel. Forwards to the existing `agent_persona_ids` backend query param (already supported by `getLogs`/`LogsQueryParams`, just not previously exposed as a flag).
 - **`newo logs --max <n>`** — caps the total number of log entries fetched across pages (default 1000). Pairs with the pagination fix below: a bare `newo logs` / `--hours` query now walks pages until the data ends or this budget is reached, instead of silently stopping after the first page.
 - **`newo logs --follow --for <seconds>` / `--max-events <n>`** — bound `--follow` so it terminates on its own after a time limit or after N new events, instead of running until `Ctrl+C`. Without either flag the interactive tail is unchanged. Makes `--follow` usable from scripts/CI.
+- **`newo logs --agent-persona-id <uuid>`** — filter logs by agent persona, matching the `Agent` field in the Builder UI's own Conversations/Logs filter panel. Forwards to the existing `agent_persona_ids` backend query param (already supported by `getLogs`/`LogsQueryParams`, just not previously exposed as a flag).
 
 ### Fixed
 
