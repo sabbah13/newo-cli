@@ -156,6 +156,7 @@ NEWO_REFRESH_URL=custom_refresh_endpoint   # Custom refresh endpoint
 | `newo status [--format <fmt>]` | Show modified files | • Format-aware status<br>• Multiple file warnings<br>• Per-customer status |
 | `newo export [--output <file>]` | Download V2 bulk ZIP from platform | • Complete organization export<br>• Projects, agents, flows, skills, attributes, AKB<br>• Compatible with platform UI import |
 | `newo sandbox` | Test agents in sandbox chat mode | • Single-command mode for automation<br>• Multi-turn conversation support<br>• Debug info for agent development<br>• v3.7.5: `--connector`, `--list-connectors`, `--file`/`--stdin`, `--timeout`, `--json` |
+| `newo test <scenario.yaml>` | Scripted multi-turn agent scenario tests (NEW v3.8.0) | • YAML-based scenario definition<br>• Single shared conversation per run<br>• Per-turn assertions: `contains`, `not_contains`, `regex`<br>• Fail-fast with skipped turns reported<br>• Connector selection (--connector, --integration, --timeout)<br>• --json output with log correlation IDs<br>• --customer for multi-customer setups |
 | `newo get-skill` / `newo update-skill` | Inspect / point-edit one skill on the platform (NEW v3.7.5) | • No pulled workspace required<br>• `--model <provider>/<model>`, `--script <file>`<br>• Optional `--publish` |
 | `newo conversations` | Pull conversation history | • User personas and chat history<br>• YAML format output<br>• Pagination support<br>• v3.7.6: `--session-id <uuid>` pulls one session's transcript |
 | `newo session <uuid>` | Inspect one session | • ⭐ Dialog view by default (transcript + `THOUGHTS` + system logs), fast<br>• `--full` adds the skill-call execution trace (`--max-logs`, `--pad-end`)<br>• `--json` for piping |
@@ -215,6 +216,42 @@ newo update-skill get_memory --project vibe --agent VibeAgent --flow VibeFlow --
 - `--model <provider_idn>/<model_idn>` and `--script <file>` can be combined; everything else (title, parameters, runner) is preserved.
 - `--publish` publishes the flow after the update (same as push); without it the change stays draft. `--publish-description "<text>"` sets the publish note.
 - If a pulled local workspace exists for the project, the CLI warns that it now diverges from the platform.
+
+### Agent Scenario Tests (NEW v3.8.0)
+
+Run scripted multi-turn conversations against a live sandbox agent and assert on each turn's reply. Compose only existing plumbing (`sandbox/chat.ts`, chat history, logs correlation) - no new backend endpoints.
+
+```yaml
+name: order status happy path        # optional; defaults to file basename
+connector: vibe_agent                # optional; CLI --connector overrides
+integration: sandbox                 # optional; CLI --integration overrides
+timeout: 90                          # optional, seconds; scenario-level default
+turns:
+  - message: "Hi"
+    expect:
+      contains: "Hello"              # string or list; AND semantics
+  - message: "Where is my order 123?"
+    timeout: 120                     # per-turn override
+    expect:
+      contains: ["order", "123"]
+      not_contains: "error"
+      regex: "order\\s+#?123"        # JS RegExp, no flags (case-sensitive)
+```
+
+Run and verify:
+
+```bash
+newo test ./scenarios/order-status.yaml                     # human output, exit 0 all-pass, 1 on failure
+newo test ./scenarios/order-status.yaml --json              # machine-readable per-turn report
+newo test ./scenarios/order-status.yaml --connector vibe_agent   # target a specific connector
+newo test ./scenarios/order-status.yaml --timeout 300       # scale response budget (per-turn overrides this)
+```
+
+**CI budget note:** each scenario runs serially; worst case is `turns x timeout` (all turns hit their timeout budget). Mitigate with per-turn timeouts, and remember CI runners may be slower than your dev machine. Failure on any turn aborts remaining turns (no flaky retries or continued-on-error modes in v1).
+
+**Known limitations:**
+- Persona and actor created per run are not deleted after the scenario finishes (matches existing `newo sandbox` behavior; no delete endpoint exists).
+- Agent replies in multiple chat bubbles are joined (`\n`) and assertions run against all bubbles together. Replies arriving during turn N+1's poll window could bleed into N+1's result (rare; `pollForResponse` already filters by `datetime > sentAt - 100ms`).
 
 ### Logs: Action-Name Filter (NEW v3.7.5)
 
