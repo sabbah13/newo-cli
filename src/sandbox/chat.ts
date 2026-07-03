@@ -210,6 +210,68 @@ function parseActDatetimeMs(datetime: string): number {
   return new Date(d).getTime();
 }
 
+type SeenAgentAct = {
+  act: ConversationAct;
+  order: number;
+};
+
+function delay(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function chatHistoryText(item: any): string {
+  return item.payload?.text || item.message || item.content || item.text || '';
+}
+
+function stableHash(input: string): string {
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < input.length; i++) {
+    hash ^= input.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return (hash >>> 0).toString(36);
+}
+
+function stableChatHistoryActId(item: any, sourceText: string, datetime: string): string {
+  return `chat_history_${stableHash([
+    datetime,
+    sourceText,
+    item.agent_actor_id || '',
+    item.agent_persona_id || '',
+    item.session_id || '',
+    item.flow_idn || '',
+    item.skill_idn || ''
+  ].join('\u001f'))}`;
+}
+
+function settleActKey(act: ConversationAct): string {
+  return [
+    act.id,
+    act.datetime,
+    act.source_text,
+    act.agent_actor_id || '',
+    act.agent_persona_id || '',
+    act.session_id,
+    act.flow_idn,
+    act.skill_idn
+  ].join('\u001f');
+}
+
+function compareActDatetime(a: ConversationAct, b: ConversationAct): number {
+  const aMs = parseActDatetimeMs(a.datetime);
+  const bMs = parseActDatetimeMs(b.datetime);
+  if (Number.isNaN(aMs) && Number.isNaN(bMs)) return 0;
+  if (Number.isNaN(aMs)) return 1;
+  if (Number.isNaN(bMs)) return -1;
+  return aMs - bMs;
+}
+
+function sortedSettledActs(acts: SeenAgentAct[]): ConversationAct[] {
+  return [...acts]
+    .sort((a, b) => compareActDatetime(a.act, b.act) || a.order - b.order)
+    .map(entry => entry.act);
+}
+
 /**
  * Poll for new conversation acts (messages and debug info)
  * Continues polling until we get an agent response, not just any new message
@@ -218,10 +280,11 @@ function parseActDatetimeMs(datetime: string): number {
  *   preserves the original single-bubble behavior byte-for-byte - `newo sandbox`'s
  *   call sites never pass this and must not change). When `settleMs > 0`, once the
  *   first agent act is observed the poll keeps going, accumulating every distinct
- *   agent act seen (deduped by `id`), until either no NEW agent act has appeared
+ *   agent act seen (deduped by a stable settle key), until either no NEW agent act has appeared
  *   for `settleMs` or the overall `timeoutMs` budget is exhausted - whichever
- *   comes first. The returned `acts` then include every agent act observed
- *   (sorted chronologically by `datetime`), not just the newest one.
+ *   comes first. The returned `acts` then include every agent act observed, not
+ *   just the newest one. Settle ordering is deterministic: `datetime`
+ *   ascending, then first-seen order for equal datetimes.
  */
 export async function pollForResponse(
   client: AxiosInstance,
@@ -235,14 +298,16 @@ export async function pollForResponse(
   let agentPersonaId = session.agent_persona_id;
   let userAct: ConversationAct | null = null;
   const maxPollAttempts = Math.max(1, Math.ceil(timeoutMs / POLL_INTERVAL_MS));
+  const timeoutDeadlineMs = Date.now() + timeoutMs;
   // Only populated/consulted when settleMs > 0 (multi-bubble collection mode).
-  const seenAgentActs = new Map<string, ConversationAct>();
+  const seenAgentActs = new Map<string, SeenAgentAct>();
+  let nextSeenOrder = 0;
   let settleDeadlineMs: number | null = null;
 
   if (verbose) console.log(`⏳ Waiting for agent response (timeout: ${Math.round(timeoutMs / 1000)}s)...`);
 
   // Add small delay before first poll to allow message to be processed
-  await new Promise(resolve => setTimeout(resolve, 500));
+  await delay(Math.min(500, Math.max(0, timeoutMs)));
 
   while (attempts < maxPollAttempts) {
     try {
@@ -263,34 +328,38 @@ export async function pollForResponse(
 
       if (response.items && response.items.length > 0) {
         // Convert chat history format to acts format
-        const convertedActs: ConversationAct[] = response.items.map((item: any) => ({
-          id: item.id || `chat_${Math.random()}`,
-          command_act_id: null,
-          external_event_id: item.external_event_id || 'chat_history',
-          arguments: item.arguments || [],
-          reference_idn: (item.is_agent === true) ? 'agent_message' : 'user_message',
-          runtime_context_id: item.runtime_context_id || 'chat_history',
-          source_text: item.payload?.text || item.message || item.content || item.text || '',
-          original_text: item.payload?.text || item.message || item.content || item.text || '',
-          datetime: item.datetime || item.created_at || item.timestamp || new Date().toISOString(),
-          user_actor_id: session.user_actor_id,
-          agent_actor_id: item.agent_actor_id || null,
-          user_persona_id: session.user_persona_id,
-          user_persona_name: 'User',
-          agent_persona_id: item.agent_persona_id || agentPersonaId || 'unknown',
-          external_id: item.external_id || null,
-          integration_idn: 'sandbox',
-          connector_idn: session.connector_idn,
-          to_integration_idn: null,
-          to_connector_idn: null,
-          is_agent: Boolean(item.is_agent === true),
-          project_idn: item.project_idn || null,
-          flow_idn: item.flow_idn || 'unknown',
-          skill_idn: item.skill_idn || 'unknown',
-          session_id: item.session_id || session.session_id || 'unknown',
-          recordings: item.recordings || [],
-          contact_information: item.contact_information || null
-        }));
+        const convertedActs: ConversationAct[] = response.items.map((item: any) => {
+          const sourceText = chatHistoryText(item);
+          const datetime = item.datetime || item.created_at || item.timestamp || new Date().toISOString();
+          return {
+            id: item.id || (settleMs > 0 ? stableChatHistoryActId(item, sourceText, datetime) : `chat_${Math.random()}`),
+            command_act_id: null,
+            external_event_id: item.external_event_id || 'chat_history',
+            arguments: item.arguments || [],
+            reference_idn: (item.is_agent === true) ? 'agent_message' : 'user_message',
+            runtime_context_id: item.runtime_context_id || 'chat_history',
+            source_text: sourceText,
+            original_text: sourceText,
+            datetime,
+            user_actor_id: session.user_actor_id,
+            agent_actor_id: item.agent_actor_id || null,
+            user_persona_id: session.user_persona_id,
+            user_persona_name: 'User',
+            agent_persona_id: item.agent_persona_id || agentPersonaId || 'unknown',
+            external_id: item.external_id || null,
+            integration_idn: 'sandbox',
+            connector_idn: session.connector_idn,
+            to_integration_idn: null,
+            to_connector_idn: null,
+            is_agent: Boolean(item.is_agent === true),
+            project_idn: item.project_idn || null,
+            flow_idn: item.flow_idn || 'unknown',
+            skill_idn: item.skill_idn || 'unknown',
+            session_id: item.session_id || session.session_id || 'unknown',
+            recordings: item.recordings || [],
+            contact_information: item.contact_information || null
+          };
+        });
 
         // Extract agent_persona_id from the first act if we don't have it yet
         if (!agentPersonaId && convertedActs.length > 0) {
@@ -359,10 +428,14 @@ export async function pollForResponse(
           } else {
             // Multi-bubble collection: accumulate every distinct agent act seen and
             // keep polling until the settle window elapses with no new arrival.
+            // Distinctness includes stable visible fields so duplicate or missing
+            // platform IDs do not make separate bubbles disappear or reappear.
             let sawNewAct = false;
             for (const act of agentMessages) {
-              if (!seenAgentActs.has(act.id)) {
-                seenAgentActs.set(act.id, act);
+              const key = settleActKey(act);
+              if (!seenAgentActs.has(key)) {
+                seenAgentActs.set(key, { act, order: nextSeenOrder });
+                nextSeenOrder++;
                 sawNewAct = true;
               }
             }
@@ -371,12 +444,16 @@ export async function pollForResponse(
             }
             if (settleDeadlineMs !== null && Date.now() >= settleDeadlineMs) {
               if (verbose) console.log(`✓ Settled after ${settleMs}ms with no new agent act - returning ${seenAgentActs.size} act(s)`);
-              return { acts: sortActsByDatetime([...seenAgentActs.values()]), agentPersonaId, userAct };
+              return { acts: sortedSettledActs([...seenAgentActs.values()]), agentPersonaId, userAct };
             }
           }
         } else if (verbose && attempts % 10 === 0) {
           console.log(`  No new agent messages yet (checked ${response.items.length} total messages, sentAt: ${messageSentAt?.toISOString()}), continuing...`);
         }
+      }
+      if (settleDeadlineMs !== null && Date.now() >= settleDeadlineMs) {
+        if (verbose) console.log(`✓ Settled after ${settleMs}ms with no new agent act - returning ${seenAgentActs.size} act(s)`);
+        return { acts: sortedSettledActs([...seenAgentActs.values()]), agentPersonaId, userAct };
       }
     } catch (error: any) {
       if (verbose && attempts < 3) {
@@ -386,23 +463,21 @@ export async function pollForResponse(
     }
 
     attempts++;
-    await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL_MS));
+    const remainingTimeoutMs = timeoutDeadlineMs - Date.now();
+    if (remainingTimeoutMs <= 0) break;
+    const remainingSettleMs = settleDeadlineMs === null ? POLL_INTERVAL_MS : Math.max(0, settleDeadlineMs - Date.now());
+    await delay(Math.min(POLL_INTERVAL_MS, remainingTimeoutMs, remainingSettleMs));
   }
 
   if (settleMs > 0 && seenAgentActs.size > 0) {
     // Overall timeout budget won before the settle window fully elapsed - the
     // design's "whichever comes first" - still return everything observed so far.
     if (verbose) console.log(`⏱️  Timeout reached mid-settle - returning ${seenAgentActs.size} act(s) observed so far`);
-    return { acts: sortActsByDatetime([...seenAgentActs.values()]), agentPersonaId, userAct };
+    return { acts: sortedSettledActs([...seenAgentActs.values()]), agentPersonaId, userAct };
   }
 
   if (verbose) console.log('⏱️  Timeout waiting for response');
   return { acts: [], agentPersonaId, userAct };
-}
-
-/** Sort agent acts chronologically by `datetime` (oldest first) for a coherent join order. */
-function sortActsByDatetime(acts: ConversationAct[]): ConversationAct[] {
-  return [...acts].sort((a, b) => parseActDatetimeMs(a.datetime) - parseActDatetimeMs(b.datetime));
 }
 
 /**

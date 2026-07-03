@@ -256,7 +256,45 @@ test('pollForResponse settle mode returns observed acts when overall timeout win
   const elapsed = Date.now() - startedAt;
 
   assert.deepEqual(acts.map(act => act.id), ['partial']);
-  assert.ok(elapsed < 5000, `expected timeout budget to win before settle window, took ${elapsed}ms`);
+  assert.ok(elapsed < 1400, `expected timeout budget to win before settle window, took ${elapsed}ms`);
+});
+
+test('pollForResponse settle mode deterministically handles missing ids duplicate ids and equal datetimes', async () => {
+  async function collectActs() {
+    const sentAt = new Date('2026-07-03T18:00:00.000Z');
+    const equalDatetime = '2026-07-03T18:00:01.000Z';
+    const client = scriptedChatHistoryClient([
+      [
+        { id: 'dup', is_agent: true, payload: { text: 'alpha' }, datetime: equalDatetime }
+      ],
+      [
+        { is_agent: true, payload: { text: 'missing id' }, datetime: equalDatetime, flow_idn: 'flow-a', skill_idn: 'skill-a' },
+        { id: 'dup', is_agent: true, payload: { text: 'beta' }, datetime: equalDatetime },
+        { id: 'dup', is_agent: true, payload: { text: 'alpha' }, datetime: equalDatetime }
+      ],
+      [
+        { is_agent: true, payload: { text: 'missing id' }, datetime: equalDatetime, flow_idn: 'flow-a', skill_idn: 'skill-a' },
+        { id: 'dup', is_agent: true, payload: { text: 'beta' }, datetime: equalDatetime },
+        { id: 'dup', is_agent: true, payload: { text: 'alpha' }, datetime: equalDatetime }
+      ]
+    ]);
+
+    const { acts } = await pollForResponse(client, sandboxSession(), sentAt, false, 3000, 250);
+    return acts.map(act => ({
+      id: act.id,
+      datetime: act.datetime,
+      text: act.source_text
+    }));
+  }
+
+  const firstRun = await collectActs();
+  const secondRun = await collectActs();
+
+  assert.deepEqual(firstRun, secondRun);
+  assert.deepEqual(firstRun.map(act => act.text), ['alpha', 'missing id', 'beta']);
+  assert.equal(firstRun[0].id, 'dup');
+  assert.match(firstRun[1].id, /^chat_history_/);
+  assert.equal(firstRun[2].id, 'dup');
 });
 
 // --- R3: remote skill resolution ---

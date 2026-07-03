@@ -27,7 +27,11 @@ against a live sandbox agent, per-turn assertions, machine-readable results.
    test` passes a ~1500ms settle window, so once the first agent act arrives polling
    continues, accumulating every distinct agent act seen, until no NEW agent act has
    appeared for that window or the turn's overall timeout is reached - whichever comes
-   first - and returns all of them (chronologically ordered) for the join above.
+   first - and returns all of them (chronologically ordered) for the join above. Equal
+   datetimes use first-seen order as the tie-break: earlier poll wins, and within one poll
+   the chat-history response order wins. The settle path also uses stable visible fields
+   rather than only platform IDs for deduplication, so missing or duplicated IDs do not make
+   distinct bubbles disappear or reappear.
 4. **Timeout is a classified turn status, not an exception** - `pollForResponse`
    deliberately never throws on timeout; the runner classifies `pass|fail|timeout|skipped`
    and fail-fast aborts the scenario (shared conversation state is off-script after a
