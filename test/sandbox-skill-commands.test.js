@@ -316,6 +316,26 @@ test('pollForResponse settle mode dedupes stable ids when timestamps change acro
   assert.deepEqual(acts.map(act => act.source_text), ['same bubble']);
 });
 
+test('pollForResponse settle mode dedupes missing ids when timestamps change across polls', async () => {
+  const sentAt = new Date('2026-07-03T18:00:00.000Z');
+  const client = scriptedChatHistoryClient([
+    [
+      { is_agent: true, external_event_id: 'evt-same', payload: { text: 'same missing-id bubble' }, datetime: '2026-07-03T18:00:01.000Z' }
+    ],
+    [
+      { is_agent: true, external_event_id: 'evt-same', payload: { text: 'same missing-id bubble' }, datetime: '2026-07-03T18:00:02.000Z' }
+    ],
+    [
+      { is_agent: true, external_event_id: 'evt-same', payload: { text: 'same missing-id bubble' }, datetime: '2026-07-03T18:00:03.000Z' }
+    ]
+  ]);
+
+  const { acts } = await pollForResponse(client, sandboxSession(), sentAt, false, 3000, 250);
+
+  assert.deepEqual(acts.map(act => act.source_text), ['same missing-id bubble']);
+  assert.match(acts[0].id, /^chat_history_/);
+});
+
 test('pollForResponse settle mode can poll past max attempts while timeout budget remains', async () => {
   const sentAt = new Date('2026-07-03T18:00:00.000Z');
   const client = scriptedChatHistoryClient([

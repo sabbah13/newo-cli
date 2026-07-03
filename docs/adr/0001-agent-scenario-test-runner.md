@@ -32,7 +32,11 @@ against a live sandbox agent, per-turn assertions, machine-readable results.
    the chat-history response order wins. The settle path also uses stable correlation and
    content fields rather than only platform IDs for deduplication, so missing or duplicated
    IDs do not make distinct bubbles disappear when another stable field, such as
-   `external_event_id`, distinguishes them.
+   `external_event_id`, distinguishes them. Synthetic IDs for missing platform IDs exclude
+   timestamps because chat-history snapshots can report the same bubble with a shifted
+   timestamp across polls. Because this is polling, not a server-side event stream, a bubble
+   first observed on the boundary poll can be collected into the current turn; exact
+   sub-poll arrival time is not observable.
 4. **Timeout is a classified turn status, not an exception** - `pollForResponse`
    deliberately never throws on timeout; the runner classifies `pass|fail|timeout|skipped`
    and fail-fast aborts the scenario (shared conversation state is off-script after a

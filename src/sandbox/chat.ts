@@ -234,7 +234,6 @@ function stableHash(input: string): string {
 
 function stableChatHistoryActId(item: any, sourceText: string): string {
   return `chat_history_${stableHash([
-    item.datetime || item.created_at || item.timestamp || '',
     sourceText,
     item.external_event_id || '',
     item.external_id || '',
