@@ -40,6 +40,32 @@ function fakeClient(routes) {
   };
 }
 
+function scriptedChatHistoryClient(polls) {
+  let index = 0;
+  return {
+    async get(url) {
+      if (url !== '/api/v1/chat/history') {
+        throw new Error(`unexpected GET ${url}`);
+      }
+      const items = polls[Math.min(index, polls.length - 1)] || [];
+      index++;
+      return { data: { items } };
+    }
+  };
+}
+
+function sandboxSession(overrides = {}) {
+  return {
+    user_persona_id: 'p1',
+    user_actor_id: 'a1',
+    agent_persona_id: 'agent-persona',
+    connector_idn: 'sandbox',
+    session_id: 's1',
+    external_id: 'x',
+    ...overrides
+  };
+}
+
 const SANDBOX_ROUTES = {
   '/api/v1/integrations': [
     { id: 'int-sandbox', idn: 'sandbox', title: 'Sandbox' },
@@ -159,6 +185,78 @@ test('pollForResponse returns agent act and matching user act with external_even
   assert.equal(acts[0].source_text, 'pong');
   assert.ok(userAct, 'user act should be captured');
   assert.equal(userAct.external_event_id, 'evt-user');
+});
+
+test('pollForResponse default settleMs returns only newest agent act', async () => {
+  const sentAt = new Date('2026-07-03T18:00:00.000Z');
+  const client = scriptedChatHistoryClient([
+    [
+      { id: 'newest', is_agent: true, payload: { text: 'newest bubble' }, datetime: '2026-07-03T18:00:02.000Z' },
+      { id: 'older', is_agent: true, payload: { text: 'older bubble' }, datetime: '2026-07-03T18:00:01.000Z' }
+    ]
+  ]);
+
+  const { acts } = await pollForResponse(client, sandboxSession(), sentAt, false, 2000);
+
+  assert.deepEqual(acts.map(act => act.id), ['newest']);
+  assert.equal(acts[0].source_text, 'newest bubble');
+});
+
+test('pollForResponse settle mode collects multiple bubbles across polls', async () => {
+  const sentAt = new Date('2026-07-03T18:00:00.000Z');
+  const client = scriptedChatHistoryClient([
+    [
+      { id: 'first', is_agent: true, payload: { text: 'first bubble' }, datetime: '2026-07-03T18:00:01.000Z' }
+    ],
+    [
+      { id: 'second', is_agent: true, payload: { text: 'second bubble' }, datetime: '2026-07-03T18:00:02.000Z' },
+      { id: 'first', is_agent: true, payload: { text: 'first bubble' }, datetime: '2026-07-03T18:00:01.000Z' }
+    ],
+    [
+      { id: 'second', is_agent: true, payload: { text: 'second bubble' }, datetime: '2026-07-03T18:00:02.000Z' },
+      { id: 'first', is_agent: true, payload: { text: 'first bubble' }, datetime: '2026-07-03T18:00:01.000Z' }
+    ]
+  ]);
+
+  const { acts } = await pollForResponse(client, sandboxSession(), sentAt, false, 4000, 250);
+
+  assert.deepEqual(acts.map(act => act.id), ['first', 'second']);
+  assert.deepEqual(acts.map(act => act.source_text), ['first bubble', 'second bubble']);
+});
+
+test('pollForResponse settle mode returns when settle window expires', async () => {
+  const sentAt = new Date('2026-07-03T18:00:00.000Z');
+  const client = scriptedChatHistoryClient([
+    [
+      { id: 'only', is_agent: true, payload: { text: 'single bubble' }, datetime: '2026-07-03T18:00:01.000Z' }
+    ],
+    [
+      { id: 'only', is_agent: true, payload: { text: 'single bubble' }, datetime: '2026-07-03T18:00:01.000Z' }
+    ]
+  ]);
+
+  const startedAt = Date.now();
+  const { acts } = await pollForResponse(client, sandboxSession(), sentAt, false, 3000, 250);
+  const elapsed = Date.now() - startedAt;
+
+  assert.deepEqual(acts.map(act => act.id), ['only']);
+  assert.ok(elapsed < 3000, `expected settle expiry before timeout, took ${elapsed}ms`);
+});
+
+test('pollForResponse settle mode returns observed acts when overall timeout wins', async () => {
+  const sentAt = new Date('2026-07-03T18:00:00.000Z');
+  const client = scriptedChatHistoryClient([
+    [
+      { id: 'partial', is_agent: true, payload: { text: 'partial bubble' }, datetime: '2026-07-03T18:00:01.000Z' }
+    ]
+  ]);
+
+  const startedAt = Date.now();
+  const { acts } = await pollForResponse(client, sandboxSession(), sentAt, false, 1000, 10_000);
+  const elapsed = Date.now() - startedAt;
+
+  assert.deepEqual(acts.map(act => act.id), ['partial']);
+  assert.ok(elapsed < 5000, `expected timeout budget to win before settle window, took ${elapsed}ms`);
 });
 
 // --- R3: remote skill resolution ---
