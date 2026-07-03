@@ -236,6 +236,9 @@ function stableChatHistoryActId(item: any, sourceText: string): string {
   return `chat_history_${stableHash([
     item.datetime || item.created_at || item.timestamp || '',
     sourceText,
+    item.external_event_id || '',
+    item.external_id || '',
+    item.runtime_context_id || '',
     item.agent_actor_id || '',
     item.agent_persona_id || '',
     item.session_id || '',
@@ -247,6 +250,9 @@ function stableChatHistoryActId(item: any, sourceText: string): string {
 function settleActKey(act: ConversationAct): string {
   return [
     act.id,
+    act.external_event_id,
+    act.external_id || '',
+    act.runtime_context_id,
     act.source_text,
     act.agent_actor_id || '',
     act.agent_persona_id || '',
@@ -308,7 +314,7 @@ export async function pollForResponse(
   // Add small delay before first poll to allow message to be processed
   await delay(Math.min(500, Math.max(0, timeoutMs)));
 
-  while (attempts < maxPollAttempts) {
+  while (attempts < maxPollAttempts || (settleDeadlineMs !== null && Date.now() < timeoutDeadlineMs)) {
     try {
       if (verbose && attempts % 5 === 0) {
         console.log(`  [Poll attempt ${attempts + 1}/${maxPollAttempts}] Checking for messages...`);

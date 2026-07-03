@@ -316,6 +316,53 @@ test('pollForResponse settle mode dedupes stable ids when timestamps change acro
   assert.deepEqual(acts.map(act => act.source_text), ['same bubble']);
 });
 
+test('pollForResponse settle mode can poll past max attempts while timeout budget remains', async () => {
+  const sentAt = new Date('2026-07-03T18:00:00.000Z');
+  const client = scriptedChatHistoryClient([
+    [
+      { id: 'first', is_agent: true, payload: { text: 'first bubble' }, datetime: '2026-07-03T18:00:01.000Z' }
+    ],
+    [
+      { id: 'second', is_agent: true, payload: { text: 'second bubble' }, datetime: '2026-07-03T18:00:02.000Z' },
+      { id: 'first', is_agent: true, payload: { text: 'first bubble' }, datetime: '2026-07-03T18:00:01.000Z' }
+    ]
+  ]);
+
+  const { acts } = await pollForResponse(client, sandboxSession(), sentAt, false, 1000, 250);
+
+  assert.deepEqual(acts.map(act => act.source_text), ['first bubble', 'second bubble']);
+});
+
+test('pollForResponse settle mode keeps same-text bubbles distinct by correlation fields', async () => {
+  const sentAt = new Date('2026-07-03T18:00:00.000Z');
+  const equalDatetime = '2026-07-03T18:00:01.000Z';
+  const client = scriptedChatHistoryClient([
+    [
+      { id: 'dup', is_agent: true, external_event_id: 'evt-1', payload: { text: 'OK' }, datetime: equalDatetime },
+      { is_agent: true, external_event_id: 'evt-missing-1', payload: { text: 'OK' }, datetime: equalDatetime }
+    ],
+    [
+      { id: 'dup', is_agent: true, external_event_id: 'evt-2', payload: { text: 'OK' }, datetime: equalDatetime },
+      { is_agent: true, external_event_id: 'evt-missing-2', payload: { text: 'OK' }, datetime: equalDatetime },
+      { id: 'dup', is_agent: true, external_event_id: 'evt-1', payload: { text: 'OK' }, datetime: equalDatetime },
+      { is_agent: true, external_event_id: 'evt-missing-1', payload: { text: 'OK' }, datetime: equalDatetime }
+    ],
+    [
+      { id: 'dup', is_agent: true, external_event_id: 'evt-2', payload: { text: 'OK' }, datetime: equalDatetime },
+      { is_agent: true, external_event_id: 'evt-missing-2', payload: { text: 'OK' }, datetime: equalDatetime },
+      { id: 'dup', is_agent: true, external_event_id: 'evt-1', payload: { text: 'OK' }, datetime: equalDatetime },
+      { is_agent: true, external_event_id: 'evt-missing-1', payload: { text: 'OK' }, datetime: equalDatetime }
+    ]
+  ]);
+
+  const { acts } = await pollForResponse(client, sandboxSession(), sentAt, false, 3000, 250);
+
+  assert.deepEqual(acts.map(act => act.external_event_id), ['evt-1', 'evt-missing-1', 'evt-2', 'evt-missing-2']);
+  assert.equal(acts[1].id.startsWith('chat_history_'), true);
+  assert.equal(acts[3].id.startsWith('chat_history_'), true);
+  assert.notEqual(acts[1].id, acts[3].id);
+});
+
 // --- R3: remote skill resolution ---
 
 const SKILL_ROUTES = {
