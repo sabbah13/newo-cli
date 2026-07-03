@@ -283,7 +283,7 @@ All turns within a scenario share the same conversation (same session ID, actor)
 
 **Output:**
 - **Human:** per-turn `✓ Turn 1/3 PASS (2.1s)` or `✗ Turn 2/3 FAIL` with expected vs actual text, user-turn `external_event_id`, and a `newo logs --event-id <id>` hint.
-- **--json:** one object with scenario metadata, per-turn results (status, message, response, correlation fields), and summary (total, passed, failed, skipped).
+- **--json:** one object with scenario metadata, per-turn results (status, message, response, correlation fields), and summary (total, passed, failed, skipped). On a setup failure or an unexpected error mid-run, `--json` instead prints exactly one error object `{ error: string, phase: "setup" | "run", file: string | null }` and exits 1.
 
 **CI budget note:** serialized, so worst-case is `turns x timeout`. With 10 turns @ 60s timeout = 10 minutes. Per-turn overrides let you keep quick assertions fast and allow slow ones more time.
 

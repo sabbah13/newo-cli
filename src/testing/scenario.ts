@@ -90,10 +90,16 @@ function checkUnknownKeys(
 
 /**
  * Normalize a YAML `contains`/`not_contains` value (string or list of strings) into a
- * string array. Throws a descriptive, path-bearing error for anything else.
+ * string array. Throws a descriptive, path-bearing error for anything else, including
+ * any empty string (scalar or list entry) - an empty needle is a vacuous assertion
+ * (`contains: ""` always passes, `not_contains: ""` always fails) that must be rejected
+ * before it can false-green a scenario in CI.
  */
 function normalizeStringOrList(value: unknown, fieldPath: string, scenarioPath: string): string[] {
   if (typeof value === 'string') {
+    if (value.length === 0) {
+      fail(scenarioPath, `${fieldPath}: must not be an empty string (a vacuous assertion)`);
+    }
     return [value];
   }
   if (Array.isArray(value)) {
@@ -103,6 +109,9 @@ function normalizeStringOrList(value: unknown, fieldPath: string, scenarioPath: 
     return value.map((entry, entryIndex) => {
       if (typeof entry !== 'string') {
         fail(scenarioPath, `${fieldPath}[${entryIndex}]: must be a string, got ${typeof entry}`);
+      }
+      if (entry.length === 0) {
+        fail(scenarioPath, `${fieldPath}[${entryIndex}]: must not be an empty string (a vacuous assertion)`);
       }
       return entry;
     });
@@ -146,6 +155,9 @@ function validateExpect(value: unknown, turnPath: string, scenarioPath: string):
     const regexField = `${fieldPath}.regex`;
     if (typeof value.regex !== 'string') {
       fail(scenarioPath, `${regexField}: must be a string, got ${typeof value.regex}`);
+    }
+    if (value.regex.length === 0) {
+      fail(scenarioPath, `${regexField}: must not be an empty string (matches everything, a vacuous assertion)`);
     }
     try {
       new RegExp(value.regex);

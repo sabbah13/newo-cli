@@ -249,6 +249,8 @@ newo test ./scenarios/order-status.yaml --timeout 300       # scale response bud
 
 **CI budget note:** each scenario runs serially; worst case is `turns x timeout` (all turns hit their timeout budget). Mitigate with per-turn timeouts, and remember CI runners may be slower than your dev machine. Failure on any turn aborts remaining turns (no flaky retries or continued-on-error modes in v1).
 
+**`--json` error contract:** any failure - setup (bad args, malformed scenario, no connector, auth error) or an unexpected error mid-run - prints exactly one JSON object of the shape `{ error: string, phase: "setup" | "run", file: string | null }` to stdout and exits 1, instead of a `turns`-shaped result.
+
 **Known limitations:**
 - Persona and actor created per run are not deleted after the scenario finishes (matches existing `newo sandbox` behavior; no delete endpoint exists).
 - Agent replies in multiple chat bubbles are joined (`\n`) and assertions run against all bubbles together. Replies arriving during turn N+1's poll window could bleed into N+1's result (rare; `pollForResponse` already filters by `datetime > sentAt - 100ms`).

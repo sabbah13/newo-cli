@@ -39,6 +39,10 @@ import type { Scenario, TurnStatus } from '../../testing/scenario.js';
 
 const DEFAULT_TIMEOUT_SECONDS = 60;
 const ACTUAL_TRUNCATE_LENGTH = 500;
+// Multi-bubble settle window: once the first agent act for a turn arrives, keep
+// polling until no NEW agent act has appeared for this long (or the turn's overall
+// timeout budget is reached), then join every agent act seen - see ADR 0001 decision 3.
+const REPLY_SETTLE_MS = 1500;
 
 /** One turn's entry in the `--json` result's `turns` array (design contract). */
 interface TestJsonTurn {
@@ -65,6 +69,19 @@ interface TestJsonResult {
   summary: { total: number; passed: number; failed: number; skipped: number };
   elapsed_ms: number;
   turns: TestJsonTurn[];
+}
+
+/**
+ * The single JSON object `--json` prints on stdout for ANY failure path - setup
+ * (before any turn runs: bad args, malformed YAML, no connector, auth error) or run
+ * (an unexpected error mid-scenario, e.g. a network failure between turns). This is
+ * distinct from `TestJsonResult`, which reports a scenario that ran to completion
+ * (possibly with failed/skipped turns) rather than a run that aborted unexpectedly.
+ */
+interface TestJsonError {
+  error: string;
+  phase: 'setup' | 'run';
+  file: string | null;
 }
 
 function truncate(text: string, max: number): string {
@@ -96,13 +113,20 @@ export async function handleTestCommand(
     console.warn = () => {};
   }
 
+  // Tracked outside the try block so both `fail()` and the catch-all below can
+  // report an accurate `file`/`phase` in the --json error contract even when the
+  // failure happens before (or logically outside) the block that computes them.
+  let filePathForError: string | null = null;
+  let phase: 'setup' | 'run' = 'setup';
+
   // A setup failure (bad args, malformed YAML, no connector, auth error): print
   // (unless quiet; a JSON error object if --json) and exit before any turn runs.
   function fail(message: string): never {
     if (!quiet) {
       console.error(`❌ ${message}`);
     } else if (json) {
-      originalConsoleLog(JSON.stringify({ error: message }));
+      const result: TestJsonError = { error: message, phase: 'setup', file: filePathForError };
+      originalConsoleLog(JSON.stringify(result));
     }
     process.exit(1);
   }
@@ -113,6 +137,7 @@ export async function handleTestCommand(
 
     const filePathArg = args._[1];
     const filePath = filePathArg === undefined ? null : String(filePathArg);
+    filePathForError = filePath;
     if (!filePath) {
       fail('Scenario file is required: newo test <scenario-file.yaml>');
     }
@@ -183,6 +208,10 @@ export async function handleTestCommand(
     let aborted = false;
     let abortedAtIndex = -1;
 
+    // Any unexpected error from here on (send/poll failures, etc.) happened while
+    // the scenario was actually running, not during setup.
+    phase = 'run';
+
     for (let i = 0; i < totalTurns; i++) {
       const turn = scenario.turns[i];
       if (!turn) continue;
@@ -206,7 +235,8 @@ export async function handleTestCommand(
         session,
         sentAt,
         quiet ? false : verbose,
-        timeoutMs
+        timeoutMs,
+        REPLY_SETTLE_MS
       );
       session.agent_persona_id = agentPersonaId;
       const elapsedMs = Date.now() - turnStartedAt;
@@ -305,7 +335,15 @@ export async function handleTestCommand(
     }
 
     const message = error instanceof Error ? error.message : String(error);
-    console.error(`❌ Test error: ${message}`);
+    if (json) {
+      // Complete the --json error contract: every failure path, including this
+      // catch-all for unexpected errors (auth/API/session/send), emits exactly one
+      // machine-readable JSON object to stdout rather than only human stderr text.
+      const result: TestJsonError = { error: message, phase, file: filePathForError };
+      console.log(JSON.stringify(result));
+    } else {
+      console.error(`❌ Test error: ${message}`);
+    }
     process.exit(1);
   } finally {
     // Always restore console functions and clear quiet mode flag
