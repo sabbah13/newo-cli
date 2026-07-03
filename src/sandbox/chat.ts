@@ -232,9 +232,9 @@ function stableHash(input: string): string {
   return (hash >>> 0).toString(36);
 }
 
-function stableChatHistoryActId(item: any, sourceText: string, datetime: string): string {
+function stableChatHistoryActId(item: any, sourceText: string): string {
   return `chat_history_${stableHash([
-    datetime,
+    item.datetime || item.created_at || item.timestamp || '',
     sourceText,
     item.agent_actor_id || '',
     item.agent_persona_id || '',
@@ -247,7 +247,6 @@ function stableChatHistoryActId(item: any, sourceText: string, datetime: string)
 function settleActKey(act: ConversationAct): string {
   return [
     act.id,
-    act.datetime,
     act.source_text,
     act.agent_actor_id || '',
     act.agent_persona_id || '',
@@ -332,7 +331,7 @@ export async function pollForResponse(
           const sourceText = chatHistoryText(item);
           const datetime = item.datetime || item.created_at || item.timestamp || new Date().toISOString();
           return {
-            id: item.id || (settleMs > 0 ? stableChatHistoryActId(item, sourceText, datetime) : `chat_${Math.random()}`),
+            id: item.id || (settleMs > 0 ? stableChatHistoryActId(item, sourceText) : `chat_${Math.random()}`),
             command_act_id: null,
             external_event_id: item.external_event_id || 'chat_history',
             arguments: item.arguments || [],

@@ -297,6 +297,25 @@ test('pollForResponse settle mode deterministically handles missing ids duplicat
   assert.equal(firstRun[2].id, 'dup');
 });
 
+test('pollForResponse settle mode dedupes stable ids when timestamps change across polls', async () => {
+  const sentAt = new Date('2026-07-03T18:00:00.000Z');
+  const client = scriptedChatHistoryClient([
+    [
+      { id: 'same', is_agent: true, payload: { text: 'same bubble' }, datetime: '2026-07-03T18:00:01.000Z' }
+    ],
+    [
+      { id: 'same', is_agent: true, payload: { text: 'same bubble' }, datetime: '2026-07-03T18:00:02.000Z' }
+    ],
+    [
+      { id: 'same', is_agent: true, payload: { text: 'same bubble' }, datetime: '2026-07-03T18:00:03.000Z' }
+    ]
+  ]);
+
+  const { acts } = await pollForResponse(client, sandboxSession(), sentAt, false, 3000, 250);
+
+  assert.deepEqual(acts.map(act => act.source_text), ['same bubble']);
+});
+
 // --- R3: remote skill resolution ---
 
 const SKILL_ROUTES = {
