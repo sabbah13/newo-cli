@@ -50,6 +50,7 @@ import { handleUpdateProjectCommand } from './cli/commands/update-project.js';
 import { handleWatchCommand } from './cli/commands/watch.js';
 import { handleDiffCommand } from './cli/commands/diff.js';
 import { handleLogsCommand, printLogsHelp } from './cli/commands/logs.js';
+import { handleTestCommand, printTestHelp } from './cli/commands/test.js';
 import { handleExportCommand } from './cli/commands/export.js';
 import { handleLintCommand } from './cli/commands/lint.js';
 import { handleFormatCommand } from './cli/commands/format.js';
@@ -79,6 +80,12 @@ async function main(): Promise<void> {
   // global summary, since logs has the most filter flags of any subcommand.
   if (cmd === 'logs' && (args.help || args.h)) {
     printLogsHelp();
+    return;
+  }
+  // Same carve-out for `test --help`: the scenario-file schema and flags need
+  // more room than the global summary gives any one subcommand.
+  if (cmd === 'test' && (args.help || args.h)) {
+    printTestHelp();
     return;
   }
   if (!cmd || ['help', '-h', '--help'].includes(cmd) || args.help || args.h) {
@@ -168,6 +175,10 @@ async function main(): Promise<void> {
 
       case 'sandbox':
         await handleSandboxCommand(customerConfig, args, verbose);
+        break;
+
+      case 'test':
+        await handleTestCommand(customerConfig, args, verbose);
         break;
 
       case 'meta':

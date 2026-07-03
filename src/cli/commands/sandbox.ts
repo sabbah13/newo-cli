@@ -26,7 +26,8 @@ import {
   sendMessage,
   pollForResponse,
   extractAgentMessages,
-  formatDebugInfo
+  formatDebugInfo,
+  normalizeActEventId
 } from '../../sandbox/chat.js';
 
 const DEFAULT_TIMEOUT_SECONDS = 60;
@@ -53,16 +54,6 @@ interface SandboxJsonResult {
   flow_idn: string | null;
   skill_idn: string | null;
   session_id: string | null;
-}
-
-/**
- * Normalize an act's external_event_id: the chat-history converter falls back
- * to the placeholder 'chat_history' when the API omits the field.
- */
-function actEventId(act: ConversationAct | null | undefined): string | null {
-  if (!act) return null;
-  const id = act.external_event_id;
-  return id && id !== 'chat_history' ? id : null;
 }
 
 /**
@@ -274,9 +265,9 @@ function printJsonResult(
     persona_id: session.user_persona_id !== 'unknown' ? session.user_persona_id : null,
     connector_idn: session.connector_idn,
     // external_event_id of the user turn is the correlation key for `newo logs --event-id`
-    external_event_id: actEventId(userAct),
-    user_external_event_id: actEventId(userAct),
-    agent_external_event_id: actEventId(agentAct),
+    external_event_id: normalizeActEventId(userAct),
+    user_external_event_id: normalizeActEventId(userAct),
+    agent_external_event_id: normalizeActEventId(agentAct),
     response: agentAct ? (agentAct.source_text || agentAct.original_text || null) : null,
     elapsed_ms: elapsedMs,
     timed_out: agentAct === null,
@@ -398,8 +389,8 @@ async function startNewChat(
         console.log(`   Flow: ${lastAct.flow_idn || 'N/A'}`);
         console.log(`   Skill: ${lastAct.skill_idn || 'N/A'}`);
         console.log(`   Session: ${lastAct.session_id}`);
-        if (actEventId(userAct)) {
-          console.log(`   Event ID (user turn): ${actEventId(userAct)}`);
+        if (normalizeActEventId(userAct)) {
+          console.log(`   Event ID (user turn): ${normalizeActEventId(userAct)}`);
         }
       }
       console.log(`   Acts Processed: ${acts.length} (${agentActs.length} agent, ${acts.length - agentActs.length} system)`);
@@ -526,8 +517,8 @@ async function continueExistingChat(
           console.log(`   Flow: ${lastAct.flow_idn || 'N/A'}`);
           console.log(`   Skill: ${lastAct.skill_idn || 'N/A'}`);
           console.log(`   Session: ${lastAct.session_id}`);
-          if (actEventId(userAct)) {
-            console.log(`   Event ID (user turn): ${actEventId(userAct)}`);
+          if (normalizeActEventId(userAct)) {
+            console.log(`   Event ID (user turn): ${normalizeActEventId(userAct)}`);
           }
         }
         console.log(`   Acts Processed: ${acts.length} (${agentActs.length} agent, ${acts.length - agentActs.length} user)`);

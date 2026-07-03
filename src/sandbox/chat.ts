@@ -361,6 +361,19 @@ export async function pollForResponse(
 }
 
 /**
+ * Normalize an act's external_event_id: the chat-history converter falls back
+ * to the placeholder 'chat_history' when the API omits the field. Callers
+ * (sandbox.ts, test.ts) must go through this rather than reading
+ * act.external_event_id raw, or they'll silently correlate against the
+ * placeholder instead of a real `newo logs --event-id` key.
+ */
+export function normalizeActEventId(act: ConversationAct | null | undefined): string | null {
+  if (!act) return null;
+  const id = act.external_event_id;
+  return id && id !== 'chat_history' ? id : null;
+}
+
+/**
  * Extract agent messages from acts
  */
 export function extractAgentMessages(acts: ConversationAct[]): ConversationAct[] {
