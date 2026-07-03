@@ -228,6 +228,18 @@ newo logs --type call --raw | jq '.data.name'  # JSONL stream, one log per line,
 
 `--raw` emits **JSONL** — one JSON object per log line (oldest-first), with no banners or "no logs found" text — so stdout is a clean stream for `jq`/piping. This differs from `--json`, which prints a single pretty-printed JSON array.
 
+### Logs: ID Filters
+
+```bash
+newo logs --agent-persona-id <uuid>              # logs for one agent persona
+newo logs --persona-id <uuid>                    # logs for one user persona
+newo logs --actor-id <uuid>                      # logs for one user actor
+newo logs --event-id <uuid>                      # logs for one external event (correlates a chat turn; see newo sandbox --json)
+newo logs --runtime-id <uuid>                    # logs for one runtime context
+```
+
+These map 1:1 onto the `agent_persona_ids` / `user_persona_ids` / `user_actor_ids` / `external_event_id` / `runtime_context_id` query params the analytics logs API accepts, and mirror the filter fields in the Builder UI's own Conversations → **Show Logs** panel (`Agent`, the `User: Persona`/`Actor` toggle, `External Event Id`, `Runtime Context Id`). Each flag takes a single UUID (no comma-separated lists, unlike `--level`/`--type`).
+
 ### Get One Session (NEW v3.7.6)
 
 Inspect a **single conversation session** by its platform `session_id` (the Session Id from an assessor report or the Conversations UI). The short command is `newo session <uuid>`.

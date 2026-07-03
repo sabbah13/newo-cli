@@ -335,3 +335,43 @@ test('CLI logs --name paginates through the entrypoint', async () => {
     }
   );
 });
+
+test('CLI logs --agent-persona-id forwards agent_persona_ids to the API', async () => {
+  const agentPersonaId = '16dd414e-46d5-485e-a818-dc8610b49f65';
+
+  await withMockNewoApi(
+    (method, url) => {
+      assert.equal(method, 'GET');
+      assert.equal(url.pathname, '/api/v1/analytics/logs');
+      return { body: { items: [] } };
+    },
+    async (baseUrl, requests) => {
+      const result = await runCli(
+        ['logs', '--agent-persona-id', agentPersonaId, '--json', '--hours', '1'],
+        {
+          NEWO_BASE_URL: baseUrl,
+          NEWO_API_KEY: 'cli-test-api-key'
+        }
+      );
+
+      assert.equal(result.code, 0, result.stderr);
+      assert.equal(result.stderr, '');
+      assert.deepEqual(JSON.parse(result.stdout), []);
+
+      const logRequests = requests.filter(request => request.pathname === '/api/v1/analytics/logs');
+      assert.equal(logRequests.length, 1);
+      assert.equal(logRequests[0].query.agent_persona_ids, agentPersonaId);
+    }
+  );
+});
+
+test('CLI logs --help prints logs-specific help, not the global summary', async () => {
+  const result = await runCli(['logs', '--help'], {});
+
+  assert.equal(result.code, 0, result.stderr);
+  assert.match(result.stdout, /Usage: newo logs \[options\]/);
+  assert.match(result.stdout, /--agent-persona-id <uuid>\s+Filter by agent persona ID/);
+  assert.match(result.stdout, /--event-id <uuid>\s+Filter by external event ID/);
+  // Must NOT fall through to the global multi-command help screen.
+  assert.doesNotMatch(result.stdout, /NEWO CLI - Multi-Customer Support/);
+});

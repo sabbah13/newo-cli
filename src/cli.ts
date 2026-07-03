@@ -49,7 +49,7 @@ import { handleAddProjectCommand } from './cli/commands/add-project.js';
 import { handleUpdateProjectCommand } from './cli/commands/update-project.js';
 import { handleWatchCommand } from './cli/commands/watch.js';
 import { handleDiffCommand } from './cli/commands/diff.js';
-import { handleLogsCommand } from './cli/commands/logs.js';
+import { handleLogsCommand, printLogsHelp } from './cli/commands/logs.js';
 import { handleExportCommand } from './cli/commands/export.js';
 import { handleLintCommand } from './cli/commands/lint.js';
 import { handleFormatCommand } from './cli/commands/format.js';
@@ -75,6 +75,12 @@ async function main(): Promise<void> {
   // the --help / -h *flag* on any subcommand (e.g. `newo push --help`):
   // otherwise it falls through to the switch and EXECUTES the command, which
   // for push/conversations/etc. is a destructive live action.
+  // `logs --help` gets its own detailed help (printLogsHelp) instead of the
+  // global summary, since logs has the most filter flags of any subcommand.
+  if (cmd === 'logs' && (args.help || args.h)) {
+    printLogsHelp();
+    return;
+  }
   if (!cmd || ['help', '-h', '--help'].includes(cmd) || args.help || args.h) {
     handleHelpCommand();
     return;
