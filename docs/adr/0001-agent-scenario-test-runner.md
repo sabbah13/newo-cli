@@ -21,7 +21,13 @@ against a live sandbox agent, per-turn assertions, machine-readable results.
    with path-bearing error messages, matching house style.
 3. **Reply = all agent acts in the turn's poll window, joined with `\n`.** Asserting only
    the last chat bubble makes `contains` flaky against message splitting, which is
-   presentation, not behavior.
+   presentation, not behavior. Made real via an optional `settleMs` parameter on
+   `pollForResponse` (`src/sandbox/chat.ts`): default `0` preserves `newo sandbox`'s
+   original single-bubble behavior byte-for-byte (its call sites are untouched); `newo
+   test` passes a ~1500ms settle window, so once the first agent act arrives polling
+   continues, accumulating every distinct agent act seen, until no NEW agent act has
+   appeared for that window or the turn's overall timeout is reached - whichever comes
+   first - and returns all of them (chronologically ordered) for the join above.
 4. **Timeout is a classified turn status, not an exception** - `pollForResponse`
    deliberately never throws on timeout; the runner classifies `pass|fail|timeout|skipped`
    and fail-fast aborts the scenario (shared conversation state is off-script after a

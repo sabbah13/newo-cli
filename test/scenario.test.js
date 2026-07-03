@@ -240,6 +240,31 @@ const INVALID_CASES = [
     expectedSubstring: 'turns[0].expect.regex: does not compile as a RegExp'
   },
   {
+    name: 'expect.contains is an empty string (vacuous assertion)',
+    content: 'turns:\n  - message: "Hi"\n    expect:\n      contains: ""',
+    expectedSubstring: 'turns[0].expect.contains: must not be an empty string'
+  },
+  {
+    name: 'expect.contains list has an empty-string entry (vacuous assertion)',
+    content: 'turns:\n  - message: "Hi"\n    expect:\n      contains: ["ok", ""]',
+    expectedSubstring: 'turns[0].expect.contains[1]: must not be an empty string'
+  },
+  {
+    name: 'expect.not_contains is an empty string (vacuous assertion)',
+    content: 'turns:\n  - message: "Hi"\n    expect:\n      not_contains: ""',
+    expectedSubstring: 'turns[0].expect.not_contains: must not be an empty string'
+  },
+  {
+    name: 'expect.not_contains list has an empty-string entry (vacuous assertion)',
+    content: 'turns:\n  - message: "Hi"\n    expect:\n      not_contains: ["error", ""]',
+    expectedSubstring: 'turns[0].expect.not_contains[1]: must not be an empty string'
+  },
+  {
+    name: 'expect.regex is an empty string (vacuous assertion, matches everything)',
+    content: 'turns:\n  - message: "Hi"\n    expect:\n      regex: ""',
+    expectedSubstring: 'turns[0].expect.regex: must not be an empty string'
+  },
+  {
     name: 'a turn timeout is zero',
     content: 'turns:\n  - message: "Hi"\n    timeout: 0\n    expect:\n      contains: "Hello"',
     expectedSubstring: 'turns[0].timeout: must be a finite positive number of seconds'

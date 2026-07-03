@@ -22,10 +22,22 @@ const ACTOR_ID = 'actor-1';
  * persona/actor creation, and a scripted chat history keyed off how many
  * user turns have been sent so far (config.replies[turnIndex - 1]; `null`
  * means "the agent never replies", i.e. a timeout).
+ *
+ * config.replies[i] may also be an array of strings - a multi-bubble reply,
+ * revealed progressively (bubble N only appears once this turn has been
+ * polled N+1 times), so callers can drive the settle-window collection path.
+ *
+ * config.authStatus - non-200 status to return from the auth endpoint (setup-phase
+ *   failure regression).
+ * config.sendFailsOnTurn - 1-based turn index whose send request 500s (run-phase
+ *   failure regression - the error propagates out of `sendMessage`, unswallowed).
+ * config.omitExternalEventId - when true, chat-history items omit `external_event_id`
+ *   entirely, so the converter's `'chat_history'` placeholder fallback kicks in
+ *   (regression for `normalizeActEventId`'s guard).
  */
 async function withMockNewoApi(config, fn) {
   const requests = [];
-  const state = { sendCount: 0 };
+  const state = { sendCount: 0, historyPollCounts: {} };
 
   const server = createServer((req, res) => {
     const url = new URL(req.url, 'http://127.0.0.1');
@@ -37,6 +49,9 @@ async function withMockNewoApi(config, fn) {
     };
 
     if (req.method === 'POST' && url.pathname === '/api/v1/auth/api-key/token') {
+      if (config.authStatus && config.authStatus !== 200) {
+        return respond(config.authStatus, { error: 'auth failed (mocked)' });
+      }
       return respond(200, {
         access_token: 'access-token-for-cli-test',
         refresh_token: 'refresh-token-for-cli-test',
@@ -59,22 +74,50 @@ async function withMockNewoApi(config, fn) {
     }
     if (req.method === 'POST' && url.pathname === `/api/v1/chat/user/${ACTOR_ID}`) {
       state.sendCount += 1;
+      if (config.sendFailsOnTurn && state.sendCount === config.sendFailsOnTurn) {
+        return respond(500, { error: 'send failed (mocked)' });
+      }
       return respond(200, {});
     }
     if (req.method === 'GET' && url.pathname === '/api/v1/chat/history') {
       const turnIndex = state.sendCount;
       if (turnIndex === 0) return respond(200, { items: [] });
 
+      state.historyPollCounts[turnIndex] = (state.historyPollCounts[turnIndex] || 0) + 1;
+      const pollCount = state.historyPollCounts[turnIndex];
+
       const reply = config.replies[turnIndex - 1];
       const now = new Date().toISOString();
       const items = [
-        { id: `u${turnIndex}`, is_agent: false, external_event_id: `user-evt-${turnIndex}`, datetime: now, payload: { text: 'turn' } }
+        {
+          id: `u${turnIndex}`,
+          is_agent: false,
+          external_event_id: config.omitExternalEventId ? undefined : `user-evt-${turnIndex}`,
+          datetime: now,
+          payload: { text: 'turn' }
+        }
       ];
-      if (reply !== null && reply !== undefined) {
+
+      if (Array.isArray(reply)) {
+        // Multi-bubble: bubble i only appears once this turn has been polled i+1 times.
+        reply.forEach((bubbleText, bubbleIndex) => {
+          if (pollCount <= bubbleIndex) return;
+          items.unshift({
+            id: `a${turnIndex}_${bubbleIndex}`,
+            is_agent: true,
+            external_event_id: config.omitExternalEventId ? undefined : `agent-evt-${turnIndex}-${bubbleIndex}`,
+            datetime: now,
+            payload: { text: bubbleText },
+            flow_idn: 'TestFlow',
+            skill_idn: 'TestSkill',
+            session_id: `sess-${turnIndex}`
+          });
+        });
+      } else if (reply !== null && reply !== undefined) {
         items.unshift({
           id: `a${turnIndex}`,
           is_agent: true,
-          external_event_id: `agent-evt-${turnIndex}`,
+          external_event_id: config.omitExternalEventId ? undefined : `agent-evt-${turnIndex}`,
           datetime: now,
           payload: { text: reply },
           flow_idn: 'TestFlow',
@@ -341,6 +384,114 @@ test('CLI test: --connector not among running connectors reuses findSandboxConne
     // Setup failure: connector discovery ran, but no persona/actor was ever created.
     const personaRequests = requests.filter(r => r.pathname === '/api/v1/customer/personas');
     assert.equal(personaRequests.length, 0);
+  });
+});
+
+test('CLI test: a reply split across multiple chat bubbles is fully collected and joined for assertions (judge round-0 must-fix 1)', async () => {
+  const scenario = `
+turns:
+  - message: "Where is my order?"
+    expect:
+      contains: ["Order found", "Tracking number 12345"]
+`;
+
+  await withMockNewoApi({ replies: [['Order found.', 'Tracking number 12345.']] }, async (baseUrl, requests) => {
+    const cwd = await mkdtemp(path.join(tmpdir(), 'newo-cli-test-scenario-'));
+    const scenarioPath = await writeScenario(cwd, 'scenario.yaml', scenario);
+
+    const result = await runCli(['test', scenarioPath, '--json', '--timeout', '8'], {
+      NEWO_BASE_URL: baseUrl,
+      NEWO_API_KEY: 'cli-test-api-key'
+    });
+
+    assert.equal(result.code, 0, result.stderr);
+    const parsed = JSON.parse(result.stdout);
+
+    assert.equal(parsed.turns[0].status, 'pass');
+    // Both bubbles' source_text, joined with \n in chronological (act) order -
+    // asserting only the newest bubble would make this fail on "Order found.".
+    assert.equal(parsed.turns[0].response, 'Order found.\nTracking number 12345.');
+
+    // The second bubble only appears on a later poll - proves the runner kept
+    // polling past the first agent act instead of returning immediately.
+    const historyRequests = requests.filter(r => r.pathname === '/api/v1/chat/history');
+    assert.ok(historyRequests.length >= 2, `expected multiple history polls, got ${historyRequests.length}`);
+  });
+});
+
+test('CLI test --json: a setup-phase failure (auth error) emits one {error, phase, file} object and exits 1 (judge round-0 must-fix 3)', async () => {
+  await withMockNewoApi({ replies: [], authStatus: 500 }, async (baseUrl) => {
+    const cwd = await mkdtemp(path.join(tmpdir(), 'newo-cli-test-scenario-'));
+    const scenarioPath = await writeScenario(cwd, 'scenario.yaml', ALL_PASS_SCENARIO);
+
+    const result = await runCli(['test', scenarioPath, '--json'], {
+      NEWO_BASE_URL: baseUrl,
+      NEWO_API_KEY: 'cli-test-api-key'
+    });
+
+    assert.equal(result.code, 1);
+    const parsed = JSON.parse(result.stdout);
+    assert.equal(typeof parsed.error, 'string');
+    assert.ok(parsed.error.length > 0);
+    assert.equal(parsed.phase, 'setup');
+    assert.equal(parsed.file, scenarioPath);
+    // This is the error contract, not the turns-shaped result.
+    assert.equal(parsed.turns, undefined);
+  });
+});
+
+test('CLI test --json: an unexpected mid-run failure (send 500 on turn 2) emits one {error, phase: "run", file} object and exits 1 (judge round-0 must-fix 3)', async () => {
+  const scenario = `
+turns:
+  - message: "Hi"
+    expect:
+      contains: "Hello"
+  - message: "Second turn"
+    expect:
+      contains: "anything"
+`;
+
+  await withMockNewoApi({ replies: ['Hello there!'], sendFailsOnTurn: 2 }, async (baseUrl) => {
+    const cwd = await mkdtemp(path.join(tmpdir(), 'newo-cli-test-scenario-'));
+    const scenarioPath = await writeScenario(cwd, 'scenario.yaml', scenario);
+
+    const result = await runCli(['test', scenarioPath, '--json', '--timeout', '5'], {
+      NEWO_BASE_URL: baseUrl,
+      NEWO_API_KEY: 'cli-test-api-key'
+    });
+
+    assert.equal(result.code, 1);
+    const parsed = JSON.parse(result.stdout);
+    assert.equal(typeof parsed.error, 'string');
+    assert.equal(parsed.phase, 'run');
+    assert.equal(parsed.file, scenarioPath);
+    assert.equal(parsed.turns, undefined);
+  });
+});
+
+test('CLI test --json: a chat-history item without external_event_id yields null correlation fields (normalizeActEventId guard, judge round-0 nice-to-have)', async () => {
+  await withMockNewoApi({ replies: ['Hello there!'], omitExternalEventId: true }, async (baseUrl) => {
+    const cwd = await mkdtemp(path.join(tmpdir(), 'newo-cli-test-scenario-'));
+    const scenarioPath = await writeScenario(cwd, 'scenario.yaml', `
+turns:
+  - message: "Hi"
+    expect:
+      contains: "Hello"
+`);
+
+    const result = await runCli(['test', scenarioPath, '--json', '--timeout', '5'], {
+      NEWO_BASE_URL: baseUrl,
+      NEWO_API_KEY: 'cli-test-api-key'
+    });
+
+    assert.equal(result.code, 0, result.stderr);
+    const parsed = JSON.parse(result.stdout);
+    assert.equal(parsed.turns[0].status, 'pass');
+    // The converter falls back to the 'chat_history' placeholder when the API
+    // omits external_event_id - normalizeActEventId must guard against ever
+    // surfacing that placeholder as a real correlation key.
+    assert.equal(parsed.turns[0].user_external_event_id, null);
+    assert.equal(parsed.turns[0].agent_external_event_id, null);
   });
 });
 

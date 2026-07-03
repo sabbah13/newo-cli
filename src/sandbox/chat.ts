@@ -213,18 +213,31 @@ function parseActDatetimeMs(datetime: string): number {
 /**
  * Poll for new conversation acts (messages and debug info)
  * Continues polling until we get an agent response, not just any new message
+ *
+ * @param settleMs - Optional multi-bubble settle window in ms (default `0`, which
+ *   preserves the original single-bubble behavior byte-for-byte - `newo sandbox`'s
+ *   call sites never pass this and must not change). When `settleMs > 0`, once the
+ *   first agent act is observed the poll keeps going, accumulating every distinct
+ *   agent act seen (deduped by `id`), until either no NEW agent act has appeared
+ *   for `settleMs` or the overall `timeoutMs` budget is exhausted - whichever
+ *   comes first. The returned `acts` then include every agent act observed
+ *   (sorted chronologically by `datetime`), not just the newest one.
  */
 export async function pollForResponse(
   client: AxiosInstance,
   session: SandboxChatSession,
   messageSentAt: Date | null = null,
   verbose: boolean = false,
-  timeoutMs: number = DEFAULT_TIMEOUT_MS
+  timeoutMs: number = DEFAULT_TIMEOUT_MS,
+  settleMs: number = 0
 ): Promise<{ acts: ConversationAct[]; agentPersonaId: string | null; userAct: ConversationAct | null }> {
   let attempts = 0;
   let agentPersonaId = session.agent_persona_id;
   let userAct: ConversationAct | null = null;
   const maxPollAttempts = Math.max(1, Math.ceil(timeoutMs / POLL_INTERVAL_MS));
+  // Only populated/consulted when settleMs > 0 (multi-bubble collection mode).
+  const seenAgentActs = new Map<string, ConversationAct>();
+  let settleDeadlineMs: number | null = null;
 
   if (verbose) console.log(`⏳ Waiting for agent response (timeout: ${Math.round(timeoutMs / 1000)}s)...`);
 
@@ -336,10 +349,30 @@ export async function pollForResponse(
         if (agentMessages.length > 0) {
           if (verbose) console.log(`✓ Received ${agentMessages.length} agent message(s) after our message (${messageSentAt?.toISOString()})`);
 
-          // Return ONLY the single newest agent message (first one, since API returns newest first)
-          const latestAgentMessage = agentMessages[0];
-          if (latestAgentMessage) {
-            return { acts: [latestAgentMessage], agentPersonaId, userAct };
+          if (settleMs <= 0) {
+            // Legacy/sandbox behavior, preserved byte-for-byte: return ONLY the single
+            // newest agent message (first one, since API returns newest first).
+            const latestAgentMessage = agentMessages[0];
+            if (latestAgentMessage) {
+              return { acts: [latestAgentMessage], agentPersonaId, userAct };
+            }
+          } else {
+            // Multi-bubble collection: accumulate every distinct agent act seen and
+            // keep polling until the settle window elapses with no new arrival.
+            let sawNewAct = false;
+            for (const act of agentMessages) {
+              if (!seenAgentActs.has(act.id)) {
+                seenAgentActs.set(act.id, act);
+                sawNewAct = true;
+              }
+            }
+            if (sawNewAct) {
+              settleDeadlineMs = Date.now() + settleMs;
+            }
+            if (settleDeadlineMs !== null && Date.now() >= settleDeadlineMs) {
+              if (verbose) console.log(`✓ Settled after ${settleMs}ms with no new agent act - returning ${seenAgentActs.size} act(s)`);
+              return { acts: sortActsByDatetime([...seenAgentActs.values()]), agentPersonaId, userAct };
+            }
           }
         } else if (verbose && attempts % 10 === 0) {
           console.log(`  No new agent messages yet (checked ${response.items.length} total messages, sentAt: ${messageSentAt?.toISOString()}), continuing...`);
@@ -356,8 +389,20 @@ export async function pollForResponse(
     await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL_MS));
   }
 
+  if (settleMs > 0 && seenAgentActs.size > 0) {
+    // Overall timeout budget won before the settle window fully elapsed - the
+    // design's "whichever comes first" - still return everything observed so far.
+    if (verbose) console.log(`⏱️  Timeout reached mid-settle - returning ${seenAgentActs.size} act(s) observed so far`);
+    return { acts: sortActsByDatetime([...seenAgentActs.values()]), agentPersonaId, userAct };
+  }
+
   if (verbose) console.log('⏱️  Timeout waiting for response');
   return { acts: [], agentPersonaId, userAct };
+}
+
+/** Sort agent acts chronologically by `datetime` (oldest first) for a coherent join order. */
+function sortActsByDatetime(acts: ConversationAct[]): ConversationAct[] {
+  return [...acts].sort((a, b) => parseActDatetimeMs(a.datetime) - parseActDatetimeMs(b.datetime));
 }
 
 /**
