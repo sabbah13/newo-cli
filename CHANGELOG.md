@@ -7,8 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.8.0] - 2026-07-03
+
 ### Added
 
+- **Settle-path hardening for multi-bubble replies** — `pollForResponse`'s settle window now dedupes acts with stable keys across polls (missing/duplicate act ids, equal timestamps get a deterministic tie-break), with direct no-network unit tests for the default and settle paths so the critical path stays verifiable in restricted sandboxes.
 - **`newo test <scenario.yaml>`** — scripted multi-turn agent scenario tests, composing only existing plumbing (sandbox chat, chat history, logs correlation). One scenario file = one conversation with per-turn assertions (substring/negation/regex). Fail-fast: on any turn's assertion failure or timeout, remaining turns are marked skipped and the full report (human or `--json`) is printed. Exit 0 all-pass, 1 otherwise. Supports connector selection (`--connector`, `--integration`, same semantics as `newo sandbox`) and timeout override per turn / per scenario / CLI level. `--json` output includes user/agent `external_event_id` for `newo logs --event-id` correlation.
 - **`newo logs --max <n>`** — caps the total number of log entries fetched across pages (default 1000). Pairs with the pagination fix below: a bare `newo logs` / `--hours` query now walks pages until the data ends or this budget is reached, instead of silently stopping after the first page.
 - **`newo logs --follow --for <seconds>` / `--max-events <n>`** — bound `--follow` so it terminates on its own after a time limit or after N new events, instead of running until `Ctrl+C`. Without either flag the interactive tail is unchanged. Makes `--follow` usable from scripts/CI.
@@ -1129,7 +1132,8 @@ Another Item: $Price [Modifiers: modifier3]
 - GitHub Actions CI/CD integration
 - Robust authentication with token refresh
 
-[Unreleased]: https://github.com/sabbah13/newo-cli/compare/v3.7.7...HEAD
+[Unreleased]: https://github.com/sabbah13/newo-cli/compare/v3.8.0...HEAD
+[3.8.0]: https://github.com/sabbah13/newo-cli/compare/v3.7.7...v3.8.0
 [3.7.7]: https://github.com/sabbah13/newo-cli/compare/v3.7.6...v3.7.7
 [3.7.6]: https://github.com/sabbah13/newo-cli/compare/v3.7.5...v3.7.6
 [3.7.5]: https://github.com/sabbah13/newo-cli/compare/v3.7.4...v3.7.5
