@@ -240,7 +240,56 @@ The displayed value is the project's `version` field — not `registry_item_vers
 
 ---
 
-### Scenario 6: Multi-Customer Workflow
+### Scenario 6: Agent Scenario Tests (v3.8.0+)
+
+Script multi-turn conversations against a live sandbox agent and assert on each turn's reply in CI. One scenario file = one conversation, with per-turn assertions (substring/regex/negation):
+
+```bash
+# Create a scenario YAML file
+cat > ./scenarios/greeting-flow.yaml <<'EOF'
+name: greeting and order flow
+connector: vibe_agent
+timeout: 90
+
+turns:
+  - message: "Hi there"
+    expect:
+      contains: "Hello"
+
+  - message: "I want to place an order"
+    expect:
+      contains: ["order", "confirm"]
+      not_contains: "error"
+
+  - message: "Order 12345"
+    timeout: 120
+    expect:
+      regex: "order.*#?12345"
+EOF
+
+# Run it
+newo test ./scenarios/greeting-flow.yaml                # human output, per-turn pass/fail
+newo test ./scenarios/greeting-flow.yaml --json         # machine-readable report
+newo test ./scenarios/greeting-flow.yaml --connector vibe_agent --timeout 300
+```
+
+**What happens:**
+1. One `createChatSession` call starts the conversation.
+2. For each turn: send message, poll until response (respecting per-turn/scenario/CLI timeout in that order), run assertions.
+3. On any failure (assertion or timeout): abort remaining turns, mark them `skipped`, print the full report (human or JSON), exit 1.
+4. On success: exit 0.
+
+All turns within a scenario share the same conversation (same session ID, actor). This is what makes it a real test - the agent's conversation state is preserved across turns; answers depend on prior context.
+
+**Output:**
+- **Human:** per-turn `✓ Turn 1/3 PASS (2.1s)` or `✗ Turn 2/3 FAIL` with expected vs actual text, user-turn `external_event_id`, and a `newo logs --event-id <id>` hint.
+- **--json:** one object with scenario metadata, per-turn results (status, message, response, correlation fields), and summary (total, passed, failed, skipped). On a setup failure or an unexpected error mid-run, `--json` instead prints exactly one error object `{ error: string, phase: "setup" | "run", file: string | null }` and exits 1.
+
+**CI budget note:** serialized, so worst-case is `turns x timeout`. With 10 turns @ 60s timeout = 10 minutes. Per-turn overrides let you keep quick assertions fast and allow slow ones more time.
+
+---
+
+### Scenario 7: Multi-Customer Workflow
 
 Work with multiple NEWO accounts:
 
@@ -414,6 +463,7 @@ For new users or migrating from old CLI:
 | `newo help` | Show full help |
 | `newo list-customers` | List configured customers |
 | `newo sandbox "msg"` | Test agent in sandbox |
+| `newo test <scenario.yaml>` | Run scripted scenario tests (v3.8.0+) |
 | `newo profile` | Show customer profile |
 | `newo list-actions` | List NSL script actions |
 

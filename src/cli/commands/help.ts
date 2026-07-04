@@ -23,6 +23,7 @@ Core Commands:
   newo sandbox --list-connectors                # list running sandbox connectors (NEW v3.7.5)
   newo sandbox "<msg>" --connector <idn>        # chat through a specific connector (NEW v3.7.5)
   newo sandbox --file <path> | --stdin          # send long messages from file/stdin (NEW v3.7.5)
+  newo test <scenario.yaml> [--connector <idn>] [--timeout <s>] [--json]  # scripted multi-turn agent test (NEW)
   newo get-skill <idn> --project <p> --agent <a> --flow <f> [--json]   # inspect live skill on platform (NEW v3.7.5)
   newo update-skill <idn> --project <p> --agent <a> --flow <f> [--model <prov>/<model>] [--script <file>] [--publish]  # point-edit skill (NEW v3.7.5)
   newo pull-attributes [--customer <idn>]       # download customer + project attributes

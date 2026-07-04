@@ -1,0 +1,51 @@
+# Example: Order Status Scenario
+#
+# This scenario tests a conversational order-status flow. One scenario file = one
+# conversation: all turns share the same session, actor, and agent persona. A turn
+# that fails aborts remaining turns (they are reported as skipped, not silently
+# dropped), so the full report is complete even on partial failure.
+#
+# Run: newo test examples/scenario.example.yaml
+#      newo test examples/scenario.example.yaml --json
+#      newo test examples/scenario.example.yaml --connector vibe_agent --timeout 300
+
+name: order status happy path
+connector: vibe_agent           # optional; CLI --connector overrides
+integration: sandbox             # optional; CLI --integration overrides
+timeout: 90                      # optional, seconds; scenario-level default
+
+turns:
+  # Turn 1: agent greets
+  - message: "Hi"
+    expect:
+      contains: "Hello"          # string or list; AND semantics
+
+  # Turn 2: user asks for an order
+  - message: "Where is my order 123?"
+    timeout: 120                 # per-turn override; overrides scenario timeout
+    expect:
+      contains: ["order", "123"]  # all must be present (AND)
+      not_contains: "error"       # must not appear
+      regex: "order\\s+#?123"     # JS RegExp, no flags (case-sensitive)
+
+  # Turn 3: confirm order resolution
+  - message: "Thanks!"
+    expect:
+      contains: "welcome"
+
+# Known limitations (v1):
+#
+# 1. Persona and actor created per run are not deleted after the scenario
+#    finishes (matches existing `newo sandbox` behavior; no delete endpoint
+#    exists to compose without violating "no new backend endpoints" constraint).
+#
+# 2. Agent replies in multiple chat bubbles are joined with `\n` and assertions
+#    run against all bubbles together. A reply arriving during turn N+1's poll
+#    window could bleed into N+1's result (rare; `pollForResponse` already filters
+#    by `datetime > sentAt - 100ms`).
+#
+# 3. Fail-fast is the only v1 behavior - continue-on-failure is not supported.
+#    On any turn's assertion failure or timeout, remaining turns are marked
+#    skipped and the full report is printed, then the process exits 1.
+#
+# 4. Retries and recording/--update golden-file modes are not in v1.
