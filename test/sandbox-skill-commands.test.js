@@ -40,6 +40,32 @@ function fakeClient(routes) {
   };
 }
 
+function scriptedChatHistoryClient(polls) {
+  let index = 0;
+  return {
+    async get(url) {
+      if (url !== '/api/v1/chat/history') {
+        throw new Error(`unexpected GET ${url}`);
+      }
+      const items = polls[Math.min(index, polls.length - 1)] || [];
+      index++;
+      return { data: { items } };
+    }
+  };
+}
+
+function sandboxSession(overrides = {}) {
+  return {
+    user_persona_id: 'p1',
+    user_actor_id: 'a1',
+    agent_persona_id: 'agent-persona',
+    connector_idn: 'sandbox',
+    session_id: 's1',
+    external_id: 'x',
+    ...overrides
+  };
+}
+
 const SANDBOX_ROUTES = {
   '/api/v1/integrations': [
     { id: 'int-sandbox', idn: 'sandbox', title: 'Sandbox' },
@@ -159,6 +185,202 @@ test('pollForResponse returns agent act and matching user act with external_even
   assert.equal(acts[0].source_text, 'pong');
   assert.ok(userAct, 'user act should be captured');
   assert.equal(userAct.external_event_id, 'evt-user');
+});
+
+test('pollForResponse default settleMs returns only newest agent act', async () => {
+  const sentAt = new Date('2026-07-03T18:00:00.000Z');
+  const client = scriptedChatHistoryClient([
+    [
+      { id: 'newest', is_agent: true, payload: { text: 'newest bubble' }, datetime: '2026-07-03T18:00:02.000Z' },
+      { id: 'older', is_agent: true, payload: { text: 'older bubble' }, datetime: '2026-07-03T18:00:01.000Z' }
+    ]
+  ]);
+
+  const { acts } = await pollForResponse(client, sandboxSession(), sentAt, false, 2000);
+
+  assert.deepEqual(acts.map(act => act.id), ['newest']);
+  assert.equal(acts[0].source_text, 'newest bubble');
+});
+
+test('pollForResponse settle mode collects multiple bubbles across polls', async () => {
+  const sentAt = new Date('2026-07-03T18:00:00.000Z');
+  const client = scriptedChatHistoryClient([
+    [
+      { id: 'first', is_agent: true, payload: { text: 'first bubble' }, datetime: '2026-07-03T18:00:01.000Z' }
+    ],
+    [
+      { id: 'second', is_agent: true, payload: { text: 'second bubble' }, datetime: '2026-07-03T18:00:02.000Z' },
+      { id: 'first', is_agent: true, payload: { text: 'first bubble' }, datetime: '2026-07-03T18:00:01.000Z' }
+    ],
+    [
+      { id: 'second', is_agent: true, payload: { text: 'second bubble' }, datetime: '2026-07-03T18:00:02.000Z' },
+      { id: 'first', is_agent: true, payload: { text: 'first bubble' }, datetime: '2026-07-03T18:00:01.000Z' }
+    ]
+  ]);
+
+  const { acts } = await pollForResponse(client, sandboxSession(), sentAt, false, 4000, 250);
+
+  assert.deepEqual(acts.map(act => act.id), ['first', 'second']);
+  assert.deepEqual(acts.map(act => act.source_text), ['first bubble', 'second bubble']);
+});
+
+test('pollForResponse settle mode returns when settle window expires', async () => {
+  const sentAt = new Date('2026-07-03T18:00:00.000Z');
+  const client = scriptedChatHistoryClient([
+    [
+      { id: 'only', is_agent: true, payload: { text: 'single bubble' }, datetime: '2026-07-03T18:00:01.000Z' }
+    ],
+    [
+      { id: 'only', is_agent: true, payload: { text: 'single bubble' }, datetime: '2026-07-03T18:00:01.000Z' }
+    ]
+  ]);
+
+  const startedAt = Date.now();
+  const { acts } = await pollForResponse(client, sandboxSession(), sentAt, false, 3000, 250);
+  const elapsed = Date.now() - startedAt;
+
+  assert.deepEqual(acts.map(act => act.id), ['only']);
+  assert.ok(elapsed < 3000, `expected settle expiry before timeout, took ${elapsed}ms`);
+});
+
+test('pollForResponse settle mode returns observed acts when overall timeout wins', async () => {
+  const sentAt = new Date('2026-07-03T18:00:00.000Z');
+  const client = scriptedChatHistoryClient([
+    [
+      { id: 'partial', is_agent: true, payload: { text: 'partial bubble' }, datetime: '2026-07-03T18:00:01.000Z' }
+    ]
+  ]);
+
+  const startedAt = Date.now();
+  const { acts } = await pollForResponse(client, sandboxSession(), sentAt, false, 1000, 10_000);
+  const elapsed = Date.now() - startedAt;
+
+  assert.deepEqual(acts.map(act => act.id), ['partial']);
+  assert.ok(elapsed < 1400, `expected timeout budget to win before settle window, took ${elapsed}ms`);
+});
+
+test('pollForResponse settle mode deterministically handles missing ids duplicate ids and equal datetimes', async () => {
+  async function collectActs() {
+    const sentAt = new Date('2026-07-03T18:00:00.000Z');
+    const equalDatetime = '2026-07-03T18:00:01.000Z';
+    const client = scriptedChatHistoryClient([
+      [
+        { id: 'dup', is_agent: true, payload: { text: 'alpha' }, datetime: equalDatetime }
+      ],
+      [
+        { is_agent: true, payload: { text: 'missing id' }, datetime: equalDatetime, flow_idn: 'flow-a', skill_idn: 'skill-a' },
+        { id: 'dup', is_agent: true, payload: { text: 'beta' }, datetime: equalDatetime },
+        { id: 'dup', is_agent: true, payload: { text: 'alpha' }, datetime: equalDatetime }
+      ],
+      [
+        { is_agent: true, payload: { text: 'missing id' }, datetime: equalDatetime, flow_idn: 'flow-a', skill_idn: 'skill-a' },
+        { id: 'dup', is_agent: true, payload: { text: 'beta' }, datetime: equalDatetime },
+        { id: 'dup', is_agent: true, payload: { text: 'alpha' }, datetime: equalDatetime }
+      ]
+    ]);
+
+    const { acts } = await pollForResponse(client, sandboxSession(), sentAt, false, 3000, 250);
+    return acts.map(act => ({
+      id: act.id,
+      datetime: act.datetime,
+      text: act.source_text
+    }));
+  }
+
+  const firstRun = await collectActs();
+  const secondRun = await collectActs();
+
+  assert.deepEqual(firstRun, secondRun);
+  assert.deepEqual(firstRun.map(act => act.text), ['alpha', 'missing id', 'beta']);
+  assert.equal(firstRun[0].id, 'dup');
+  assert.match(firstRun[1].id, /^chat_history_/);
+  assert.equal(firstRun[2].id, 'dup');
+});
+
+test('pollForResponse settle mode dedupes stable ids when timestamps change across polls', async () => {
+  const sentAt = new Date('2026-07-03T18:00:00.000Z');
+  const client = scriptedChatHistoryClient([
+    [
+      { id: 'same', is_agent: true, payload: { text: 'same bubble' }, datetime: '2026-07-03T18:00:01.000Z' }
+    ],
+    [
+      { id: 'same', is_agent: true, payload: { text: 'same bubble' }, datetime: '2026-07-03T18:00:02.000Z' }
+    ],
+    [
+      { id: 'same', is_agent: true, payload: { text: 'same bubble' }, datetime: '2026-07-03T18:00:03.000Z' }
+    ]
+  ]);
+
+  const { acts } = await pollForResponse(client, sandboxSession(), sentAt, false, 3000, 250);
+
+  assert.deepEqual(acts.map(act => act.source_text), ['same bubble']);
+});
+
+test('pollForResponse settle mode dedupes missing ids when timestamps change across polls', async () => {
+  const sentAt = new Date('2026-07-03T18:00:00.000Z');
+  const client = scriptedChatHistoryClient([
+    [
+      { is_agent: true, external_event_id: 'evt-same', payload: { text: 'same missing-id bubble' }, datetime: '2026-07-03T18:00:01.000Z' }
+    ],
+    [
+      { is_agent: true, external_event_id: 'evt-same', payload: { text: 'same missing-id bubble' }, datetime: '2026-07-03T18:00:02.000Z' }
+    ],
+    [
+      { is_agent: true, external_event_id: 'evt-same', payload: { text: 'same missing-id bubble' }, datetime: '2026-07-03T18:00:03.000Z' }
+    ]
+  ]);
+
+  const { acts } = await pollForResponse(client, sandboxSession(), sentAt, false, 3000, 250);
+
+  assert.deepEqual(acts.map(act => act.source_text), ['same missing-id bubble']);
+  assert.match(acts[0].id, /^chat_history_/);
+});
+
+test('pollForResponse settle mode can poll past max attempts while timeout budget remains', async () => {
+  const sentAt = new Date('2026-07-03T18:00:00.000Z');
+  const client = scriptedChatHistoryClient([
+    [
+      { id: 'first', is_agent: true, payload: { text: 'first bubble' }, datetime: '2026-07-03T18:00:01.000Z' }
+    ],
+    [
+      { id: 'second', is_agent: true, payload: { text: 'second bubble' }, datetime: '2026-07-03T18:00:02.000Z' },
+      { id: 'first', is_agent: true, payload: { text: 'first bubble' }, datetime: '2026-07-03T18:00:01.000Z' }
+    ]
+  ]);
+
+  const { acts } = await pollForResponse(client, sandboxSession(), sentAt, false, 1000, 250);
+
+  assert.deepEqual(acts.map(act => act.source_text), ['first bubble', 'second bubble']);
+});
+
+test('pollForResponse settle mode keeps same-text bubbles distinct by correlation fields', async () => {
+  const sentAt = new Date('2026-07-03T18:00:00.000Z');
+  const equalDatetime = '2026-07-03T18:00:01.000Z';
+  const client = scriptedChatHistoryClient([
+    [
+      { id: 'dup', is_agent: true, external_event_id: 'evt-1', payload: { text: 'OK' }, datetime: equalDatetime },
+      { is_agent: true, external_event_id: 'evt-missing-1', payload: { text: 'OK' }, datetime: equalDatetime }
+    ],
+    [
+      { id: 'dup', is_agent: true, external_event_id: 'evt-2', payload: { text: 'OK' }, datetime: equalDatetime },
+      { is_agent: true, external_event_id: 'evt-missing-2', payload: { text: 'OK' }, datetime: equalDatetime },
+      { id: 'dup', is_agent: true, external_event_id: 'evt-1', payload: { text: 'OK' }, datetime: equalDatetime },
+      { is_agent: true, external_event_id: 'evt-missing-1', payload: { text: 'OK' }, datetime: equalDatetime }
+    ],
+    [
+      { id: 'dup', is_agent: true, external_event_id: 'evt-2', payload: { text: 'OK' }, datetime: equalDatetime },
+      { is_agent: true, external_event_id: 'evt-missing-2', payload: { text: 'OK' }, datetime: equalDatetime },
+      { id: 'dup', is_agent: true, external_event_id: 'evt-1', payload: { text: 'OK' }, datetime: equalDatetime },
+      { is_agent: true, external_event_id: 'evt-missing-1', payload: { text: 'OK' }, datetime: equalDatetime }
+    ]
+  ]);
+
+  const { acts } = await pollForResponse(client, sandboxSession(), sentAt, false, 3000, 250);
+
+  assert.deepEqual(acts.map(act => act.external_event_id), ['evt-1', 'evt-missing-1', 'evt-2', 'evt-missing-2']);
+  assert.equal(acts[1].id.startsWith('chat_history_'), true);
+  assert.equal(acts[3].id.startsWith('chat_history_'), true);
+  assert.notEqual(acts[1].id, acts[3].id);
 });
 
 // --- R3: remote skill resolution ---
