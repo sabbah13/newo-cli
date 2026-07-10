@@ -162,9 +162,6 @@ export async function writeFileSafe(filepath: string, content: string): Promise<
   await fs.writeFile(filepath, content, 'utf8');
 }
 
-// Deprecated: use writeFileSafe instead
-export const writeFileAtomic = writeFileSafe;
-
 export async function readIfExists(filepath: string): Promise<string | null> {
   return (await fs.pathExists(filepath)) ? fs.readFile(filepath, 'utf8') : null;
 }

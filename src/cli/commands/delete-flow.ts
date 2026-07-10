@@ -75,7 +75,7 @@ export async function handleDeleteFlowCommand(
     if (!confirm) {
       console.log('⚠️  This will permanently delete the flow and all its skills locally.');
       console.log('⚠️  Use --confirm flag to proceed with deletion.');
-      console.log('⚠️  Run "newo push" after deletion to remove from NEWO platform.');
+      console.log('⚠️  This removes the local mirror only — newo push does not sync flow deletions to the platform yet.');
       process.exit(1);
     }
 
@@ -96,7 +96,7 @@ export async function handleDeleteFlowCommand(
     console.log(`✅ Flow deleted locally`);
     console.log(`   IDN: ${flowIdn}`);
     console.log(`   Path: ${flowDir}`);
-    console.log(`   Run 'newo push' to delete from NEWO platform`);
+    console.log(`   Local mirror only — this flow still exists on the NEWO platform (newo push does not sync flow deletions yet)`);
 
   } catch (error: unknown) {
     console.error('❌ Failed to delete flow locally:', error instanceof Error ? error.message : String(error));

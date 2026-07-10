@@ -13,6 +13,7 @@ import { makeClient } from '../../api.js';
 import { getValidAccessToken } from '../../auth.js';
 import { selectSingleCustomer } from '../customer-selection.js';
 import { ALL_RESOURCE_TYPES } from '../../cli-new/di/tokens.js';
+import { resolveFormat } from '../../format/detect.js';
 import type { MultiCustomerConfig, CliArgs, CustomerConfig } from '../../types.js';
 import type { AxiosInstance } from 'axios';
 import { getSkill, listAgents, listFlowSkills, getCustomerAttributes, listProjects } from '../../api.js';
@@ -105,8 +106,22 @@ function generateUnifiedDiff(local: string, remote: string, filePath: string): s
 async function getProjectDiffs(
   client: AxiosInstance,
   customer: CustomerConfig,
-  _verbose: boolean
+  _verbose: boolean,
+  explicitFormat?: string
 ): Promise<DiffEntry[]> {
+  // This function's local-path construction (below) hardcodes the legacy cli_v1 layout
+  // (projects/{proj}/{agent}/{flow}/{skill}/{skill}.jinja|.guidance) with no format check at
+  // all. Confirmed directly: a newo_v2 mirror has no .jinja/.guidance files under projects/
+  // anywhere, so every skill would misreport as 'deleted' instead of just not being compared —
+  // silently wrong, not just unsupported. Building a correct newo_v2-aware diff is a bigger
+  // change (ideally delegating to the same SyncEngine.getChanges() data `status` already uses
+  // for this format); until then, say so plainly instead of producing misleading output.
+  const formatConfig = resolveFormat(customer.idn, explicitFormat);
+  if (formatConfig.version === 'newo_v2') {
+    console.log(`⚠️  'newo diff' does not yet support the newo_v2 format correctly — it would misreport every skill as deleted. Use 'newo status' instead for this customer.`);
+    return [];
+  }
+
   const diffs: DiffEntry[] = [];
   const customerDir = path.join(process.cwd(), 'newo_customers', customer.idn);
 
@@ -124,8 +139,17 @@ async function getProjectDiffs(
         const skills = await listFlowSkills(client, flow.id);
 
         for (const skill of skills) {
-          // Get full skill content from API
-          const remoteSkill = await getSkill(client, skill.id);
+          // Get full skill content from API. Isolated per-skill: one skill that 404s on the
+          // individual-fetch endpoint (confirmed to happen on real accounts even though the
+          // same skill appears fine in the parent listFlowSkills listing) previously aborted
+          // the entire diff command instead of just that one skill.
+          let remoteSkill;
+          try {
+            remoteSkill = await getSkill(client, skill.id);
+          } catch (error) {
+            console.error(`⚠️  Could not fetch skill ${projectIdn}/${agent.idn}/${flow.idn}/${skill.idn}: ${error instanceof Error ? error.message : String(error)}`);
+            continue;
+          }
           const remoteContent = remoteSkill.prompt_script || '';
 
           // Determine local file path
@@ -267,6 +291,7 @@ export async function handleDiffCommand(
   // Parse options
   const onlyResources = parseResourceList(args.only as string | undefined);
   const detailed = Boolean(args.detailed || args.d);
+  const explicitFormat = args.format as string | undefined;
 
   // Determine resources to diff
   let resourcesToDiff: string[];
@@ -290,7 +315,7 @@ export async function handleDiffCommand(
     switch (resource) {
       case 'projects':
         console.log(`📦 Checking projects...`);
-        const projectDiffs = await getProjectDiffs(client, selectedCustomer, verbose);
+        const projectDiffs = await getProjectDiffs(client, selectedCustomer, verbose, explicitFormat);
         allDiffs.push(...projectDiffs);
         break;
       case 'attributes':

@@ -57,6 +57,7 @@ import {
   totalFlowSyncOps,
   describeFlowSyncCounts
 } from '../../../sync/flow-metadata.js';
+import { scanForLocallyDeletedSkills, deleteRemovedSkills } from '../../../sync/push.js';
 import {
   ensureState,
   writeFileSafe,
@@ -296,7 +297,9 @@ export class ProjectSyncStrategy implements ISyncStrategy<ProjectMeta, LocalProj
           }
         }
       } catch (error) {
-        this.logger.verbose(`  Could not pull libraries for project ${project.idn}: ${error instanceof Error ? error.message : String(error)}`);
+        // Visible by default, not just at --verbose: a genuine "no libraries" and a failed
+        // fetch are otherwise indistinguishable in a normal run.
+        this.logger.warn(`  Could not pull libraries for project ${project.idn}: ${error instanceof Error ? error.message : String(error)}`);
       }
 
       existingMap.projects[project.idn] = projectData;
@@ -580,6 +583,19 @@ export class ProjectSyncStrategy implements ISyncStrategy<ProjectMeta, LocalProj
       } catch (error) {
         result.errors.push(`Failed to push ${change.path}: ${error instanceof Error ? error.message : String(error)}`);
       }
+    }
+
+    // Sync local skill deletions to the platform. Reuses the fix (and its interactive
+    // per-item confirmation gate) from src/sync/push.ts's bare `newo push` path — see
+    // scanForLocallyDeletedSkills there for why this exists: delete-skill's own promise to
+    // finish the job via push never held for any push invocation before that fix, and this
+    // ports it here so `--only`/`--all` get the same behavior (finding 10: these two families
+    // shared no code before this).
+    const locallyDeleted = await scanForLocallyDeletedSkills(customer, mapData.projects);
+    if (locallyDeleted.length > 0) {
+      const deletionResult = await deleteRemovedSkills(client, locallyDeleted, mapData.projects);
+      result.deleted += deletionResult.deleted;
+      deletionResult.errors.forEach(e => result.errors.push(e));
     }
 
     // Save updated hashes

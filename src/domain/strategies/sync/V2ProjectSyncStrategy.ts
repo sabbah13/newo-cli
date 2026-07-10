@@ -55,6 +55,8 @@ import {
   getCustomerAttributes,
   listLibraries,
   updateLibrarySkill,
+  createLibrarySkill,
+  createLibrarySkillParameter,
   getFlow,
 } from '../../../api.js';
 import {
@@ -63,6 +65,7 @@ import {
   totalFlowSyncOps,
   describeFlowSyncCounts
 } from '../../../sync/flow-metadata.js';
+import { deleteRemovedSkills } from '../../../sync/push.js';
 import type { LibraryResponse } from '../../../api.js';
 import {
   ensureStateOnly,
@@ -94,6 +97,7 @@ import {
   generateV2ProjectYaml,
   generateV2AgentYaml,
   parseV2FlowYaml,
+  parseV2LibraryYaml,
   buildV2InlineSkill,
   buildV2FlowEvent,
   buildV2StateField,
@@ -300,7 +304,7 @@ export class V2ProjectSyncStrategy implements ISyncStrategy<ProjectMeta, LocalPr
           }
         }
       } catch {
-        this.logger.verbose(`  Could not pull libraries for project ${project.idn}`);
+        this.logger.warn(`  Could not pull libraries for project ${project.idn}`);
       }
 
       // Write V2 project attributes: {project_idn}/attributes.yaml
@@ -668,7 +672,14 @@ export class V2ProjectSyncStrategy implements ISyncStrategy<ProjectMeta, LocalPr
     }
 
     const mapData = await fs.readJson(mapFile) as ProjectMap;
-    const metadataSync = await this.syncV2FlowYamlDefinitions(client, customer, mapData, newHashes);
+    const flowMetadataSync = await this.syncV2FlowYamlDefinitions(client, customer, mapData, newHashes);
+    const libraryMetadataSync = await this.syncV2LibraryYamlDefinitions(client, customer, mapData, newHashes);
+    const metadataSync = {
+      created: flowMetadataSync.created + libraryMetadataSync.created,
+      updated: flowMetadataSync.updated + libraryMetadataSync.updated,
+      syncedPaths: new Set([...flowMetadataSync.syncedPaths, ...libraryMetadataSync.syncedPaths]),
+      errors: [...flowMetadataSync.errors, ...libraryMetadataSync.errors]
+    };
     result.created += metadataSync.created;
     result.updated += metadataSync.updated;
     result.errors.push(...metadataSync.errors);
@@ -700,6 +711,19 @@ export class V2ProjectSyncStrategy implements ISyncStrategy<ProjectMeta, LocalPr
         result.errors.push(
           `Failed to push ${change.path}: ${error instanceof Error ? error.message : String(error)}`
         );
+      }
+    }
+
+    // Sync local flow-skill deletions to the platform (finding 10: this family shared no
+    // code with the cli_v1 bare-push path's equivalent fix before now). Library skill
+    // deletion is not covered — see scanForV2LocallyDeletedFlowSkills's docstring.
+    const locallyDeleted = await this.scanForV2LocallyDeletedFlowSkills(customer, mapData.projects);
+    if (locallyDeleted.length > 0) {
+      const deletionResult = await deleteRemovedSkills(client, locallyDeleted, mapData.projects);
+      result.deleted += deletionResult.deleted;
+      deletionResult.errors.forEach(e => result.errors.push(e));
+      if (deletionResult.deleted > 0) {
+        await writeFileSafe(mapFile, JSON.stringify(mapData, null, 2));
       }
     }
 
@@ -1000,6 +1024,233 @@ export class V2ProjectSyncStrategy implements ISyncStrategy<ProjectMeta, LocalPr
     return { created, updated, syncedPaths, errors };
   }
 
+  /**
+   * newo_v2 counterpart to scanForLocallyDeletedSkills (src/sync/push.ts, cli_v1 format).
+   * That function's skillFolderPath assumes the cli_v1 on-disk layout (a folder per skill) and
+   * would misfire for every single skill in a newo_v2 mirror, which has no such folder at all —
+   * so it is not reused here, unlike the flow-skill deletion call below which reuses
+   * deleteRemovedSkills (the confirm-and-delete half, which only touches the platform-map
+   * shape, not the on-disk layout). This reads each flow's own YAML — the newo_v2 source of
+   * truth for which skills exist — instead of checking for a folder, and flags a platform-known
+   * skill missing from that list as locally deleted.
+   *
+   * Library skills are NOT covered here: deleteRemovedSkills's map mutation
+   * (`projects[p].agents[a].flows[f].skills[s]`) is flow-skill-shaped only. A library skill
+   * lives at `projects[p].libraries[l].skills[s]` — a different shape that would need its own
+   * mutation path, not built in this pass.
+   */
+  private async scanForV2LocallyDeletedFlowSkills(
+    customer: CustomerConfig,
+    projects: Record<string, ProjectData>
+  ): Promise<Array<{ id: string; idn: string; displayPath: string; projectIdn: string; agentIdn: string; flowIdn: string }>> {
+    const deleted: Array<{ id: string; idn: string; displayPath: string; projectIdn: string; agentIdn: string; flowIdn: string }> = [];
+
+    for (const [projectIdn, projectData] of Object.entries(projects)) {
+      for (const [agentIdn, agentData] of Object.entries(projectData.agents)) {
+        for (const [flowIdn, flowData] of Object.entries(agentData.flows)) {
+          const flowYamlPath = v2FlowYamlPath(customer.idn, projectIdn, agentIdn, flowIdn);
+          if (!(await fs.pathExists(flowYamlPath))) {
+            // Whole flow YAML missing locally is a bigger case than "one skill entry
+            // removed" — not treated as a mass-deletion signal here.
+            continue;
+          }
+
+          let flowDef;
+          try {
+            flowDef = await parseV2FlowYaml(flowYamlPath);
+          } catch (error) {
+            this.logger.warn(
+              `[newo_v2] Failed to parse flow YAML ${flowYamlPath} while scanning for deleted skills: ${error instanceof Error ? error.message : String(error)}`
+            );
+            continue;
+          }
+
+          const currentIdns = new Set((flowDef.skills || []).map(s => s.idn));
+          for (const [skillIdn, skillMeta] of Object.entries(flowData.skills)) {
+            if (!currentIdns.has(skillIdn)) {
+              deleted.push({
+                id: skillMeta.id,
+                idn: skillIdn,
+                displayPath: `${projectIdn}/${agentIdn}/${flowIdn}/${skillIdn}`,
+                projectIdn,
+                agentIdn,
+                flowIdn
+              });
+            }
+          }
+        }
+      }
+    }
+
+    return deleted;
+  }
+
+  /**
+   * Library counterpart to syncV2FlowYamlDefinitions. getChanges() only ever hashed each
+   * library skill's *script* file against the stale project map — it never read the library's
+   * own YAML, so a new inline skill entry there was invisible to status/diff, and push had
+   * nothing that would ever create it (confirmed directly: pushing a new library-skill YAML
+   * entry was a silent no-op, 0 created/0 updated). This mirrors the flow-YAML reconciliation
+   * flows already get, adapted for libraries: no per-flow model-default fallback is needed here
+   * because a library's V2InlineSkill entries always carry their own model directly.
+   */
+  private async syncV2LibraryYamlDefinitions(
+    client: AxiosInstance,
+    customer: CustomerConfig,
+    mapData: ProjectMap,
+    newHashes: HashStore
+  ): Promise<{ created: number; updated: number; syncedPaths: Set<string>; errors: string[] }> {
+    let created = 0;
+    let updated = 0;
+    const syncedPaths = new Set<string>();
+    const errors: string[] = [];
+
+    for (const [projectIdn, projectData] of Object.entries(mapData.projects)) {
+      if (!projectData.libraries) {
+        continue;
+      }
+
+      for (const [libIdn, libData] of Object.entries(projectData.libraries)) {
+        const libYamlPath = v2LibraryYamlPath(customer.idn, projectIdn, libIdn);
+        if (!(await fs.pathExists(libYamlPath))) {
+          continue;
+        }
+
+        let libDef;
+        try {
+          libDef = await parseV2LibraryYaml(libYamlPath);
+        } catch (error) {
+          this.logger.warn(
+            `[newo_v2] Failed to parse library YAML ${libYamlPath}: ${error instanceof Error ? error.message : String(error)}`
+          );
+          continue;
+        }
+
+        // The YAML itself is fully reconciled by this function — mark it synced so the
+        // generic per-change loop in push() doesn't also try to treat it as a skill script.
+        syncedPaths.add(libYamlPath);
+
+        for (const skill of libDef.skills || []) {
+          const skillLocator = `${projectIdn}/libraries/${libIdn}/${skill.idn}`;
+          // Per-skill failure isolation, same rationale as the flow-YAML version: one broken
+          // library skill must not abort the sync of every other library/flow in the workspace.
+          try {
+            const runnerType = this.normalizeRunnerType(skill.runner_type);
+            const scriptPath = v2LibrarySkillScriptPath(
+              customer.idn, projectIdn, libIdn, skill.idn, runnerType
+            );
+
+            if (!(await fs.pathExists(scriptPath))) {
+              errors.push(
+                `[newo_v2] Missing script for library skill ${skillLocator}: ${scriptPath}`
+              );
+              continue;
+            }
+
+            const content = await fs.readFile(scriptPath, 'utf8');
+            const existingSkill = libData.skills[skill.idn];
+            const localMetadata: SkillMetadata = {
+              id: existingSkill?.id || '',
+              idn: skill.idn,
+              title: skill.title || '',
+              runner_type: runnerType,
+              model: {
+                model_idn: skill.model?.model_idn || '',
+                provider_idn: skill.model?.provider_idn || ''
+              },
+              parameters: this.normalizeParameters(skill.parameters),
+              path: existingSkill?.path || ''
+            };
+
+            if (!existingSkill) {
+              const createdSkill = await createLibrarySkill(client, libData.id, {
+                idn: localMetadata.idn,
+                title: localMetadata.title,
+                prompt_script: content,
+                runner_type: localMetadata.runner_type,
+                model: localMetadata.model,
+                path: localMetadata.path || ''
+                // parameters deliberately omitted: the create endpoint ignores them inline
+                // (confirmed against the live platform for flow skills; treated the same way
+                // here defensively) — created explicitly below.
+              });
+
+              for (const parameter of localMetadata.parameters) {
+                try {
+                  await createLibrarySkillParameter(client, libData.id, createdSkill.id, {
+                    name: parameter.name,
+                    default_value: parameter.default_value ?? ''
+                  });
+                } catch (error) {
+                  if (!this.isAlreadyExistsApiError(error)) {
+                    errors.push(
+                      `[newo_v2] Failed to create parameter '${parameter.name}' for library skill ${skillLocator}: ${error instanceof Error ? error.message : String(error)}`
+                    );
+                  }
+                }
+              }
+
+              libData.skills[skill.idn] = {
+                ...localMetadata,
+                id: createdSkill.id
+              };
+              newHashes[scriptPath] = sha256(content);
+              syncedPaths.add(scriptPath);
+              created++;
+              this.logger.info(`[newo_v2] Created library skill: ${libIdn}/${skill.idn}`);
+              continue;
+            }
+
+            const existingNames = new Set(this.normalizeParameters(existingSkill.parameters).map(p => p.name));
+            let createdParamCount = 0;
+            for (const parameter of localMetadata.parameters) {
+              if (existingNames.has(parameter.name)) {
+                continue;
+              }
+              try {
+                await createLibrarySkillParameter(client, libData.id, existingSkill.id, {
+                  name: parameter.name,
+                  default_value: parameter.default_value ?? ''
+                });
+                createdParamCount++;
+              } catch (error) {
+                if (!this.isAlreadyExistsApiError(error)) {
+                  errors.push(
+                    `[newo_v2] Failed to create parameter '${parameter.name}' for library skill ${skillLocator}: ${error instanceof Error ? error.message : String(error)}`
+                  );
+                }
+              }
+            }
+
+            if (createdParamCount > 0 || this.skillMetadataDiffers(existingSkill, localMetadata)) {
+              await updateLibrarySkill(client, libData.id, existingSkill.id, {
+                prompt_script: content,
+                title: localMetadata.title,
+                runner_type: localMetadata.runner_type,
+                model: localMetadata.model
+              });
+
+              libData.skills[skill.idn] = {
+                ...localMetadata,
+                id: existingSkill.id
+              };
+              newHashes[scriptPath] = sha256(content);
+              syncedPaths.add(scriptPath);
+              updated++;
+              this.logger.info(`[newo_v2] Updated library skill: ${libIdn}/${skill.idn}`);
+            }
+          } catch (error) {
+            errors.push(
+              `Failed to sync library skill ${skillLocator}: ${error instanceof Error ? error.message : String(error)}`
+            );
+          }
+        }
+      }
+    }
+
+    return { created, updated, syncedPaths, errors };
+  }
+
   private async createMissingSkillParameters(
     client: AxiosInstance,
     existing: SkillMetadata,
@@ -1050,7 +1301,11 @@ export class V2ProjectSyncStrategy implements ISyncStrategy<ProjectMeta, LocalPr
       response?.data ?? (error instanceof Error ? error.message : String(error))
     ).toLowerCase();
 
-    return haystack.includes('already exists') || haystack.includes('duplicate key');
+    // "already in use" confirmed directly: the parameter-creation endpoint's 409 reads
+    // "Parameter name X is already in use for Skill Y", not "already exists"/"duplicate key" —
+    // without it, re-running createMissingSkillParameters against a skill whose parameters
+    // were already created would throw on a harmless retry instead of skipping it.
+    return haystack.includes('already exists') || haystack.includes('duplicate key') || haystack.includes('already in use');
   }
 
   private normalizeRunnerType(runnerType: string | undefined): RunnerType {
@@ -1406,6 +1661,23 @@ export class V2ProjectSyncStrategy implements ISyncStrategy<ProjectMeta, LocalPr
       // Library skills
       if (projectData.libraries) {
         for (const [libIdn, libData] of Object.entries(projectData.libraries)) {
+          // Library's own YAML carries the inline skill list — detect changes here the same
+          // way the flow-YAML block above does, so a newly-added skill entry (not yet present
+          // as a script file the old scan below would find) registers as a pending change.
+          const libYamlPath = v2LibraryYamlPath(customer.idn, projectIdn, libIdn);
+          if (await fs.pathExists(libYamlPath)) {
+            const content = await fs.readFile(libYamlPath, 'utf8');
+            const currentHash = sha256(content);
+            const storedHash = hashes[libYamlPath];
+            if (storedHash !== currentHash) {
+              changes.push({
+                item: {} as LocalProjectData,
+                operation: 'modified',
+                path: libYamlPath
+              });
+            }
+          }
+
           for (const [skillIdn, skillMeta] of Object.entries(libData.skills)) {
             const scriptPath = v2LibrarySkillScriptPath(
               customer.idn, projectIdn, libIdn, skillIdn,

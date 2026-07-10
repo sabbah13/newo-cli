@@ -35,21 +35,6 @@ export function getExtensionForRunner(runnerType: RunnerType): string {
   }
 }
 
-/**
- * Generate IDN-based script file path
- */
-export function getIdnBasedScriptPath(
-  customerIdn: string,
-  projectIdn: string,
-  agentIdn: string,
-  flowIdn: string,
-  skillIdn: string,
-  runnerType: RunnerType
-): string {
-  const extension = getExtensionForRunner(runnerType);
-  const folderPath = skillFolderPath(customerIdn, projectIdn, agentIdn, flowIdn, skillIdn);
-  return path.join(folderPath, `${skillIdn}.${extension}`);
-}
 
 /**
  * Find all script files in a skill folder

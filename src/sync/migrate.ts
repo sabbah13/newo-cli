@@ -14,6 +14,7 @@ import {
 } from '../api.js';
 import { pullAll } from './projects.js';
 import { pullIntegrations } from './integrations.js';
+import { syncSkillParameters } from './push.js';
 import { customerDir, customerProjectsDir } from '../fsutil.js';
 import fs from 'fs-extra';
 import yaml from 'js-yaml';
@@ -281,13 +282,17 @@ async function migrateProjectStructure(
             const skillMeta = yaml.load(await fs.readFile(skillMetaPath, 'utf8')) as any;
 
             try {
-              await createSkill(destClient, flowId, {
+              const created = await createSkill(destClient, flowId, {
                 idn: skillMeta.idn || skillIdn,
                 title: skillMeta.title || skillIdn,
                 runner_type: skillMeta.runner_type || 'guidance',
                 model: skillMeta.model,
                 prompt_script: ''
               });
+              // The create endpoint silently discards an inline parameters array
+              // (confirmed platform behavior, see newo-cli/.ai/newo-skills-testing-findings.md
+              // finding 6) — create them explicitly, same as every push path does.
+              await syncSkillParameters(destClient, created.id, skillIdn, skillMeta.parameters);
               skillsCreated++;
               if (verbose) console.log(`   ✅ Created skill: ${skillIdn}`);
             } catch (error: any) {
@@ -701,6 +706,8 @@ async function pushSkillContent(
                   ...typedSkillData,
                   prompt_script: content
                 });
+                // Same silent parameter-drop as createSkill above — re-assert explicitly.
+                await syncSkillParameters(destClient, typedSkillData.id, skillIdn, typedSkillData.parameters);
                 pushedCount++;
 
                 if (pushedCount % 100 === 0 && verbose) {
@@ -794,6 +801,8 @@ async function verifyMigration(
 
   let srcSkills = 0;
   let dstSkills = 0;
+  let srcParameters = 0;
+  let dstParameters = 0;
 
   for (const proj of sourceProjects) {
     const agents = await listAgents(sourceClient, proj.id);
@@ -801,6 +810,7 @@ async function verifyMigration(
       for (const flow of agent.flows || []) {
         const skills = await listFlowSkills(sourceClient, flow.id);
         srcSkills += skills.length;
+        srcParameters += skills.reduce((sum, s) => sum + (s.parameters?.length || 0), 0);
       }
     }
   }
@@ -811,14 +821,20 @@ async function verifyMigration(
       for (const flow of agent.flows || []) {
         const skills = await listFlowSkills(destClient, flow.id);
         dstSkills += skills.length;
+        dstParameters += skills.reduce((sum, s) => sum + (s.parameters?.length || 0), 0);
       }
     }
   }
 
   console.log(`   Skills: ${srcSkills} source → ${dstSkills} destination ${srcSkills === dstSkills ? '✅' : '❌'}`);
+  console.log(`   Skill parameters: ${srcParameters} source → ${dstParameters} destination ${srcParameters === dstParameters ? '✅' : '❌'}`);
 
   if (srcSkills !== dstSkills) {
     throw new Error(`Skill count mismatch: ${srcSkills} source vs ${dstSkills} destination`);
+  }
+
+  if (srcParameters !== dstParameters) {
+    throw new Error(`Skill parameter count mismatch: ${srcParameters} source vs ${dstParameters} destination — a migrated skill likely lost its parameters (see newo-cli/.ai/newo-skills-testing-findings.md finding 6)`);
   }
 
   console.log('   ✅ Verification passed');
