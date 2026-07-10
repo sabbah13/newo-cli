@@ -243,6 +243,47 @@ export async function status(customer: CustomerConfig, verbose: boolean = false)
       if (verbose) console.log(`  📁 Checking agent: ${agentIdn}`);
       for (const [flowIdn, flowObj] of Object.entries(agentObj.flows)) {
         if (verbose) console.log(`    📁 Checking flow: ${flowIdn}`);
+
+        // Check the flow's own metadata.yaml for changes (title, model, and critically
+        // events:/state_fields: — additions and removals here were previously invisible to
+        // `status` entirely; push.ts independently re-derives its own hash and DOES sync
+        // these changes, so a change could be applied by push without status ever having
+        // shown it as pending).
+        {
+          const flowMetaPath = flowMetadataPath(customer.idn, projectIdn, agentIdn, flowIdn);
+          if (await fs.pathExists(flowMetaPath)) {
+            const flowMetaContent = await fs.readFile(flowMetaPath, 'utf8');
+            const h = sha256(flowMetaContent);
+            const oldHash = hashes[flowMetaPath];
+
+            if (verbose) {
+              console.log(`      📄 ${flowMetaPath}`);
+              console.log(`        Old hash: ${oldHash || 'none'}`);
+              console.log(`        New hash: ${h}`);
+            }
+
+            if (oldHash !== h) {
+              console.log(`M  ${flowMetaPath}`);
+              dirty++;
+
+              try {
+                const newFlowMeta = yaml.load(flowMetaContent) as any;
+                console.log(`      📊 Flow metadata changed: ${flowIdn}`);
+                if (newFlowMeta?.title) {
+                  console.log(`        • Title: ${newFlowMeta.title}`);
+                }
+                const eventCount = Array.isArray(newFlowMeta?.events) ? newFlowMeta.events.length : 0;
+                const stateCount = Array.isArray(newFlowMeta?.state_fields) ? newFlowMeta.state_fields.length : 0;
+                console.log(`        • Events: ${eventCount}, State fields: ${stateCount}`);
+              } catch (e) {
+                if (verbose) console.log(`      🔄 Modified: ${flowIdn} metadata.yaml`);
+              }
+            } else if (verbose) {
+              console.log(`      ✓ Unchanged: ${flowMetaPath}`);
+            }
+          }
+        }
+
         for (const [skillIdn] of Object.entries(flowObj.skills)) {
           // Validate skill folder and show warnings
           const validation = await validateSkillFolder(customer.idn, projectIdn, agentIdn, flowIdn, skillIdn);

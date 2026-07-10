@@ -18,6 +18,7 @@ import { handleImportAkbCommand } from './cli/commands/import-akb.js';
 import { handleHelpCommand } from './cli/commands/help.js';
 import { handleListCustomersCommand } from './cli/commands/list-customers.js';
 import { handleCreateAgentCommand } from './cli/commands/create-agent.js';
+import { handleUpdateAgentCommand } from './cli/commands/update-agent.js';
 import { handleDeleteAgentCommand } from './cli/commands/delete-agent.js';
 import { handleCreateFlowCommand } from './cli/commands/create-flow.js';
 import { handleDeleteFlowCommand } from './cli/commands/delete-flow.js';
@@ -33,6 +34,7 @@ import { handleCreateParameterCommand } from './cli/commands/create-parameter.js
 import { handleCreatePersonaCommand } from './cli/commands/create-persona.js';
 import { handleCreateAttributeCommand } from './cli/commands/create-attribute.js';
 import { handleUpdateAttributeCommand } from './cli/commands/update-attribute.js';
+import { handleDeleteAttributeCommand } from './cli/commands/delete-attribute.js';
 import { handleSandboxCommand } from './cli/commands/sandbox.js';
 import { handlePullIntegrationsCommand } from './cli/commands/pull-integrations.js';
 import { handlePushIntegrationsCommand } from './cli/commands/push-integrations.js';
@@ -180,6 +182,10 @@ async function main(): Promise<void> {
         await handleCreateAgentCommand(customerConfig, args, verbose);
         break;
 
+      case 'update-agent':
+        await handleUpdateAgentCommand(customerConfig, args, verbose);
+        break;
+
       case 'delete-agent':
         await handleDeleteAgentCommand(customerConfig, args, verbose);
         break;
@@ -238,6 +244,10 @@ async function main(): Promise<void> {
 
       case 'update-attribute':
         await handleUpdateAttributeCommand(customerConfig, args, verbose);
+        break;
+
+      case 'delete-attribute':
+        await handleDeleteAttributeCommand(customerConfig, args, verbose);
         break;
 
       case 'pull-integrations':

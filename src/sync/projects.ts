@@ -6,7 +6,8 @@ import {
   listAgents,
   listFlowSkills,
   listFlowEvents,
-  listFlowStates
+  listFlowStates,
+  listLibraries
 } from '../api.js';
 import {
   ensureState,
@@ -21,7 +22,10 @@ import {
   flowsYamlPath,
   customerAttributesPath,
   customerProjectsDir,
-  projectDir
+  projectDir,
+  libraryMetadataPath,
+  librarySkillMetadataPath,
+  librarySkillScriptPath
 } from '../fsutil.js';
 import {
   findSkillScriptFiles,
@@ -60,7 +64,7 @@ export function isLegacyProjectMap(x: unknown): x is LegacyProjectMap {
 /**
  * Ask user for deletion confirmation
  */
-async function askForDeletion(entityType: string, entityPath: string): Promise<'yes' | 'no' | 'all' | 'quit'> {
+export async function askForDeletion(entityType: string, entityPath: string): Promise<'yes' | 'no' | 'all' | 'quit'> {
   const readline = await import('readline');
   const rl = readline.createInterface({
     input: process.stdin,
@@ -141,6 +145,12 @@ async function cleanupDeletedEntities(
 
         // Skip files and metadata.yaml
         if (!agentStat || !agentStat.isDirectory()) continue;
+
+        // `libraries/` is a sibling of agents, not an agent itself — pullSingleProject writes
+        // it directly via libraryMetadataPath/etc. Without this skip, this loop treats it as
+        // an "agent" with no matching entry in projectData.agents and offers to delete the
+        // whole libraries tree on every pull.
+        if (agentIdn === 'libraries') continue;
 
         // Check if agent exists in map
         const agentData = projectData.agents[agentIdn];
@@ -518,6 +528,51 @@ export async function pullSingleProject(
           projectData.agents[agent.idn]!.flows[flow.idn]!.skills[skill.idn] = skillMeta;
         }
       }
+    }
+
+    // Pull libraries for this project — the default cli_v1 pull path (this function) never
+    // fetched libraries at all until this fix; only `--format newo_v2` did, via a separate
+    // implementation (ProjectSyncStrategy.ts) that this block mirrors.
+    try {
+      const libraries = await listLibraries(client, project.id);
+      if (libraries.length > 0) {
+        if (verbose) console.log(`  Found ${libraries.length} libraries in project ${project.idn}`);
+        projectData.libraries = {};
+
+        for (const lib of libraries) {
+          projectData.libraries[lib.idn] = {
+            id: lib.id,
+            skills: {}
+          };
+
+          const libMetaPath = libraryMetadataPath(customer.idn, project.idn, lib.idn);
+          const libMeta = { id: lib.id, idn: lib.idn };
+          const libMetaYaml = yaml.dump(libMeta, { indent: 2, quotingType: '"', forceQuotes: false });
+          await writeFileSafe(libMetaPath, libMetaYaml);
+          newHashes[libMetaPath] = sha256(libMetaYaml);
+
+          for (const skill of lib.skills) {
+            const skillMetaPath = librarySkillMetadataPath(customer.idn, project.idn, lib.idn, skill.idn);
+            const skillMeta: SkillMetadata = {
+              id: skill.id, idn: skill.idn, title: skill.title,
+              runner_type: skill.runner_type, model: skill.model,
+              parameters: [...skill.parameters], path: skill.path
+            };
+            const skillMetaYaml = yaml.dump(skillMeta, { indent: 2, quotingType: '"', forceQuotes: false });
+            await writeFileSafe(skillMetaPath, skillMetaYaml);
+            newHashes[skillMetaPath] = sha256(skillMetaYaml);
+
+            const scriptContent = skill.prompt_script || '';
+            const scriptPath = librarySkillScriptPath(customer.idn, project.idn, lib.idn, skill.idn, skill.runner_type);
+            await writeFileSafe(scriptPath, scriptContent);
+            newHashes[scriptPath] = sha256(scriptContent);
+
+            projectData.libraries[lib.idn]!.skills[skill.idn] = skillMeta;
+          }
+        }
+      }
+    } catch (error) {
+      console.error(`  ⚠️  Could not pull libraries for project ${project.idn}: ${error instanceof Error ? error.message : String(error)}`);
     }
 
     // Store project data in map

@@ -12,7 +12,6 @@ import type {
   CustomerAttribute,
   CustomerAttributesResponse,
   UserPersonaResponse,
-  UserPersona,
   ChatHistoryParams,
   ChatHistoryResponse,
   CreateAgentRequest,
@@ -297,17 +296,6 @@ export async function listUserPersonas(client: AxiosInstance, page: number = 1, 
   return response.data;
 }
 
-export async function getUserPersona(client: AxiosInstance, personaId: string): Promise<UserPersona> {
-  const response = await client.get<UserPersona>(`/api/v1/bff/conversations/user-personas/${personaId}`);
-  return response.data;
-}
-
-export async function getAccount(client: AxiosInstance): Promise<{ id: string; [key: string]: any }> {
-  const response = await client.get<{ id: string; [key: string]: any }>('/api/v1/account');
-  return response.data;
-}
-
-
 export async function getChatHistory(client: AxiosInstance, params: ChatHistoryParams): Promise<ChatHistoryResponse> {
   const queryParams: Record<string, any> = {
     user_actor_id: params.user_actor_id,
@@ -359,10 +347,6 @@ export async function deleteFlow(client: AxiosInstance, flowId: string): Promise
 export async function createSkill(client: AxiosInstance, flowId: string, skillData: CreateSkillRequest): Promise<CreateSkillResponse> {
   const response = await client.post<CreateSkillResponse>(`/api/v1/designer/flows/${flowId}/skills`, skillData);
   return response.data;
-}
-
-export async function deleteSkill(client: AxiosInstance, skillId: string): Promise<void> {
-  await client.delete(`/api/v1/designer/flows/skills/${skillId}`);
 }
 
 export async function deleteSkillById(client: AxiosInstance, skillId: string): Promise<void> {
@@ -436,6 +420,10 @@ export async function createSkillParameter(client: AxiosInstance, skillId: strin
 export async function createCustomerAttribute(client: AxiosInstance, attributeData: CreateCustomerAttributeRequest): Promise<CreateCustomerAttributeResponse> {
   const response = await client.post<CreateCustomerAttributeResponse>('/api/v1/customer/attributes', attributeData);
   return response.data;
+}
+
+export async function deleteCustomerAttribute(client: AxiosInstance, attributeId: string): Promise<void> {
+  await client.delete(`/api/v1/customer/attributes/${attributeId}`);
 }
 
 export async function createProject(client: AxiosInstance, projectData: CreateProjectRequest): Promise<CreateProjectResponse> {
@@ -600,7 +588,9 @@ export async function forceUpdateProject(client: AxiosInstance, projectId: strin
   await client.post(`/api/v1/designer/projects/by-id/${projectId}/force-update`);
 }
 
-// Agent update
+// Agent update. The endpoint only accepts GET/PATCH (confirmed live via its Allow header on a
+// 405) — this was PUT before and could never have worked, which is exactly why it had zero
+// callers anywhere in the codebase until now.
 export async function updateAgent(
   client: AxiosInstance,
   agentId: string,
@@ -610,34 +600,7 @@ export async function updateAgent(
     persona_id: string | null;
   }>
 ): Promise<void> {
-  await client.put(`/api/v1/designer/agents/${agentId}`, updateData);
-}
-
-// Webhook creation
-export async function createOutgoingWebhook(
-  client: AxiosInstance,
-  webhookData: {
-    connector_idn: string;
-    event_idn: string;
-    url: string;
-    method: string;
-    headers?: Record<string, string>;
-    body_template?: string;
-  }
-): Promise<{ id: string }> {
-  const response = await client.post('/api/v1/webhooks', webhookData);
-  return response.data;
-}
-
-export async function createIncomingWebhook(
-  client: AxiosInstance,
-  webhookData: {
-    connector_idn: string;
-    event_idn: string;
-  }
-): Promise<{ id: string; url: string }> {
-  const response = await client.post('/api/v1/webhooks/incoming', webhookData);
-  return response.data;
+  await client.patch(`/api/v1/designer/agents/${agentId}`, updateData);
 }
 
 // Registry API Functions
@@ -724,13 +687,6 @@ export async function listLibraries(client: AxiosInstance, projectId: string): P
   return response.data;
 }
 
-export async function listLibrarySkills(client: AxiosInstance, libraryId: string): Promise<Skill[]> {
-  const response = await client.get<Skill[]>(
-    `/api/v1/designer/libraries/${libraryId}/skills`
-  );
-  return response.data;
-}
-
 export async function updateLibrarySkill(
   client: AxiosInstance,
   libraryId: string,
@@ -741,6 +697,16 @@ export async function updateLibrarySkill(
     `/api/v1/designer/libraries/${libraryId}/skills/${skillId}`,
     data
   );
+}
+
+export async function createLibrarySkill(client: AxiosInstance, libraryId: string, skillData: CreateSkillRequest): Promise<CreateSkillResponse> {
+  const response = await client.post<CreateSkillResponse>(`/api/v1/designer/libraries/${libraryId}/skills`, skillData);
+  return response.data;
+}
+
+export async function createLibrarySkillParameter(client: AxiosInstance, libraryId: string, skillId: string, paramData: CreateSkillParameterRequest): Promise<CreateSkillParameterResponse> {
+  const response = await client.post<CreateSkillParameterResponse>(`/api/v1/designer/libraries/${libraryId}/skills/${skillId}/parameters`, paramData);
+  return response.data;
 }
 
 // ── V2 Bulk Export/Import ──

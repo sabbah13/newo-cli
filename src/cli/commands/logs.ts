@@ -251,6 +251,24 @@ export async function fetchAndDisplayLogs(
   try {
     const logs = await collectLogsForDisplay(client, params, nameFilter, getLogsFn, maxItems);
 
+    // The API returns pages within the requested window in an order this CLI does not
+    // control; on a busy window that order can bias toward one end (proven live: a
+    // --hours 1 pull on an account whose only activity was one ~6-minute call returned
+    // exactly the budget's worth of entries, and every one of them was from the call's
+    // last ~2 minutes — the earlier, equally real majority of the call was silently
+    // absent, with no error and a plausible-looking non-empty result). Hitting the budget
+    // exactly is the only client-visible signal that this happened; surface it on stderr
+    // so --raw/--json's stdout contract stays untouched.
+    const budget = maxItems && maxItems > 0 ? maxItems : DEFAULT_MAX_ENTRIES;
+    if (logs.length >= budget) {
+      console.error(
+        `⚠️  Hit the ${budget}-entry fetch budget — this window may be truncated and is not ` +
+        `guaranteed to cover the full requested range. Narrow --hours/--from/--to, raise --max, ` +
+        `or if you have a session id, prefer \`newo session <id> --full\` (session-scoped, and its ` +
+        `own \`partial\`/\`total_log_entries\` fields make truncation visible).`
+      );
+    }
+
     if (asJson) {
       console.log(JSON.stringify(logs, null, 2));
       return;
@@ -430,6 +448,10 @@ Output Options:
   --max <n>             Max total entries to fetch across pages (default: 1000).
                         Without this, results paginate to the end of data or the
                         default budget — older queries stopped after one page.
+                        Hitting the budget prints a stderr warning: the returned
+                        window may be truncated (the API's page order within a
+                        busy window is not controlled by this CLI). Prefer
+                        \`newo session <id> --full\` when a session id is known.
 
 Live Tailing:
   --follow, -f          Continuously poll for new logs (like tail -f)

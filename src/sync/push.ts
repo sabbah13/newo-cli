@@ -1,11 +1,12 @@
 /**
  * Push operations for changed files
  */
-import { updateSkill, createAgent, createFlow, createSkill, publishFlow, getFlow } from '../api.js';
+import { updateSkill, createAgent, createFlow, createSkill, createSkillParameter, deleteSkillById, deleteAgent, deleteFlow, publishFlow, getFlow } from '../api.js';
 import {
   ensureState,
   mapPath,
   skillMetadataPath,
+  skillFolderPath,
   projectDir,
   agentMetadataPath,
   flowMetadataPath
@@ -19,7 +20,7 @@ import fs from 'fs-extra';
 import { sha256, loadHashes, saveHashes } from '../hash.js';
 import yaml from 'js-yaml';
 import { generateFlowsYaml } from './metadata.js';
-import { isProjectMap, isLegacyProjectMap } from './projects.js';
+import { isProjectMap, isLegacyProjectMap, askForDeletion } from './projects.js';
 import { flowsYamlPath } from '../fsutil.js';
 import { pushAllProjectAttributes } from './attributes.js';
 import {
@@ -39,8 +40,61 @@ import type {
   CreateAgentRequest,
   CreateFlowRequest,
   CreateSkillRequest,
-  PublishFlowRequest
+  PublishFlowRequest,
+  SkillParameter
 } from '../types.js';
+
+/**
+ * Detect "resource already exists" API errors, matching only the precise phrases the
+ * platform actually returns. Mirrors V2ProjectSyncStrategy.isAlreadyExistsApiError, plus
+ * "already in use" — confirmed directly against a live re-push: the parameter-creation
+ * endpoint's 409 reads "Parameter name X is already in use for Skill Y", not "already
+ * exists"/"duplicate key", so those two phrases alone let a harmless retry (re-pushing a
+ * skill whose parameters were already created) surface as a scary but meaningless error.
+ */
+function isAlreadyExistsApiError(error: unknown): boolean {
+  const response = (error as { response?: { status?: number; data?: unknown } } | null | undefined)?.response;
+  const status = response?.status;
+  if (status !== 400 && status !== 409 && status !== 422) {
+    return false;
+  }
+
+  const haystack = JSON.stringify(
+    response?.data ?? (error instanceof Error ? error.message : String(error))
+  ).toLowerCase();
+
+  return haystack.includes('already exists') || haystack.includes('duplicate key') || haystack.includes('already in use');
+}
+
+/**
+ * Neither create-skill (POST .../flows/{flowId}/skills) nor update-skill
+ * (PUT .../flows/skills/{id}) persist an inline `parameters` array — confirmed against
+ * the live platform: both accept a request with a non-empty `parameters` array (2xx) but
+ * the skill comes back from a subsequent read with `parameters: []`. V2ProjectSyncStrategy
+ * already works around the identical platform behavior for the newo_v2 path
+ * (createMissingSkillParameters); this mirrors that fix for the default cli_v1 path, which
+ * otherwise silently drops every parameter on both skill creation and skill/metadata
+ * updates alike.
+ */
+export async function syncSkillParameters(
+  client: AxiosInstance,
+  skillId: string,
+  skillIdn: string,
+  parameters: SkillParameter[] | undefined
+): Promise<void> {
+  for (const parameter of parameters || []) {
+    try {
+      await createSkillParameter(client, skillId, {
+        name: parameter.name,
+        default_value: parameter.default_value ?? ''
+      });
+    } catch (error) {
+      if (!isAlreadyExistsApiError(error)) {
+        console.error(`❌ Failed to create parameter '${parameter.name}' for skill ${skillIdn}: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
+  }
+}
 
 /**
  * Scan filesystem for local-only entities not in the project map yet
@@ -156,6 +210,268 @@ async function scanForLocalOnlyEntities(customer: CustomerConfig, projects: Reco
   }
 
   return { agentCount, flowCount, skillCount, entities: localEntities };
+}
+
+/**
+ * Agent-level counterpart to scanForLocallyDeletedSkills — same shape, same reasoning:
+ * delete-agent.ts only ever removed the local mirror, so a locally-deleted agent stayed live
+ * on the platform indefinitely. Checks metadata.yaml existence (matching how
+ * scanForLocalOnlyEntities checks for the same file in the creation direction), not the bare
+ * folder, since a stray leftover folder with no metadata.yaml is exactly what delete-agent.ts
+ * itself produces when its local removal is later restored/re-pulled partially.
+ */
+async function scanForLocallyDeletedAgents(
+  customer: CustomerConfig,
+  projects: Record<string, ProjectData>
+): Promise<Array<{ id: string; idn: string; displayPath: string; projectIdn: string }>> {
+  const deleted: Array<{ id: string; idn: string; displayPath: string; projectIdn: string }> = [];
+
+  for (const [projectIdn, projectData] of Object.entries(projects)) {
+    for (const [agentIdn, agentData] of Object.entries(projectData.agents)) {
+      const metaPath = agentMetadataPath(customer.idn, projectIdn, agentIdn);
+      if (!(await fs.pathExists(metaPath))) {
+        deleted.push({ id: agentData.id, idn: agentIdn, displayPath: `${projectIdn}/${agentIdn}`, projectIdn });
+      }
+    }
+  }
+
+  return deleted;
+}
+
+/**
+ * Confirm-and-delete for agents, mirroring deleteRemovedSkills's y/n/a/q loop. Deleting an
+ * agent cascades to its flows and skills on the platform (confirmed live) — this gates behind
+ * the same interactive per-item confirmation the skill case uses, deliberately: the blast
+ * radius here is an entire agent's worth of flows and skills per confirmed row, not one skill.
+ * Removes the whole agent entry from the in-memory map on success, so a subsequent flow/skill
+ * deletion scan against the same map naturally never sees this agent's now-gone children —
+ * no separate exclusion list needed.
+ */
+async function deleteRemovedAgents(
+  client: AxiosInstance,
+  toDelete: Array<{ id: string; idn: string; displayPath: string; projectIdn: string }>,
+  projects: Record<string, ProjectData>
+): Promise<{ deleted: number; errors: string[] }> {
+  let deleted = 0;
+  const errors: string[] = [];
+
+  if (toDelete.length === 0) {
+    return { deleted, errors };
+  }
+
+  console.log(`\n🔍 Found ${toDelete.length} agent(s) deleted locally that still exist on the platform:`);
+  for (const entity of toDelete) {
+    console.log(`   agent    : ${entity.displayPath} (deleting cascades to its flows and skills)`);
+  }
+  console.log('\nThese will be deleted from the NEWO platform.');
+
+  let deleteAll = false;
+  for (const entity of toDelete) {
+    let shouldDelete = deleteAll;
+
+    if (!deleteAll) {
+      const choice = await askForDeletion('agent (platform, cascades to flows/skills)', entity.displayPath);
+      if (choice === 'quit') {
+        console.log('❌ Platform deletion cancelled by user');
+        break;
+      } else if (choice === 'all') {
+        deleteAll = true;
+        shouldDelete = true;
+      } else if (choice === 'yes') {
+        shouldDelete = true;
+      }
+    }
+
+    if (!shouldDelete) {
+      continue;
+    }
+
+    try {
+      await deleteAgent(client, entity.id);
+      delete projects[entity.projectIdn]!.agents[entity.idn];
+      deleted++;
+    } catch (error) {
+      errors.push(`Failed to delete agent ${entity.displayPath} from platform: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  return { deleted, errors };
+}
+
+/**
+ * Flow-level counterpart to scanForLocallyDeletedAgents. Run this AFTER agent deletion has
+ * already mutated the map — any flow under an agent deleted above is no longer in `projects`
+ * at all, so this walk never revisits it.
+ */
+async function scanForLocallyDeletedFlows(
+  customer: CustomerConfig,
+  projects: Record<string, ProjectData>
+): Promise<Array<{ id: string; idn: string; displayPath: string; projectIdn: string; agentIdn: string }>> {
+  const deleted: Array<{ id: string; idn: string; displayPath: string; projectIdn: string; agentIdn: string }> = [];
+
+  for (const [projectIdn, projectData] of Object.entries(projects)) {
+    for (const [agentIdn, agentData] of Object.entries(projectData.agents)) {
+      for (const [flowIdn, flowData] of Object.entries(agentData.flows)) {
+        const metaPath = flowMetadataPath(customer.idn, projectIdn, agentIdn, flowIdn);
+        if (!(await fs.pathExists(metaPath))) {
+          deleted.push({ id: flowData.id, idn: flowIdn, displayPath: `${projectIdn}/${agentIdn}/${flowIdn}`, projectIdn, agentIdn });
+        }
+      }
+    }
+  }
+
+  return deleted;
+}
+
+/**
+ * Confirm-and-delete for flows — same pattern as deleteRemovedAgents, one level down.
+ * Deleting a flow cascades to its skills on the platform.
+ */
+async function deleteRemovedFlows(
+  client: AxiosInstance,
+  toDelete: Array<{ id: string; idn: string; displayPath: string; projectIdn: string; agentIdn: string }>,
+  projects: Record<string, ProjectData>
+): Promise<{ deleted: number; errors: string[] }> {
+  let deleted = 0;
+  const errors: string[] = [];
+
+  if (toDelete.length === 0) {
+    return { deleted, errors };
+  }
+
+  console.log(`\n🔍 Found ${toDelete.length} flow(s) deleted locally that still exist on the platform:`);
+  for (const entity of toDelete) {
+    console.log(`   flow     : ${entity.displayPath} (deleting cascades to its skills)`);
+  }
+  console.log('\nThese will be deleted from the NEWO platform.');
+
+  let deleteAll = false;
+  for (const entity of toDelete) {
+    let shouldDelete = deleteAll;
+
+    if (!deleteAll) {
+      const choice = await askForDeletion('flow (platform, cascades to skills)', entity.displayPath);
+      if (choice === 'quit') {
+        console.log('❌ Platform deletion cancelled by user');
+        break;
+      } else if (choice === 'all') {
+        deleteAll = true;
+        shouldDelete = true;
+      } else if (choice === 'yes') {
+        shouldDelete = true;
+      }
+    }
+
+    if (!shouldDelete) {
+      continue;
+    }
+
+    try {
+      await deleteFlow(client, entity.id);
+      delete projects[entity.projectIdn]!.agents[entity.agentIdn]!.flows[entity.idn];
+      deleted++;
+    } catch (error) {
+      errors.push(`Failed to delete flow ${entity.displayPath} from platform: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  return { deleted, errors };
+}
+
+/**
+ * Inverse of scanForLocalOnlyEntities: find skills the project map already knows about
+ * (i.e. they exist on the platform) whose local folder no longer exists. `delete-skill`
+ * removes only the local mirror folder and tells the user to run `push` to finish the job on
+ * the platform (`src/cli/commands/delete-skill.ts`), but nothing before this scan ever looked
+ * for a locally-missing-but-platform-known skill, so that promise never held: a deleted local
+ * folder was invisible to push, and the skill stayed live on the platform indefinitely.
+ */
+export async function scanForLocallyDeletedSkills(
+  customer: CustomerConfig,
+  projects: Record<string, ProjectData>
+): Promise<Array<{ id: string; idn: string; displayPath: string; projectIdn: string; agentIdn: string; flowIdn: string }>> {
+  const deleted: Array<{ id: string; idn: string; displayPath: string; projectIdn: string; agentIdn: string; flowIdn: string }> = [];
+
+  for (const [projectIdn, projectData] of Object.entries(projects)) {
+    for (const [agentIdn, agentData] of Object.entries(projectData.agents)) {
+      for (const [flowIdn, flowData] of Object.entries(agentData.flows)) {
+        for (const [skillIdn, skillMeta] of Object.entries(flowData.skills)) {
+          const folderPath = skillFolderPath(customer.idn, projectIdn, agentIdn, flowIdn, skillIdn);
+          if (!(await fs.pathExists(folderPath))) {
+            deleted.push({
+              id: skillMeta.id,
+              idn: skillIdn,
+              displayPath: `${projectIdn}/${agentIdn}/${flowIdn}/${skillIdn}`,
+              projectIdn,
+              agentIdn,
+              flowIdn
+            });
+          }
+        }
+      }
+    }
+  }
+
+  return deleted;
+}
+
+/**
+ * Confirm and apply platform-side deletion for skills scanForLocallyDeletedSkills found.
+ * Interactive, mirroring cleanupDeletedEntities's y/n/a/q pattern in projects.ts (the
+ * platform-facing pull-side cleanup) — deliberately: a detection bug in "what counts as
+ * deleted" must never be able to silently delete the wrong skill on the live platform, so this
+ * gates on the same explicit per-item confirmation the codebase already trusts for the
+ * lower-stakes local-cleanup case.
+ */
+export async function deleteRemovedSkills(
+  client: AxiosInstance,
+  toDelete: Array<{ id: string; idn: string; displayPath: string; projectIdn: string; agentIdn: string; flowIdn: string }>,
+  projects: Record<string, ProjectData>
+): Promise<{ deleted: number; errors: string[] }> {
+  let deleted = 0;
+  const errors: string[] = [];
+
+  if (toDelete.length === 0) {
+    return { deleted, errors };
+  }
+
+  console.log(`\n🔍 Found ${toDelete.length} skill(s) deleted locally that still exist on the platform:`);
+  for (const entity of toDelete) {
+    console.log(`   skill    : ${entity.displayPath}`);
+  }
+  console.log('\nThese will be deleted from the NEWO platform.');
+
+  let deleteAll = false;
+  for (const entity of toDelete) {
+    let shouldDelete = deleteAll;
+
+    if (!deleteAll) {
+      const choice = await askForDeletion('skill (platform)', entity.displayPath);
+      if (choice === 'quit') {
+        console.log('❌ Platform deletion cancelled by user');
+        break;
+      } else if (choice === 'all') {
+        deleteAll = true;
+        shouldDelete = true;
+      } else if (choice === 'yes') {
+        shouldDelete = true;
+      }
+    }
+
+    if (!shouldDelete) {
+      continue;
+    }
+
+    try {
+      await deleteSkillById(client, entity.id);
+      delete projects[entity.projectIdn]!.agents[entity.agentIdn]!.flows[entity.flowIdn]!.skills[entity.idn];
+      deleted++;
+    } catch (error) {
+      errors.push(`Failed to delete ${entity.displayPath} from platform: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  return { deleted, errors };
 }
 
 /**
@@ -354,6 +670,9 @@ export async function pushChanged(client: AxiosInstance, customer: CustomerConfi
 
           const createResponse = await createSkill(client, flowData.id, createSkillRequest);
           console.log(`✅ Skill created: ${entity.idn} (ID: ${createResponse.id})`);
+
+          await syncSkillParameters(client, createResponse.id, entity.idn, metadata.parameters);
+
           pushed++;
           metadataChanged = true;
 
@@ -445,6 +764,8 @@ export async function pushChanged(client: AxiosInstance, customer: CustomerConfi
               await updateSkill(client, skillObject);
               console.log(`↑ Pushed: ${skillIdn} (${skillMeta.title}) from ${skillFile.fileName}`);
 
+              await syncSkillParameters(client, skillMeta.id, skillIdn, skillMeta.parameters);
+
               newHashes[currentPath] = h;
               pushed++;
             } catch (error) {
@@ -498,6 +819,8 @@ export async function pushChanged(client: AxiosInstance, customer: CustomerConfi
 
                 await updateSkill(client, skillObject);
                 console.log(`↑ Pushed metadata update for skill: ${skillIdn} (${updatedMetadata.title})`);
+
+                await syncSkillParameters(client, updatedMetadata.id, skillIdn, updatedMetadata.parameters);
 
                 newHashes[metadataPath] = h;
                 pushed++;
@@ -595,6 +918,42 @@ export async function pushChanged(client: AxiosInstance, customer: CustomerConfi
   const attributesUpdated = await pushAllProjectAttributes(client, customer, projectsInfoMap, verbose);
   if (attributesUpdated > 0) {
     pushed += attributesUpdated;
+  }
+
+  // Sync local agent/flow deletions to the platform first — same gap as skills (delete-agent.ts
+  // and delete-flow.ts made the identical unfulfilled promise), fixed the same way, in cascade
+  // order (agent, then flow, then skill) so a deleted agent's own flows/skills are never
+  // separately re-scanned once its map entry is gone.
+  const locallyDeletedAgents = await scanForLocallyDeletedAgents(customer, projects);
+  if (locallyDeletedAgents.length > 0) {
+    const agentDeletionResult = await deleteRemovedAgents(client, locallyDeletedAgents, projects);
+    if (agentDeletionResult.deleted > 0) {
+      pushed += agentDeletionResult.deleted;
+      metadataChanged = true;
+    }
+    agentDeletionResult.errors.forEach(error => console.error(`❌ ${error}`));
+  }
+
+  const locallyDeletedFlows = await scanForLocallyDeletedFlows(customer, projects);
+  if (locallyDeletedFlows.length > 0) {
+    const flowDeletionResult = await deleteRemovedFlows(client, locallyDeletedFlows, projects);
+    if (flowDeletionResult.deleted > 0) {
+      pushed += flowDeletionResult.deleted;
+      metadataChanged = true;
+    }
+    flowDeletionResult.errors.forEach(error => console.error(`❌ ${error}`));
+  }
+
+  // Sync local skill deletions to the platform — see scanForLocallyDeletedSkills for why this
+  // is necessary at all (delete-skill's own promise to do this via push never held before now).
+  const locallyDeleted = await scanForLocallyDeletedSkills(customer, projects);
+  if (locallyDeleted.length > 0) {
+    const deletionResult = await deleteRemovedSkills(client, locallyDeleted, projects);
+    if (deletionResult.deleted > 0) {
+      pushed += deletionResult.deleted;
+      metadataChanged = true;
+    }
+    deletionResult.errors.forEach(error => console.error(`❌ ${error}`));
   }
 
   // Regenerate flows.yaml if metadata was changed

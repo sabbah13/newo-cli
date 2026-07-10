@@ -256,7 +256,17 @@ export function generateV2AgentYaml(meta: V2AgentMeta): string {
 
 export async function parseV2LibraryYaml(filePath: string): Promise<V2LibraryDefinition> {
   const content = await fs.readFile(filePath, 'utf8');
-  return yaml.load(content, { schema: V2_YAML_SCHEMA }) as V2LibraryDefinition;
+  const parsed = yaml.load(content, { schema: V2_YAML_SCHEMA }) as
+    | { library: V2LibraryDefinition }
+    | V2LibraryDefinition;
+  // Unlike flow YAML (title/idn/skills at the top level, matching V2FlowDefinition directly),
+  // library YAML on disk is always wrapped in a top-level `library:` key — confirmed against
+  // both the pull-side writer (V2ProjectSyncStrategy's pullProjectLibraries, which dumps
+  // `{ library: { idn, skills } }`) and every real pulled library file. Casting the raw parse
+  // straight to V2LibraryDefinition without unwrapping silently produced `skills: undefined`
+  // for every library, every time -- this function had no other caller, so nothing had ever
+  // exercised it end to end before now.
+  return 'library' in parsed && parsed.library ? parsed.library : (parsed as V2LibraryDefinition);
 }
 
 /**

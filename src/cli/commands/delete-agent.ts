@@ -60,7 +60,7 @@ export async function handleDeleteAgentCommand(
     if (!confirm) {
       console.log('⚠️  This will permanently delete the agent and all its flows and skills locally.');
       console.log('⚠️  Use --confirm flag to proceed with deletion.');
-      console.log('⚠️  Run "newo push" after deletion to remove from NEWO platform.');
+      console.log('⚠️  This removes the local mirror only — newo push does not sync agent deletions to the platform yet.');
       process.exit(1);
     }
 
@@ -81,7 +81,7 @@ export async function handleDeleteAgentCommand(
     console.log(`✅ Agent deleted locally`);
     console.log(`   IDN: ${agentIdn}`);
     console.log(`   Path: ${agentDir}`);
-    console.log(`   Run 'newo push' to delete from NEWO platform`);
+    console.log(`   Local mirror only — this agent still exists on the NEWO platform (newo push does not sync agent deletions yet)`);
 
   } catch (error: unknown) {
     console.error('❌ Failed to delete agent locally:', error instanceof Error ? error.message : String(error));

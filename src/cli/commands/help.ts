@@ -52,6 +52,7 @@ Project Management:
 
 Entity Management (Full Lifecycle Support):
   newo create-agent <idn> --project <project-idn> [--title <title>] [--description <desc>]    # create agent → push to platform ✅
+  newo update-agent <agent-idn> --project <project-idn> [--title <t>] [--description <d>] [--persona-id <id|null>]  # update agent on platform ✅
   newo delete-agent <agent-idn> --project <project-idn> [--confirm]    # delete agent locally (requires --confirm)
   newo create-flow <idn> --agent <agent-idn> --project <project-idn> [--title <title>] [--description <desc>] [--runner <guidance|nsl>]  # create flow → push to platform ✅
   newo delete-flow <flow-idn> --agent <agent-idn> --project <project-idn> [--confirm]  # delete flow locally (requires --confirm)
@@ -61,6 +62,8 @@ Entity Management (Full Lifecycle Support):
 Identity & Configuration:
   newo create-persona <name> [--title <title>] [--description <desc>]  # create agent persona ✅
   newo create-attribute <idn> --value <value> [--title <title>] [--group <group>] [--value-type <string>]  # create customer attribute ✅
+  newo update-attribute <idn> [--value <value>] [--title <title>] [--group <group>]  # update customer attribute ✅
+  newo delete-attribute <idn> [--confirm]  # delete customer attribute from platform ✅
 
 Advanced Components (NSL Focus):
   newo create-event <idn> --flow <flow-id> --skill <skill-idn> [--description <desc>] [--integration <api|system>] [--connector <webhook|system>]  # create flow event ✅
