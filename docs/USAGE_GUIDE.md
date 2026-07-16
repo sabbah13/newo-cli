@@ -165,6 +165,7 @@ newo pull
 - `create-parameter` - Create skill parameter
 - `create-persona` - Create agent persona
 - `create-attribute` - Create customer attribute
+- `update-attribute` - Point-edit one attribute by IDN (customer or `--project` scope); preserves all metadata (`is_read_only`, `possible_values`, `value_type`) by round-tripping the full object, JSON-safe, `--file`/`--json`
 
 **Flow events and `newo push` (v3.7.2+):** Editing `events:` or `state_fields:` in a flow's `metadata.yaml` (V1) or `{FlowIdn}.yaml` (V2) now syncs to the platform on `newo push`. Hash-gated — only changed flows are reconciled. After `newo create-event`, run `newo pull` first to fold the new event into local metadata; otherwise the next push will treat the event as platform-only and delete it. See README → "Flow Metadata Sync".
 

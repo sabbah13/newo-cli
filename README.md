@@ -497,6 +497,7 @@ newo verify --source SOURCE_IDN --dest DEST_IDN
 | **Identity & Configuration** |||
 | `newo create-persona <name>` | Create agent persona | • Persona configuration<br>• Title and description<br>• Agent assignment |
 | `newo create-attribute <idn> --value <val>` | Create customer attribute | • Enum types support<br>• Group organization<br>• Hidden attributes |
+| `newo update-attribute <idn> --value <val>` | Point-edit one attribute | • Customer or `--project` scope<br>• Preserves all metadata (`is_read_only`, etc.)<br>• `--file` for long values, `--json` output, JSON-safe |
 
 **Workflow:**
 1. **Create locally** → Entities created as folder structures with metadata.yaml
@@ -990,6 +991,8 @@ newo pull  # Sync new project locally
 # Step 2: Create persona and configuration
 newo create-persona weather_persona --title "Weather Assistant" --description "Professional weather guidance"
 newo create-attribute weather_api_key --value "your_api_key" --group "Weather Config"
+newo update-attribute weather_api_key --value "rotated_key"                              # point-edit one attribute (metadata preserved)
+newo update-attribute project_attributes_setting_test_mode --project weather_system --value "True"  # project-scoped attribute
 
 # Step 3: Create agent structure
 newo create-agent WeatherBot --project weather_system --title "Weather Bot" --persona-id <persona-id>

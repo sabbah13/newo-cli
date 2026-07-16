@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`newo update-attribute` — project scope, file input, JSON output.** The command now takes `--project <project-idn>` to point-edit a PROJECT attribute (`PUT /api/v1/designer/projects/{projectId}/attributes/{id}`) in addition to customer attributes; `--file <path>` to read a large or multi-line value from a file; and `--json` for machine-readable output.
+
+### Changed
+
+- **`newo update-attribute` now preserves ALL attribute metadata on write.** It round-trips the full attribute object returned by the platform (GET → overlay only the passed flags → PUT the whole object), instead of projecting to a fixed 8-field subset. The old path went through `updateCustomerAttribute`, which omitted `is_read_only` (and any other field the platform added), silently resetting it on every value edit — the Builder UI's own request sends the complete object. JSON-typed values (`value_type: json`) are normalized to a canvas-safe compact string via `normalizeJsonValueForStorage`, matching the pull/push path. New API helpers `putCustomerAttributeRaw` / `putProjectAttributeRaw` send an arbitrary full body; new pure helper `buildAttributeUpdateBody` does the merge (10 unit tests in `test/update-attribute.test.js`).
+
 ## [3.8.0] - 2026-07-03
 
 ### Added
