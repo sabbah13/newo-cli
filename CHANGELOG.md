@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.8.1] - 2026-07-16
+
 ### Added
 
 - **`newo update-attribute` — project scope, file input, JSON output.** The command now takes `--project <project-idn>` to point-edit a PROJECT attribute (`PUT /api/v1/designer/projects/{projectId}/attributes/{id}`) in addition to customer attributes; `--file <path>` to read a large or multi-line value from a file; and `--json` for machine-readable output.
@@ -1140,7 +1142,8 @@ Another Item: $Price [Modifiers: modifier3]
 - GitHub Actions CI/CD integration
 - Robust authentication with token refresh
 
-[Unreleased]: https://github.com/sabbah13/newo-cli/compare/v3.8.0...HEAD
+[Unreleased]: https://github.com/sabbah13/newo-cli/compare/v3.8.1...HEAD
+[3.8.1]: https://github.com/sabbah13/newo-cli/compare/v3.8.0...v3.8.1
 [3.8.0]: https://github.com/sabbah13/newo-cli/compare/v3.7.7...v3.8.0
 [3.7.7]: https://github.com/sabbah13/newo-cli/compare/v3.7.6...v3.7.7
 [3.7.6]: https://github.com/sabbah13/newo-cli/compare/v3.7.5...v3.7.6
