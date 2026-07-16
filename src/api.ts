@@ -264,6 +264,40 @@ export async function updateProjectAttribute(
   });
 }
 
+/**
+ * Update a customer attribute with an arbitrary, full body.
+ *
+ * Unlike updateCustomerAttribute (which projects to a fixed field set), this
+ * sends the exact body it is given so callers can round-trip every field the
+ * platform returned (e.g. is_read_only) and only override what changed. Used by
+ * the `update-attribute` point-edit command to preserve metadata.
+ */
+export async function putCustomerAttributeRaw(
+  client: AxiosInstance,
+  attributeId: string,
+  body: Record<string, unknown>
+): Promise<unknown> {
+  const response = await client.put(`/api/v1/customer/attributes/${attributeId}`, body);
+  return response.data;
+}
+
+/**
+ * Update a project attribute with an arbitrary, full body. See
+ * putCustomerAttributeRaw for the rationale.
+ */
+export async function putProjectAttributeRaw(
+  client: AxiosInstance,
+  projectId: string,
+  attributeId: string,
+  body: Record<string, unknown>
+): Promise<unknown> {
+  const response = await client.put(
+    `/api/v1/designer/projects/${projectId}/attributes/${attributeId}`,
+    body
+  );
+  return response.data;
+}
+
 export async function createProjectAttribute(
   client: AxiosInstance,
   projectId: string,

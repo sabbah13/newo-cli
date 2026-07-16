@@ -62,6 +62,7 @@ Entity Management (Full Lifecycle Support):
 Identity & Configuration:
   newo create-persona <name> [--title <title>] [--description <desc>]  # create agent persona ✅
   newo create-attribute <idn> --value <value> [--title <title>] [--group <group>] [--value-type <string>]  # create customer attribute ✅
+  newo update-attribute <idn> [--value <value> | --file <path>] [--project <project-idn>] [--title <t>] [--description <d>] [--group <g>] [--hidden] [--value-type <type>] [--possible-values <v1,v2>] [--json]  # update one attribute (preserves metadata) ✅
 
 Advanced Components (NSL Focus):
   newo create-event <idn> --flow <flow-id> --skill <skill-idn> [--description <desc>] [--integration <api|system>] [--connector <webhook|system>]  # create flow event ✅
@@ -192,6 +193,8 @@ Usage Examples:
   newo create-project weather_system --title "Weather System" --description "Comprehensive weather service"
   newo create-persona weather_persona --title "Weather Persona" --description "Professional weather assistant"
   newo create-attribute weather_api_key --value "your_api_key" --group "Weather Config"
+  newo update-attribute weather_api_key --value "new_key"          # point-edit one attribute (metadata preserved)
+  newo update-attribute project_attributes_setting_test_mode --project weather_system --value "True"  # project-scoped attribute
   newo pull                                    # Sync new project locally
 
   newo create-agent WeatherBot --project weather_system --title "Weather Bot" --persona-id <persona-id>
