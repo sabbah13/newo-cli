@@ -8,6 +8,7 @@
 **NEWO CLI** - Professional command-line tool for NEWO AI Agent development. Features **modular architecture**, **IDN-based file management**, and **comprehensive multi-customer support**.
 
 Sync NEWO "Project → Agent → Flow → Skills" structure to local files with:
+- 🆕 **Attribute point-edit** (v3.8.1) - `newo update-attribute <idn> --value <val>` edits one attribute (customer or `--project` scope) while preserving all metadata (`is_read_only`, title, `possible_values`, `value_type`); `--file` for long values, `--json` output, JSON-value safe
 - 🆕 **Faithful JSON-attr Markdown escapes** (v3.7.7) - canvas/JSON attributes preserve `\_` Markdown escapes through pull/push (escaped, not dropped), so escaped underscores no longer render as italics in the Workflow Builder
 - 🆕 **Project version & force-update** (v3.7.6) - `newo update-project <idn> --version <semver>` sets the displayed Builder project version after a deploy; `--force-update` re-syncs the project from its registry (the Builder's "Force Update Project" action)
 - 🆕 **Get one session** (v3.7.6) - `newo session <uuid>` pulls one session's dialog (transcript + agent `THOUGHTS` + system logs) by its platform `session_id`; add `--full` for the low-level skill-call execution trace
@@ -497,6 +498,7 @@ newo verify --source SOURCE_IDN --dest DEST_IDN
 | **Identity & Configuration** |||
 | `newo create-persona <name>` | Create agent persona | • Persona configuration<br>• Title and description<br>• Agent assignment |
 | `newo create-attribute <idn> --value <val>` | Create customer attribute | • Enum types support<br>• Group organization<br>• Hidden attributes |
+| `newo update-attribute <idn> --value <val>` | Point-edit one attribute | • Customer or `--project` scope<br>• Preserves all metadata (`is_read_only`, etc.)<br>• `--file` for long values, `--json` output, JSON-safe |
 
 **Workflow:**
 1. **Create locally** → Entities created as folder structures with metadata.yaml
@@ -990,6 +992,8 @@ newo pull  # Sync new project locally
 # Step 2: Create persona and configuration
 newo create-persona weather_persona --title "Weather Assistant" --description "Professional weather guidance"
 newo create-attribute weather_api_key --value "your_api_key" --group "Weather Config"
+newo update-attribute weather_api_key --value "rotated_key"                              # point-edit one attribute (metadata preserved)
+newo update-attribute project_attributes_setting_test_mode --project weather_system --value "True"  # project-scoped attribute
 
 # Step 3: Create agent structure
 newo create-agent WeatherBot --project weather_system --title "Weather Bot" --persona-id <persona-id>
